@@ -1,0 +1,6 @@
+node_modules
+ios
+android
+dist
+src/data/schema.generated.ts
+package-lock.json

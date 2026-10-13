@@ -1,2 +1,3 @@
 # Preserve the upstream license verbatim.
 design/assets/fonts/OFL.txt -whitespace
+apps/mobile/assets/fonts/OFL.txt -whitespace

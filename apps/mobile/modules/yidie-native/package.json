@@ -1,0 +1,7 @@
+{
+  "name": "yidie-native",
+  "version": "0.1.0",
+  "description": "Local PhotoKit and Vision for Yidie",
+  "main": "index.ts",
+  "license": "MIT"
+}

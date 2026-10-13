@@ -35,3 +35,12 @@
 | [Apple TestFlight](https://developer.apple.com/testflight/) | 测试分发路径 |
 
 没有据这些来源推导下载量、收入或未来 Star 数，也没有把官方功能描述当作性能测试结果。
+
+## 工程与字体补充来源
+
+- [Apple Xcode 系统要求](https://developer.apple.com/xcode/system-requirements)
+- [Expo SDK57 SQLite](https://docs.expo.dev/versions/v57.0.0/sdk/sqlite/)
+- [Expo SDK57 Font](https://docs.expo.dev/versions/v57.0.0/sdk/font/)
+- [Bluesky 功能模块](https://github.com/bluesky-social/social-app/tree/main/src/features)
+- [Ignite 字体配置](https://github.com/infinitered/ignite/blob/master/boilerplate/app/theme/typography.ts)
+- [Fraunces 官方字体源码与许可证](https://github.com/google/fonts/tree/main/ofl/fraunces)

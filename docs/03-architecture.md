@@ -23,7 +23,7 @@ Data                 Native Expo Module
 
 | 能力 | 选择 | 边界 |
 | --- | --- | --- |
-| 路由与页面 | Expo Router + TypeScript | 主要一个月历页，其他完整页或弹层，不先搭复杂 Tab |
+| 路由与页面 | AppRoot + TypeScript + 原生 Modal | 当前只有月历与弹层，更多独立页面出现时再引入 Expo Router，不先搭复杂 Tab |
 | 图片显示 | expo-image，使用本地缩略图 | 月历不解码原始 48MP 图片 |
 | 文件与数据库 | expo-file-system、expo-sqlite | 存相对路径，不能持久化安装沙盒的绝对前缀 |
 | 动效和手势 | Reanimated、Gesture Handler；底部弹层候选 @gorhom/bottom-sheet | 创建工程时核对当前 SDK/新架构兼容；必要时自建轻量 Modal + pager |
@@ -38,7 +38,7 @@ Data                 Native Expo Module
 
 1. 获取用户明确选择的资源，提取元数据。先判断原照片是否可在本机读取。对 PhotoKit 请求设置 `isNetworkAccessAllowed=false`，仅在本地存在时继续。
 2. 在临时目录复制原图并计算内容摘要，校验文件可读。原子移动到持久目录，再在事务中写 entry 与 job；若事务失败，移除本次新增文件。
-3. 纠正 EXIF orientation；按目标分辨率解码，用 Vision 的 `VNGenerateForegroundInstanceMaskRequest` 得到前景实例。默认选择主要人物；多人场景在可用时允许选择实例。
+3. 纠正 EXIF orientation；按目标分辨率解码，用 Vision 的 `VNGenerateForegroundInstanceMaskRequest` 得到前景实例。验证阶段保留所有前景实例；后续根据真机效果实现主体选择，当前未提供自动主要人物识别。
 4. 获取主体 alpha mask，合成人像透明图。主体应包含外套、裙摆、包等，不能仅使用脸部或人像半身裁剪替代全身抠图。
 5. 对 alpha 膨胀得到外轮廓，在其下绘制白色底层，再覆盖原主体，生成白边；阴影作为布局效果处理。裁剪到主体边界，并补足白边和阴影空间。
 6. 保存透明 PNG 与月历缩略图，事务更新 ready。缩略图与大图均携带尺寸和裁剪边界，不在 JS bridge 传大段 base64。

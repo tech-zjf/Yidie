@@ -1,61 +1,10 @@
-/** Design-only contracts. No native module or RN implementation is provided yet. */
-export type RecordDate = string; // Runtime validated Gregorian YYYY-MM-DD.
-export type DateSource = 'user' | 'exif' | 'photo_library' | 'unknown';
-export type ProcessingState = 'queued' | 'running' | 'ready' | 'failed' | 'paused';
-export type NativeErrorCode =
-  | 'UNSUPPORTED_DEVICE' | 'PHOTO_PERMISSION_DENIED' | 'SOURCE_NOT_LOCAL'
-  | 'SOURCE_UNAVAILABLE' | 'INVALID_IMAGE' | 'NO_FOREGROUND'
-  | 'PROCESSING_FAILED' | 'INSUFFICIENT_STORAGE' | 'CANCELLED';
-
-export interface DateProposal {
-  recordDate: RecordDate | null;
-  source: DateSource;
-  sourceDateTime?: string;
-  offsetMinutes?: number;
-  assumedTimeZone?: string;
-  needsConfirmation: boolean;
-}
-
-export interface LocalPhoto {
-  localUri: string; // Temporary native result: caller copies into owned storage.
-  assetId?: string;
-  contentHash: string;
-  width: number;
-  height: number;
-  originalOrientation: number;
-  date: DateProposal;
-}
-
-export interface StickerRequest {
-  jobId: string;
-  entryId: string;
-  expectedRevision: number;
-  originalUri: string;
-  maxInputDimension: number;
-  instanceIds?: number[];
-  borderWidth: number;
-  outputDirectory: string;
-}
-
-export interface StickerResult {
-  entryId: string;
-  expectedRevision: number;
-  stickerUri: string;
-  thumbnailUri: string;
-  width: number;
-  height: number;
-  subjectBounds: { x: number; y: number; width: number; height: number };
-  availableInstanceIds: number[];
-}
-
-export interface YidieNative {
-  getCapabilities(): Promise<{ canSegment: boolean; canReadLocalPhotos: boolean }>;
-  readLocalPhoto(assetId: string, options: { allowNetwork: false }): Promise<LocalPhoto>;
-  createSticker(request: StickerRequest): Promise<StickerResult>;
-  cancelJob(jobId: string): Promise<void>;
-  excludeFromBackup(directoryUri: string): Promise<void>;
-  renderMonth(layout: MonthLayout, options: { widthPx: number; outputUri: string }): Promise<string>;
-}
+/** Current runtime types are re-exported, not independently redefined here.
+ * Month export and backup types below are targets for later implementation stages.
+ */
+export type { DateProposal, DateSource } from '../apps/mobile/src/domain/datePolicy';
+export type { Asset, ImportedPhoto, Sticker, Entry, EntryRepository, PhotoProcessor } from '../apps/mobile/src/domain/records';
+export type { LocalModule as YidieNative } from '../apps/mobile/modules/yidie-native';
+export type RecordDate = string; // Validated Gregorian YYYY-MM-DD.
 
 export interface StickerPlacement {
   entryId: string;

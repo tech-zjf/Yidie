@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "衣叠",
+    "slug": "yidie",
+    "version": "0.1.0",
+    "platforms": ["ios"],
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "updates": { "enabled": false },
+    "ios": {
+      "bundleIdentifier": "com.techzjf.yidie",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "选择你想记录的穿搭照片，在这台 iPhone 上制作贴纸。照片不会上传。",
+        "PHPhotoLibraryPreventAutomaticLimitedAccessAlert": true,
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      ["expo-build-properties", { "ios": { "deploymentTarget": "17.0" } }],
+      [
+        "expo-font",
+        { "fonts": ["./assets/fonts/YidieDisplay.ttf", "./assets/fonts/YidieDisplayItalic.ttf"] }
+      ],
+      "expo-image",
+      "expo-sqlite"
+    ]
+  }
+}

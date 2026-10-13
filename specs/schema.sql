@@ -20,6 +20,8 @@ CREATE TABLE entries (
   original_path TEXT NOT NULL,
   sticker_path TEXT,
   thumbnail_path TEXT,
+  sticker_width INTEGER CHECK(sticker_width > 0),
+  sticker_height INTEGER CHECK(sticker_height > 0),
   display_mode TEXT NOT NULL DEFAULT 'cutout' CHECK(display_mode IN ('cutout','photo')),
   processing_state TEXT NOT NULL DEFAULT 'queued'
     CHECK(processing_state IN ('queued','running','ready','failed','paused')),

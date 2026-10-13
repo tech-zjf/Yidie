@@ -7,3 +7,5 @@
 - Generated `ios/`, dependencies, credentials, real user photos and local databases must not be committed. Native source belongs in `modules/yidie-native`.
 - Distinguish implementation, simulator verification and physical-device verification in status updates. Never label an unverified release production ready.
 - Use the checked-in lockfile. Review Expo/Xcode compatibility before upgrades. Keep Chinese copy in a shared catalog and use deterministic layout across screens and exports.
+- Follow `docs/10-engineering.md`: feature-local UI/controllers, pure domain rules and use cases, injected storage/native ports, one composition root. Do not add global state or generic base classes without a concrete requirement.
+- Run `npm run check` in `apps/mobile` and `python3 scripts/check_packet.py` from the root before committing. Native changes additionally require Swift typecheck and, once the toolchain is upgraded, a full iOS build. List unverified device behavior explicitly.

@@ -1,19 +1,5 @@
 # App 工程入口
 
-正式工程计划放入 `apps/mobile`。当前未生成 Expo 工程，先按 [实施方案](../docs/04-implementation.md) 完成初始化及真机原生验证。
+正式 Expo / React Native 工程位于 [mobile](mobile/README.md)。iOS 原生源代码在该工程的 `modules/yidie-native`，不会因重新生成 iOS 工程而丢失。
 
-预计结构：
-
-```text
-mobile/
-  app/                   Expo Router 页面入口
-  src/
-    features/            calendar、import、day、editor、export、settings
-    domain/              日期规则、布局、队列状态
-    data/                repository、文件、备份
-    ui/                  token、基础组件
-  modules/yidie-native/  Swift 原生模块
-  app.config.ts
-```
-
-保持应用代码与设计原型独立，避免将 WebView 包装网页原型作为最终 RN App。
+架构与模块边界见 [工程约定](../docs/10-engineering.md)，实际验证状态见 [实施记录](../docs/09-build-log.md)。网页原型只负责设计演示，不用于包装为 WebView App。
