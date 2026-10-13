@@ -37,7 +37,7 @@ Data                 Native Expo Module
 ## 一张照片的处理链路
 
 1. 获取用户明确选择的资源，提取元数据。先判断原照片是否可在本机读取。对 PhotoKit 请求设置 `isNetworkAccessAllowed=false`，仅在本地存在时继续。
-2. 在临时目录复制原图并计算内容摘要，校验文件可读。原子移动到持久目录，再在事务中写 entry 与 job；若事务失败，移除本次新增文件。
+2. 在临时目录复制原图并计算内容摘要，校验文件可读。原子移动到持久目录，再在事务中写 entry 与 job；若事务失败，先确认没有持久记录拥有该资源，再移除本次新增文件；归属无法确认时保留文件。
 3. 纠正 EXIF orientation；按目标分辨率解码，用 Vision 的 `VNGenerateForegroundInstanceMaskRequest` 得到前景实例。验证阶段保留所有前景实例；后续根据真机效果实现主体选择，当前未提供自动主要人物识别。
 4. 获取主体 alpha mask，合成人像透明图。主体应包含外套、裙摆、包等，不能仅使用脸部或人像半身裁剪替代全身抠图。
 5. 对 alpha 膨胀得到外轮廓，在其下绘制白色底层，再覆盖原主体，生成白边；阴影作为布局效果处理。裁剪到主体边界，并补足白边和阴影空间。
@@ -55,7 +55,7 @@ Apple 框架没有按次调用账单，无需自托管推理服务器。具体�
 
 ## 日期与数据
 
-数据契约见 [schema.sql](../specs/schema.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
+数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [迁移](../specs/migrations/002-file-deletions.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
 
 EXIF 日期含偏移时使用原本日历日期；不含偏移时保留原字面日期。相册 creationDate 只有绝对时间时，用导入时确定的时区生成建议并由用户确认。不要用 `toISOString().slice(0,10)` 处理本地日期，跨午夜会归错天。
 

@@ -27,8 +27,12 @@ export const MonthGrid = memo(function MonthGrid({
   const cellHeight = Math.max(cells.length === 42 ? 66 : 82, 44 * fontScale);
   const today = localDate();
   const days = new Map<string, Entry[]>();
-  for (const entry of entries)
-    if (entry.date) days.set(entry.date, [...(days.get(entry.date) ?? []), entry]);
+  for (const entry of entries) {
+    if (!entry.date) continue;
+    const day = days.get(entry.date);
+    if (day) day.push(entry);
+    else days.set(entry.date, [entry]);
+  }
   return (
     <View>
       <View style={styles.week}>
@@ -72,7 +76,10 @@ export const MonthGrid = memo(function MonthGrid({
                 visible.map((entry, i) => (
                   <Image
                     key={entry.id}
-                    source={rootUri + (entry.thumbnailPath ?? entry.originalPath)}
+                    source={{
+                      uri: rootUri + (entry.thumbnailPath ?? entry.originalPath),
+                      cacheKey: `${entry.id}:${entry.revision}:thumbnail`,
+                    }}
                     contentFit="contain"
                     accessible={false}
                     style={{

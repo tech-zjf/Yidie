@@ -29,12 +29,33 @@ export interface Entry {
   width: number | null;
   height: number | null;
   status: 'queued' | 'running' | 'ready' | 'failed' | 'paused';
+  revision: number;
+  sortKey: number;
+  isCover: boolean;
+  errorCode: string | null;
 }
-export interface EntryRepository {
-  list(options?: { month?: string; offset?: number }): Promise<Entry[]>;
-  begin(photo: ImportedPhoto, date: DateProposal): Promise<void>;
-  finish(id: string, sticker: Sticker): Promise<void>;
-  fail(id: string, code: string): Promise<void>;
+export interface EntryCursor {
+  sortKey: number;
+  id: string;
+}
+export interface ProcessingTicket {
+  id: string;
+  revision: number;
+}
+export interface ProcessingRepository {
+  begin(photo: ImportedPhoto, date: DateProposal): Promise<ProcessingTicket>;
+  retry(id: string, expectedRevision: number): Promise<ProcessingTicket>;
+  finish(ticket: ProcessingTicket, sticker: Sticker): Promise<void>;
+  fail(ticket: ProcessingTicket, code: string): Promise<void>;
+}
+export interface EntryRepository extends ProcessingRepository {
+  list(options?: { month?: string; before?: EntryCursor }): Promise<Entry[]>;
+  get(id: string): Promise<Entry | null>;
+  changeDate(id: string, expectedRevision: number, date: string | null): Promise<void>;
+  setCover(id: string, expectedRevision: number): Promise<void>;
+  remove(id: string, expectedRevision: number): Promise<void>;
+  pendingDeletions(): Promise<string[]>;
+  acknowledgeDeletion(id: string): Promise<void>;
 }
 export interface PhotoProcessor {
   createSticker(id: string): Promise<Sticker>;

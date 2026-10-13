@@ -82,7 +82,10 @@ export function CalendarScreen({ services }: { services: AppServices }) {
       <DaySheet
         date={model.day}
         entries={model.entries.filter((e) => e.date === model.day)}
-        rootUri={services.rootUri}
+        services={services}
+        onChanged={() => {
+          void model.refresh();
+        }}
         onClose={() => model.setDay(null)}
         onDismiss={() => {
           if (nextImportDate.current) {
@@ -108,7 +111,15 @@ export function CalendarScreen({ services }: { services: AppServices }) {
           }}
         />
       )}
-      {model.showAll && <RecordList services={services} onClose={() => model.setShowAll(false)} />}
+      {model.showAll && (
+        <RecordList
+          services={services}
+          onClose={() => model.setShowAll(false)}
+          onChanged={() => {
+            void model.refresh();
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Modal,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import type { AppServices } from '../../services';
 import type { Asset } from '../../domain/records';
 import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
+import { DateField } from '../../ui/DateField';
 import { colors, fonts } from '../../ui/tokens';
 import { copy } from '../../ui/copy';
 import { usePhotoImport } from './usePhotoImport';
@@ -114,16 +107,7 @@ export function PhotoImportSheet({
               contentFit="contain"
             />
             <Text>{copy.source[model.proposal.source]}</Text>
-            <TextInput
-              accessibilityLabel={copy.dateLabel}
-              placeholder={copy.datePlaceholder}
-              value={model.date}
-              onChangeText={model.setDate}
-              editable={!model.busy}
-              style={styles.input}
-              autoCorrect={false}
-            />
-            <Text style={styles.muted}>{copy.dateHelp}</Text>
+            <DateField value={model.date} onChange={model.setDate} disabled={model.busy} />
             <Button primary label={copy.make} onPress={model.confirm} disabled={model.busy} />
           </View>
         ) : (
@@ -167,14 +151,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
     borderRadius: 12,
-  },
-  input: {
-    minHeight: 50,
-    padding: 12,
-    backgroundColor: colors.wash,
-    borderRadius: 12,
-    fontSize: 18,
-    fontFamily: fonts.body,
-    color: colors.ink,
   },
 });

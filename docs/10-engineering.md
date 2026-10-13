@@ -25,13 +25,20 @@ apps/mobile/
     features/
       calendar/                   # 页面、月格、当天弹层、控制 hook
       import/                     # 选照、确认日期、导入控制 hook
+      records/                    # 单条记录编辑、封面、重试、删除
     domain/
       datePolicy.ts               # 公历日期、EXIF/相册来源优先级
       stickerLayout.ts            # 稳定旋转、整组适配单格
       importPhoto.ts              # 导入用例与失败时所有权转移
+      entryActions.ts             # 单并发图片处理/删除与启动清理
       records.ts                  # 数据类型与存储/处理接口
     data/
-      entryRepository.ts          # SQLite、迁移、事务与恢复状态
+      entryRepository.ts          # 查询与仓库组合，按游标翻页
+      entryMutations.ts           # 改日期、封面与删除事务
+      processingRepository.ts     # 导入/重试/完成，按 revision 校验
+      initializeDatabase.ts       # 版本迁移与中断恢复
+      openEntryRepository.ts      # Expo 连接适配与初始化
+      sqlDatabase.ts              # 最小 SQL 接口，供真实 SQLite 测试注入
       writeTransaction.ts         # 专用连接、外键核验、事务与释放
       schema.generated.ts         # 由唯一 SQL 源生成，不手改
     ui/                           # 文字、按钮、文案、设计 token
@@ -59,7 +66,11 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 
 检查 SDK57 的 `SQLiteDatabase.ts` 后确认，`withExclusiveTransactionAsync` 会创建新连接；不能认为原连接的 `foreign_keys=ON` 会继承。衣叠统一使用 `writeTransaction.ts`：新连接 → 开启并核验外键、设置 busy_timeout → BEGIN IMMEDIATE → 执行用例 → COMMIT/ROLLBACK → 关闭连接。SQL 始终传参数，不插值用户输入。这个细节有独立 SQLite 回归检查。
 
-导入先复制原图到自有目录，确认日期后写入记录和任务，再开始 Vision。事务写入失败时清理尚未归属记录的文件；处理失败时保留已归档原图，记录失败状态。当前阶段重启将未完成项标记 paused；完整批量调度、重试、孤儿文件对账属于阶段 3–4，不能宣称已经完成。
+导入先复制原图到自有目录，确认日期后写入记录和任务，再开始 Vision。事务写入失败时清理尚未归属记录的文件；处理失败时保留已归档原图，记录失败状态。重启将未完成项标记 paused，用户可以重试单条记录。重试递增 revision，完成/失败只接受相同 revision 的结果；处理中不允许改日期或删除。完整批量导入调度和导入前孤儿文件对账尚未实现。
+
+删除先在同一事务中移除记录、清除封面与关联任务，并写入 file_deletions；提交后才清理 App 自有文件。文件删除失败保留任务，启动时幂等继续。图片处理和文件删除共用串行 worker，避免删除后又生成旧贴纸；系统相册原图不参与删除。
+
+`specs/schema.sql` 是 v1 基线，后续变更存放 `specs/migrations/*.sql`。由 build_schema.py 生成运行时模块，已发布的迁移不可改写。升级和版本号更新在同一事务中执行；拒绝打开版本过新的库。
 
 同日弹层关闭后，等待 iOS `onDismiss` 再打开照片弹层，避免同时呈现两个原生 Modal。组件卸载后忽略照片预览的异步返回；重复确认有同步锁保护。
 
@@ -70,7 +81,7 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 | 原图 | Swift 降采样至长边 2048 后进行 Vision；图片工作在串行队列和 autoreleasepool 中 |
 | 月历 | 最多 42 格，每格最多 3 层，使用长边 256 的贴纸缩略图 |
 | 相册 | 分页 60 条；FlatList 只渲染窗口内图片，180×240 的本地预览 |
-| 记录 | 月历按日期索引只读取当前月；全部记录每页 60 条。阶段 3 增加游标分页和并发变更测试，再做大库验证 |
+| 记录 | 月历按日期索引只读取当前月；全部记录使用 (sort_key,id) 游标和对应索引，每页 60 条；插入/删除并发变更已有测试，大库真机验证待做 |
 | 堆叠 | 纯函数计算旋转后的完整包围盒并一次缩放；不逐帧随机位置 |
 | 主线程 | 不同步跑抠图，不同步执行数据库批量事务，不解码全量原图给月历 |
 | 基准 | 真机测 20 张不同照片的耗时/内存，50 张批量、1000 条月切换与滚动；记录设备与 Release 配置 |
@@ -86,4 +97,4 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 5. 运行 `npm run check` 与根目录交付检查，原生改动增加 Swift 检查和完整 iOS 构建。
 6. 记录真实验证证据；未完成的设备、离线和性能检查继续保留为门槛。
 
-当前测试覆盖公历、跨时区、跨年、四至六周月历、整组贴纸边界与导入失败路径。后续补存储集成测试、关键交互测试和真机端到端用例，不写只复述实现细节的测试。
+当前测试覆盖公历、跨时区、跨年、四至六周月历、整组贴纸边界与导入失败路径。已补真实 SQLite 仓库集成测试；后续补关键交互测试和真机端到端用例，不写只复述实现细节的测试。

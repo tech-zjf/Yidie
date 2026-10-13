@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AppServices } from '../../services';
 import type { Entry } from '../../domain/records';
 import { copy } from '../../ui/copy';
@@ -8,46 +8,70 @@ export function useRecordList(services: AppServices) {
   const [loading, setLoading] = useState(true),
     [hasMore, setHasMore] = useState(false),
     [error, setError] = useState('');
-  const active = useRef(true),
-    lock = useRef(true);
-  useEffect(() => {
-    active.current = true;
-    void services.repository
-      .list()
-      .then((rows) => {
-        if (active.current) {
-          setEntries(rows);
-          setHasMore(rows.length === 60);
-        }
-      })
-      .catch(() => {
-        if (active.current) setError(copy.errors.PROCESSING_FAILED);
-      })
-      .finally(() => {
-        lock.current = false;
-        if (active.current) setLoading(false);
-      });
-    return () => {
-      active.current = false;
-    };
+  const requests = useRef({ version: 0, busy: false, active: true });
+  const loadFirstPage = useCallback(() => {
+    const state = requests.current,
+      version = ++state.version;
+    state.busy = true;
+    return readFirstPage(services).then((rows) => {
+      if (version !== state.version) return;
+      state.busy = false;
+      setLoading(false);
+      if (rows) {
+        setEntries(rows);
+        setHasMore(rows.length === 60);
+        setError('');
+      } else setError(copy.errors.PROCESSING_FAILED);
+    });
   }, [services]);
+  useEffect(() => {
+    const state = requests.current;
+    state.active = true;
+    void loadFirstPage();
+    return () => {
+      state.version++;
+      state.active = false;
+    };
+  }, [loadFirstPage]);
+  function refresh() {
+    if (!requests.current.active) return;
+    setLoading(true);
+    setError('');
+    return loadFirstPage();
+  }
   async function loadMore() {
-    if (lock.current) return;
-    lock.current = true;
+    const state = requests.current;
+    if (state.busy) return;
+    if (!entries.length) return refresh();
+    const version = state.version,
+      last = entries[entries.length - 1];
+    state.busy = true;
     setLoading(true);
     setError('');
     try {
-      const rows = await services.repository.list({ offset: entries.length });
-      if (active.current) {
+      const rows = await services.repository.list({
+        before: { sortKey: last.sortKey, id: last.id },
+      });
+      if (version === state.version) {
         setEntries((current) => [...current, ...rows]);
         setHasMore(rows.length === 60);
       }
     } catch {
-      if (active.current) setError(copy.errors.PROCESSING_FAILED);
+      if (version === state.version) setError(copy.errors.PROCESSING_FAILED);
     } finally {
-      lock.current = false;
-      if (active.current) setLoading(false);
+      if (version === state.version) {
+        state.busy = false;
+        setLoading(false);
+      }
     }
   }
-  return { entries, loading, hasMore, error, loadMore };
+  return { entries, loading, hasMore, error, loadMore, refresh };
+}
+
+async function readFirstPage(services: AppServices) {
+  try {
+    return await services.repository.list();
+  } catch {
+    return null;
+  }
 }

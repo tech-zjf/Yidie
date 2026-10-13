@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { AppServices } from '../../services';
 import type { Asset, ImportedPhoto } from '../../domain/records';
 import { proposeDate, isRecordDate, type DateProposal } from '../../domain/datePolicy';
-import { importPhoto, errorCode } from '../../domain/importPhoto';
+import { errorCode } from '../../domain/importPhoto';
 import { copy } from '../../ui/copy';
 
 export function usePhotoImport(
@@ -89,7 +89,7 @@ export function usePhotoImport(
       // Ownership transfers to the use case, which handles pre-insert cleanup.
       staged.current = null;
       try {
-        await importPhoto(photo, confirmed, services.repository, services.photos);
+        await services.actions.import(photo, confirmed);
         if (mounted.current) setNotice(copy.saved);
       } finally {
         setPhoto(null);

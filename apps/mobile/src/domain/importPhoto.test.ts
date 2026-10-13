@@ -1,7 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { importPhoto } from './importPhoto';
-import type { EntryRepository, PhotoProcessor, ImportedPhoto, Sticker } from './records';
+import type {
+  EntryRepository,
+  ProcessingRepository,
+  PhotoProcessor,
+  ImportedPhoto,
+  Sticker,
+} from './records';
 const photo: ImportedPhoto = {
   id: 'sample',
   originalPath: 'originals/sample.source',
@@ -18,11 +24,13 @@ const sticker: Sticker = {
 };
 function rig(failure?: string) {
   const events: string[] = [];
-  const repo: EntryRepository = {
-    list: async () => [],
+  const repo: ProcessingRepository & Pick<EntryRepository, 'get'> = {
+    get: async () => null,
+    retry: async () => ({ id: photo.id, revision: 1 }),
     begin: async () => {
       events.push('begin');
       if (failure === 'db') throw new Error('DB');
+      return { id: photo.id, revision: 0 };
     },
     finish: async () => {
       events.push('finish');

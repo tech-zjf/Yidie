@@ -1,9 +1,10 @@
-import { openDatabaseAsync, type SQLiteDatabase } from 'expo-sqlite';
+import { openDatabaseAsync } from 'expo-sqlite';
+import type { SqlDatabase } from './sqlDatabase';
 
 /** Every write owns a dedicated connection, configured before BEGIN. */
-export async function withWriteTransaction(
+export async function withWriteTransaction<T>(
   directory: string,
-  action: (tx: SQLiteDatabase) => Promise<void>,
+  action: (tx: SqlDatabase) => Promise<T>,
 ) {
   const tx = await openDatabaseAsync('yidie.sqlite', { useNewConnection: true }, directory);
   try {
@@ -12,8 +13,9 @@ export async function withWriteTransaction(
     if (foreignKeys?.foreign_keys !== 1) throw new Error('FOREIGN_KEYS_DISABLED');
     await tx.execAsync('BEGIN IMMEDIATE');
     try {
-      await action(tx);
+      const result = await action(tx);
       await tx.execAsync('COMMIT');
+      return result;
     } catch (error) {
       await tx.execAsync('ROLLBACK');
       throw error;

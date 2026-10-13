@@ -16,15 +16,16 @@ UI 已有交互设计，但需要由你决定视觉是否达到想做的程度�
 
 用户已确认采用新版 Expo SDK 57，并稍后升级 macOS 与 Xcode。最低工具链要求 macOS 26.2+、Xcode 26.4+。以下为初始基线步骤，实际实施状态见 README：
 
+工程已初始化，继续开发使用已提交的版本与 lockfile：
+
 ```sh
-npx create-expo-app@5.0.0 apps/mobile --template expo-template-blank-typescript@57.0.30
 cd apps/mobile
-npx expo install expo-dev-client expo-image expo-sqlite expo-file-system expo-media-library expo-sharing react-native-reanimated react-native-gesture-handler
-npx expo install expo-build-properties
-npx create-expo-module@latest --local
+npm ci
+npm run check
+npm run ios
 ```
 
-交互式模块名选择 `yidie-native`，平台只实现 iOS。通过 Expo 配置插件声明最低系统、照片权限用途和本地存储要求。保留 `modules/` 为原生源代码来源，避免把唯一业务代码写在会被 prebuild 覆盖的文件里。
+模板来源为 `expo-template-blank-typescript@57.0.30`；实际依赖见 package.json。原生模块名 `yidie-native`，仅实现 iOS。通过 app.json / 配置插件声明最低系统、照片权限和字体，保留 modules 为原生源代码；生成的 ios 目录不提交。不要重跑初始化命令或一次性安装尚未使用的依赖。
 
 交付：`apps/mobile/App.tsx` 入口、`src` 分层、主题 token、lint/typecheck、基础 smoke test、构建说明；清除模板无关页面。第一屏放一个真实 RN 月历静态布局。
 
@@ -41,6 +42,8 @@ npx create-expo-module@latest --local
 验收：一张照片在飞行模式下成功生成透明贴纸；断开 Metro 的 Release 版仍能冷启动并完成。若原生抠图效果或严格本地照片导入无法满足要求，先修正能力边界，不继续铺开页面。
 
 ## 阶段 3：本地数据与日期（约 2 天）
+
+当前已在等待工具链升级期间实现日期/封面/删除/单条重试、迁移与 SQLite 集成测试；真机恢复和文件验证未通过，持久批量队列仍待后续。具体边界见实施记录。
 
 实现 schema migration、EntryRepository、FileStore、DatePolicy、持久化处理队列。根据 [SQL 契约](../specs/schema.sql) 和 [接口契约](../specs/contracts.ts) 落地，保留业务规则的纯函数。
 
