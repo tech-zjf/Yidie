@@ -23,5 +23,6 @@ async function create(): Promise<AppServices> {
   const repository = await openEntryRepository(storage.databaseUri);
   const actions = createEntryActions(repository, native);
   await actions.resumeCleanup();
+  await actions.queue.refresh();
   return { repository, photos: native, actions, rootUri: storage.rootUri };
 }

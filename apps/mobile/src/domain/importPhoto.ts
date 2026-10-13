@@ -13,7 +13,7 @@ export function errorCode(error: unknown): string {
   return error instanceof Error ? error.message : 'PROCESSING_FAILED';
 }
 
-/** One foreground import for the phase-2 gate; persistent batch scheduling comes later. */
+/** Isolated single-photo validation use case; the app UI submits via the persistent queue. */
 export async function importPhoto(
   photo: ImportedPhoto,
   date: DateProposal,

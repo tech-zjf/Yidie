@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, AppState, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -34,6 +34,17 @@ export function AppRoot() {
       active = false;
     };
   }, []);
+  useEffect(() => {
+    if (!services) return;
+    void services.actions.queue.setForeground(AppState.currentState === 'active');
+    const subscription = AppState.addEventListener('change', (state) => {
+      void services.actions.queue.setForeground(state === 'active');
+    });
+    return () => {
+      subscription.remove();
+      void services.actions.queue.setForeground(false);
+    };
+  }, [services]);
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />

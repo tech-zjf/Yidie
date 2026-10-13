@@ -11,6 +11,7 @@ import { DaySheet } from './DaySheet';
 import { RecordList } from './RecordList';
 import { useCalendar } from './useCalendar';
 import { PhotoImportSheet } from '../import/PhotoImportSheet';
+import { QueuePanel } from '../processing/QueuePanel';
 
 export function CalendarScreen({ services }: { services: AppServices }) {
   const model = useCalendar(services),
@@ -67,6 +68,7 @@ export function CalendarScreen({ services }: { services: AppServices }) {
           </Text>
         )}
       </ScrollView>
+      <QueuePanel services={services} />
       <View style={styles.footer}>
         <Button label={copy.all} onPress={() => model.setShowAll(true)} />
         <Pressable

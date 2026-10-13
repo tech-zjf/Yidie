@@ -1,55 +1,16 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
+import { ActivityIndicator, FlatList, Modal, StyleSheet, View } from 'react-native';
 import type { AppServices } from '../../services';
-import type { Asset } from '../../domain/records';
+import { batchLimit } from '../../domain/batchDraft';
 import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
-import { DateField } from '../../ui/DateField';
 import { colors, fonts } from '../../ui/tokens';
 import { copy } from '../../ui/copy';
-import { usePhotoImport } from './usePhotoImport';
+import { useBatchImport } from './useBatchImport';
+import { usePhotoLibrary } from './usePhotoLibrary';
+import { PhotoTile } from './PhotoTile';
+import { BatchReview } from './BatchReview';
+import { QueuePanel } from '../processing/QueuePanel';
 
-function PhotoTile({
-  asset,
-  services,
-  onPress,
-  disabled,
-}: {
-  asset: Asset;
-  services: AppServices;
-  onPress: () => void;
-  disabled: boolean;
-}) {
-  const [uri, setUri] = useState<string | null>(null);
-  useEffect(() => {
-    let active = true;
-    void services.photos
-      .thumbnail(asset.id)
-      .then((value) => {
-        if (active) setUri(value);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [asset.id, services]);
-  return (
-    <Pressable
-      disabled={disabled}
-      accessibilityRole="button"
-      accessibilityLabel={asset.createdAt ?? copy.choose}
-      onPress={onPress}
-      style={styles.tile}
-    >
-      {uri ? (
-        <Image source={uri} style={{ width: '100%', height: 140 }} contentFit="cover" />
-      ) : (
-        <Text style={styles.muted}>{copy.cloudThumb}</Text>
-      )}
-    </Pressable>
-  );
-}
 export function PhotoImportSheet({
   services,
   selectedDate,
@@ -61,95 +22,120 @@ export function PhotoImportSheet({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const model = usePhotoImport(services, selectedDate, onSaved);
+  const library = usePhotoLibrary(services);
+  const model = useBatchImport(services, selectedDate, onSaved);
+  const busy = model.busy || library.busy;
+  const title = { select: copy.choose, review: copy.dateTitle, submitted: copy.done }[model.stage];
+  const libraryError = model.stage === 'select' ? library.error : '';
+  let content;
+  if (model.stage === 'submitted') {
+    content = (
+      <View style={{ gap: 24, paddingTop: 24 }}>
+        <Text style={styles.heading}>{copy.batch.submitted(model.submittedCount)}</Text>
+        <Text style={styles.muted}>{copy.batch.submittedHelp}</Text>
+        <QueuePanel services={services} />
+        <Button primary label={copy.batch.returnCalendar} onPress={onClose} />
+      </View>
+    );
+  } else if (model.stage === 'review') {
+    content = (
+      <>
+        <BatchReview
+          drafts={model.drafts}
+          failures={model.failures}
+          busy={busy}
+          onRemove={model.remove}
+          onToggle={model.toggleDuplicate}
+          onDates={model.changeDates}
+          onRetry={model.retryReading}
+          onConfirm={model.confirm}
+        />
+      </>
+    );
+  } else if (!library.permission) {
+    content = (
+      <View style={{ gap: 16, paddingTop: 40 }}>
+        <Text>{copy.permissionHelp}</Text>
+        <Button primary label={copy.permissionButton} onPress={library.authorize} disabled={busy} />
+      </View>
+    );
+  } else {
+    const selected = new Set(model.selected.map((asset) => asset.id));
+    content = (
+      <>
+        <FlatList
+          data={library.assets}
+          numColumns={3}
+          keyExtractor={(item) => item.id}
+          initialNumToRender={12}
+          windowSize={5}
+          extraData={model.selected}
+          renderItem={({ item }) => (
+            <PhotoTile
+              asset={item}
+              services={services}
+              selected={selected.has(item.id)}
+              onPress={() => model.toggle(item)}
+              disabled={busy}
+            />
+          )}
+          ListEmptyComponent={<Text>{copy.noPhotos}</Text>}
+          ListFooterComponent={
+            library.hasMore || library.error ? (
+              <Button label={copy.morePhotos} onPress={library.loadMore} disabled={busy} />
+            ) : null
+          }
+        />
+        <Text style={styles.muted}>{copy.batch.limit(batchLimit)}</Text>
+        <Button
+          primary
+          label={copy.batch.review(model.selected.length)}
+          onPress={model.prepare}
+          disabled={busy || model.selected.length === 0}
+        />
+      </>
+    );
+  }
   return (
     <Modal
       visible
       animationType="slide"
       presentationStyle="pageSheet"
       onRequestClose={() => {
-        if (!model.busy) onClose();
+        if (!busy) onClose();
       }}
     >
       <View style={styles.screen} accessibilityViewIsModal>
         <View style={styles.header}>
-          <Text style={styles.heading}>{model.photo ? copy.dateTitle : copy.choose}</Text>
-          <Button label={copy.cancel} onPress={onClose} disabled={model.busy} />
+          <Text style={styles.heading}>{title}</Text>
+          <Button label={copy.close} onPress={onClose} disabled={busy} />
         </View>
-        <Text style={styles.muted}>{copy.local}</Text>
-        {!!model.notice && <Text accessibilityRole="alert">{model.notice}</Text>}
-        {!!model.error && (
+        <Text style={styles.muted}>
+          {selectedDate ? copy.batch.targetDate(selectedDate) : copy.local}
+        </Text>
+        {!!(model.error || libraryError) && (
           <Text accessibilityRole="alert" style={{ color: colors.danger }}>
-            {model.error}
+            {model.error || libraryError}
           </Text>
         )}
-        {model.busy && (
-          <View style={{ gap: 8 }}>
+        {busy && (
+          <View style={styles.loading}>
             <ActivityIndicator color={colors.action} />
-            <Text style={styles.muted}>{model.photo ? copy.processing : copy.preparing}</Text>
-          </View>
-        )}
-        {!model.permission ? (
-          <View style={{ gap: 16, paddingTop: 40 }}>
-            <Text>{copy.permissionHelp}</Text>
-            <Button
-              primary
-              label={copy.permissionButton}
-              onPress={model.authorize}
-              disabled={model.busy}
-            />
-          </View>
-        ) : model.photo ? (
-          <View style={{ gap: 16 }}>
-            <Image
-              source={services.rootUri + model.photo.originalPath}
-              style={{ width: '100%', height: 240 }}
-              contentFit="contain"
-            />
-            <Text>{copy.source[model.proposal.source]}</Text>
-            <DateField value={model.date} onChange={model.setDate} disabled={model.busy} />
-            <Button primary label={copy.make} onPress={model.confirm} disabled={model.busy} />
-          </View>
-        ) : (
-          <FlatList
-            data={model.assets}
-            numColumns={3}
-            keyExtractor={(a) => a.id}
-            initialNumToRender={12}
-            windowSize={5}
-            renderItem={({ item }) => (
-              <PhotoTile
-                asset={item}
-                services={services}
-                onPress={() => model.choose(item)}
-                disabled={model.busy}
-              />
+            <Text style={styles.muted}>{model.progress || copy.preparing}</Text>
+            {!!model.progress && (
+              <Button label={copy.batch.stopReading} onPress={model.stopReading} />
             )}
-            ListEmptyComponent={<Text>{copy.noPhotos}</Text>}
-            ListFooterComponent={
-              model.hasMore ? (
-                <Button label={copy.morePhotos} onPress={model.loadMore} disabled={model.busy} />
-              ) : null
-            }
-          />
+          </View>
         )}
+        {content}
       </View>
     </Modal>
   );
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper, padding: 20, gap: 16 },
+  screen: { flex: 1, backgroundColor: colors.paper, padding: 20, paddingBottom: 32, gap: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  heading: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 30 },
+  heading: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 30, flexShrink: 1 },
   muted: { color: colors.muted, fontSize: 13 },
-  tile: {
-    flex: 1,
-    margin: 3,
-    height: 140,
-    backgroundColor: colors.wash,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    borderRadius: 12,
-  },
+  loading: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
 });

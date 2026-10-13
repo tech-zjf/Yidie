@@ -1,7 +1,7 @@
 import { schema, migrations } from './schema.generated';
 import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
 
-const currentVersion = 2;
+const currentVersion = 3;
 
 export async function initializeDatabase(db: SqlDatabase, write: WriteTransaction) {
   await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
@@ -21,7 +21,7 @@ export async function initializeDatabase(db: SqlDatabase, write: WriteTransactio
       "UPDATE entries SET processing_state='paused' WHERE processing_state IN ('running','queued')",
     );
     await tx.runAsync(
-      "UPDATE processing_jobs SET state='paused' WHERE state IN ('running','queued')",
+      "UPDATE processing_jobs SET state='paused',pause_reason='interrupted' WHERE state IN ('running','queued')",
     );
   });
 }

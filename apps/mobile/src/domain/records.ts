@@ -11,6 +11,7 @@ export interface ImportedPhoto {
   contentHash: string;
   exifDateTime: string | null;
   createdAt: string | null;
+  sourceAssetId?: string;
 }
 export interface Sticker {
   stickerPath: string;
@@ -51,11 +52,34 @@ export interface ProcessingRepository {
 export interface EntryRepository extends ProcessingRepository {
   list(options?: { month?: string; before?: EntryCursor }): Promise<Entry[]>;
   get(id: string): Promise<Entry | null>;
+  getMany(ids: string[]): Promise<Entry[]>;
   changeDate(id: string, expectedRevision: number, date: string | null): Promise<void>;
   setCover(id: string, expectedRevision: number): Promise<void>;
   remove(id: string, expectedRevision: number): Promise<void>;
   pendingDeletions(): Promise<string[]>;
   acknowledgeDeletion(id: string): Promise<void>;
+  findDuplicate(photo: ImportedPhoto): Promise<DuplicateEntry | null>;
+  queueBatch(items: BatchItem[]): Promise<void>;
+  claimNext(): Promise<ProcessingTicket | null>;
+  pauseQueued(reason: PauseReason): Promise<void>;
+  resumePaused(reason?: PauseReason): Promise<void>;
+  queueCounts(): Promise<QueueCounts>;
+}
+export interface DuplicateEntry {
+  id: string;
+  date: string | null;
+}
+export interface BatchItem {
+  photo: ImportedPhoto;
+  date: DateProposal;
+  allowDuplicate: boolean;
+}
+export type PauseReason = 'user' | 'background' | 'interrupted' | 'storage';
+export interface QueueCounts {
+  queued: number;
+  running: number;
+  paused: number;
+  failed: number;
 }
 export interface PhotoProcessor {
   createSticker(id: string): Promise<Sticker>;

@@ -47,7 +47,9 @@ Apple 框架没有按次调用账单，无需自托管推理服务器。具体�
 
 ## 批量队列与性能
 
-首版原生队列并发 1，逐张释放图像缓冲；处理不占用 UI 主线程。持久化任务状态和 attempt，不把 JS timer 当可靠后台队列。进入后台暂停领取新任务；当前项的完成或取消由原生实现明确回调，重启后将遗留 running 恢复为 queued。
+首版图片处理并发 1，逐张释放图像缓冲；处理不占用 UI 主线程。SQLite 持久化任务状态、attempt、revision 和 pause_reason；纯 TypeScript 调度器只保存前台意图和界面快照，不把 JS timer 当可靠后台队列。进入后台停止领取新任务，不保证当前任务在系统挂起前完成。冷启动将遗留 running/queued 标记 paused/interrupted，用户确认后恢复。回前台仅自动恢复 background 暂停项；主动暂停、空间不足与重启恢复不会自动继续。
+
+批量准备逐张复制原图、读取日期并检测重复，确认页不提前执行 Vision。提交在一个事务内复查重复、写入全部记录与任务；失败则整批回滚，副本仍归确认页持有。确认成功后由数据库记录持有原图，队列、手动重试、删除共用串行执行器。数据库无法保存处理结果时停止调度并要求重启，避免仍在 running 的条目失去恢复入口。开发单批上限为 10，放大前需要设备证据。
 
 每次处理持有 entry revision；结果提交前核对记录仍存在且 revision 一致。用户删除、修改主体或重新处理时旧结果不可写回。失败保留原图和可理解的 errorCode。
 
@@ -55,7 +57,7 @@ Apple 框架没有按次调用账单，无需自托管推理服务器。具体�
 
 ## 日期与数据
 
-数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [迁移](../specs/migrations/002-file-deletions.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
+数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [文件清理迁移](../specs/migrations/002-file-deletions.sql)、[队列迁移](../specs/migrations/003-processing-queue.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
 
 EXIF 日期含偏移时使用原本日历日期；不含偏移时保留原字面日期。相册 creationDate 只有绝对时间时，用导入时确定的时区生成建议并由用户确认。不要用 `toISOString().slice(0,10)` 处理本地日期，跨午夜会归错天。
 

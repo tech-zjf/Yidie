@@ -45,7 +45,7 @@ rejects("UPDATE entries SET record_date='2026-06-13' WHERE id='pending'")
 db.execute("UPDATE entries SET record_date='2026-06-13' WHERE id='a'")
 assert db.execute("SELECT cover_entry_id FROM days WHERE record_date='2026-06-12'").fetchone()[0] is None
 db.execute("UPDATE days SET cover_entry_id='a' WHERE record_date='2026-06-13'")
-db.execute("INSERT INTO processing_jobs VALUES('j','a','queued',0,0,NULL,'now','now')")
+db.execute("INSERT INTO processing_jobs(id,entry_id,state,expected_revision,attempt,error_code,created_at,updated_at) VALUES('j','a','queued',0,0,NULL,'now','now')")
 db.execute("DELETE FROM entries WHERE id='a'")
 assert db.execute('SELECT count(*) FROM processing_jobs').fetchone()[0] == 0
 assert db.execute("SELECT cover_entry_id FROM days WHERE record_date='2026-06-13'").fetchone()[0] is None

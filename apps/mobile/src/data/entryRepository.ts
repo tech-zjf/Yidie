@@ -1,5 +1,6 @@
 import type { Entry, EntryRepository } from '../domain/records';
 import { createEntryMutations } from './entryMutations';
+import { createQueueRepository } from './queueRepository';
 import { createProcessingRepository } from './processingRepository';
 import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
 
@@ -24,6 +25,7 @@ export function createEntryRepository(
   };
   return {
     ...createProcessingRepository(write),
+    ...createQueueRepository(db, write),
     ...createEntryMutations(write),
     async list(options = {}) {
       if (options.month) {
@@ -48,6 +50,18 @@ export function createEntryRepository(
     async get(id) {
       const row = await db.getFirstAsync<Entry>(`${select} WHERE e.id=?`, id);
       return row ? decode(row) : null;
+    },
+    async getMany(ids) {
+      const rows: Entry[] = [];
+      // Keep each query below the SQLite parameter limit, including older device builds.
+      for (let start = 0; start < ids.length; start += 500) {
+        const page = ids.slice(start, start + 500);
+        const placeholders = page.map(() => '?').join(',');
+        rows.push(
+          ...(await db.getAllAsync<Entry>(`${select} WHERE e.id IN (${placeholders})`, ...page)),
+        );
+      }
+      return rows.map(decode);
     },
     async pendingDeletions() {
       const rows = await db.getAllAsync<{ entry_id: string }>(

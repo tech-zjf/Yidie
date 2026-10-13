@@ -1,6 +1,7 @@
 import { importPhoto, processEntry } from './importPhoto';
 import type { DateProposal } from './datePolicy';
-import type { EntryRepository, ImportedPhoto, PhotoProcessor } from './records';
+import { createProcessingQueue } from './processingQueue';
+import type { BatchItem, EntryRepository, ImportedPhoto, PhotoProcessor } from './records';
 
 /** One worker for image creation and deletion, so cleanup cannot race a late output. */
 export function createEntryActions(repository: EntryRepository, processor: PhotoProcessor) {
@@ -10,6 +11,7 @@ export function createEntryActions(repository: EntryRepository, processor: Photo
     tail = pending.catch(() => {});
     return pending;
   }
+  const queue = createProcessingQueue(repository, processor, enqueue);
   async function clean(id: string): Promise<boolean> {
     try {
       await processor.discardImport(id);
@@ -21,16 +23,37 @@ export function createEntryActions(repository: EntryRepository, processor: Photo
     }
   }
   return {
+    queue,
+    submitBatch: async (items: BatchItem[]) => {
+      await enqueue(() => repository.queueBatch(items));
+      await queue.refresh();
+      void queue.start();
+    },
+    discardDrafts: (photos: ImportedPhoto[]) =>
+      enqueue(async () => {
+        for (const photo of photos) {
+          try {
+            if (!(await repository.get(photo.id))) await processor.discardImport(photo.id);
+          } catch {
+            /* Preserve uncertain ownership. Startup orphan reconciliation is a later stage. */
+          }
+        }
+      }),
     import: (photo: ImportedPhoto, date: DateProposal) =>
       enqueue(() => importPhoto(photo, date, repository, processor)),
     retry: (id: string, revision: number) =>
       enqueue(async () => {
         const ticket = await repository.retry(id, revision);
-        await processEntry(ticket, repository, processor);
+        try {
+          await processEntry(ticket, repository, processor);
+        } finally {
+          await queue.refresh();
+        }
       }),
     remove: (id: string, revision: number) =>
       enqueue(async () => {
         await repository.remove(id, revision);
+        await queue.refresh();
         return { filesRemoved: await clean(id) };
       }),
     resumeCleanup: () =>

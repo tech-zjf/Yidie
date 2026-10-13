@@ -24,18 +24,24 @@ apps/mobile/
     services.ts                   # 唯一装配点：连接数据库、原生能力
     features/
       calendar/                   # 页面、月格、当天弹层、控制 hook
-      import/                     # 选照、确认日期、导入控制 hook
+      import/                     # 相册选择、批量确认、日期编辑、控制 hook
+      processing/                 # 队列状态与暂停/继续入口
       records/                    # 单条记录编辑、封面、重试、删除
     domain/
       datePolicy.ts               # 公历日期、EXIF/相册来源优先级
       stickerLayout.ts            # 稳定旋转、整组适配单格
       importPhoto.ts              # 导入用例与失败时所有权转移
-      entryActions.ts             # 单并发图片处理/删除与启动清理
+      batchDraft.ts               # 分组、改日期与提交项规则
+      prepareBatch.ts             # 顺序读取、查重、取消与副本所有权
+      processingQueue.ts          # 前台调度与状态订阅，不持有持久数据
+      entryActions.ts             # 共用串行执行器、提交、重试与文件清理
       records.ts                  # 数据类型与存储/处理接口
     data/
       entryRepository.ts          # 查询与仓库组合，按游标翻页
       entryMutations.ts           # 改日期、封面与删除事务
-      processingRepository.ts     # 导入/重试/完成，按 revision 校验
+      processingRepository.ts     # 单张导入/重试/完成，按 revision 校验
+      queueRepository.ts          # 批量事务、领取、暂停/恢复与计数
+      insertPhoto.ts              # 单张和批量共用的记录/任务写入
       initializeDatabase.ts       # 版本迁移与中断恢复
       openEntryRepository.ts      # Expo 连接适配与初始化
       sqlDatabase.ts              # 最小 SQL 接口，供真实 SQLite 测试注入
@@ -66,7 +72,9 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 
 检查 SDK57 的 `SQLiteDatabase.ts` 后确认，`withExclusiveTransactionAsync` 会创建新连接；不能认为原连接的 `foreign_keys=ON` 会继承。衣叠统一使用 `writeTransaction.ts`：新连接 → 开启并核验外键、设置 busy_timeout → BEGIN IMMEDIATE → 执行用例 → COMMIT/ROLLBACK → 关闭连接。SQL 始终传参数，不插值用户输入。这个细节有独立 SQLite 回归检查。
 
-导入先复制原图到自有目录，确认日期后写入记录和任务，再开始 Vision。事务写入失败时清理尚未归属记录的文件；处理失败时保留已归档原图，记录失败状态。重启将未完成项标记 paused，用户可以重试单条记录。重试递增 revision，完成/失败只接受相同 revision 的结果；处理中不允许改日期或删除。完整批量导入调度和导入前孤儿文件对账尚未实现。
+批量准备先顺序复制原图到自有目录，再显示日期分组和查重结果。确认后一个事务复查重复、写入全部记录和任务，提交后才执行 Vision。事务失败时副本仍归确认页管理，可调整后再提交；关闭确认页只清理没有持久归属的副本，未知归属时保留。处理失败保留已归档原图与失败状态；导入前崩溃的孤儿文件对账尚未实现。
+
+队列是服务装配出的单例，用 useSyncExternalStore 提供瞬时界面快照；SQL 是持久任务的事实来源。批处理、手动重试与文件删除共用串行执行器，UI 不调用 SQL。重启将未完成项标记 paused/interrupted；回前台只恢复 background 暂停项，主动暂停与重启恢复需确认。恢复/重试递增 revision，完成/失败只接受相同 revision；queued/running 不允许编辑或删除。数据库无法保存结果时停止调度并提示重启，保留可恢复的记录。
 
 删除先在同一事务中移除记录、清除封面与关联任务，并写入 file_deletions；提交后才清理 App 自有文件。文件删除失败保留任务，启动时幂等继续。图片处理和文件删除共用串行 worker，避免删除后又生成旧贴纸；系统相册原图不参与删除。
 
@@ -80,8 +88,8 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 | --- | --- |
 | 原图 | Swift 降采样至长边 2048 后进行 Vision；图片工作在串行队列和 autoreleasepool 中 |
 | 月历 | 最多 42 格，每格最多 3 层，使用长边 256 的贴纸缩略图 |
-| 相册 | 分页 60 条；FlatList 只渲染窗口内图片，180×240 的本地预览 |
-| 记录 | 月历按日期索引只读取当前月；全部记录使用 (sort_key,id) 游标和对应索引，每页 60 条；插入/删除并发变更已有测试，大库真机验证待做 |
+| 相册 | 分页 60 条；FlatList 只渲染窗口内图片，180×240 的本地预览；单批暂限 10 张，逐张准备，不并发解码原图 |
+| 记录 | 月历按日期索引只读取当前月；全部记录使用 (sort_key,id) 游标和对应索引，每页 60 条；队列更新只重读已载入 ID，保留翻页位置；插入/删除并发变更已有测试，大库真机验证待做 |
 | 堆叠 | 纯函数计算旋转后的完整包围盒并一次缩放；不逐帧随机位置 |
 | 主线程 | 不同步跑抠图，不同步执行数据库批量事务，不解码全量原图给月历 |
 | 基准 | 真机测 20 张不同照片的耗时/内存，50 张批量、1000 条月切换与滚动；记录设备与 Release 配置 |

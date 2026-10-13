@@ -33,14 +33,18 @@ export function useCalendar(services: AppServices) {
   useEffect(() => {
     const token = request.current;
     void refresh();
+    const unsubscribe = services.actions.queue.subscribe(() => {
+      void refresh();
+    });
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') void refresh();
     });
     return () => {
       sub.remove();
+      unsubscribe();
       token.version++;
     };
-  }, [refresh]);
+  }, [refresh, services]);
   return {
     month,
     entries,

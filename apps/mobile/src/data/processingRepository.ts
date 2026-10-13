@@ -1,47 +1,10 @@
-import { isRecordDate } from '../domain/datePolicy';
+import { insertPhoto } from './insertPhoto';
 import type { ProcessingRepository } from '../domain/records';
 import type { WriteTransaction } from './sqlDatabase';
 
 export function createProcessingRepository(write: WriteTransaction): ProcessingRepository {
   return {
-    async begin(photo, date) {
-      if (date.date !== null && !isRecordDate(date.date)) throw new Error('INVALID_DATE');
-      return write(async (tx) => {
-        const deletion = await tx.getFirstAsync(
-          'SELECT entry_id FROM file_deletions WHERE entry_id=?',
-          photo.id,
-        );
-        if (deletion) throw new Error('INVALID_RESOURCE');
-        if (date.date)
-          await tx.runAsync('INSERT OR IGNORE INTO days(record_date) VALUES (?)', date.date);
-        const now = new Date().toISOString();
-        await tx.runAsync(
-          `INSERT INTO entries
-          (id,record_date,date_source,source_datetime,suggested_timezone,content_hash,original_path,
-           processing_state,layout_seed,sort_key,imported_at,updated_at)
-          VALUES (?,?,?,?,?,?,?,'running',0,?,?,?)`,
-          photo.id,
-          date.date,
-          date.source,
-          photo.exifDateTime ?? photo.createdAt,
-          date.assumedTimeZone ?? null,
-          photo.contentHash,
-          photo.originalPath,
-          Date.now(),
-          now,
-          now,
-        );
-        await tx.runAsync(
-          `INSERT INTO processing_jobs(id,entry_id,state,expected_revision,attempt,created_at,updated_at)
-          VALUES (?,?,'running',0,1,?,?)`,
-          photo.id,
-          photo.id,
-          now,
-          now,
-        );
-        return { id: photo.id, revision: 0 };
-      });
-    },
+    begin: (photo, date) => write((tx) => insertPhoto(tx, photo, date, 'running')),
     retry: (id, revision) =>
       write(async (tx) => {
         const now = new Date().toISOString();
@@ -54,7 +17,7 @@ export function createProcessingRepository(write: WriteTransaction): ProcessingR
         );
         if (result.changes !== 1) throw new Error('STALE_RESULT');
         const job = await tx.runAsync(
-          `UPDATE processing_jobs SET state='running',error_code=NULL,expected_revision=?,attempt=attempt+1,updated_at=?
+          `UPDATE processing_jobs SET state='running',error_code=NULL,pause_reason=NULL,expected_revision=?,attempt=attempt+1,updated_at=?
         WHERE entry_id=?`,
           revision + 1,
           now,

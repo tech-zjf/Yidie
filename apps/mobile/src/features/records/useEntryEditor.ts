@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Entry } from '../../domain/records';
 import { isRecordDate } from '../../domain/datePolicy';
 import { errorCode } from '../../domain/importPhoto';
@@ -18,21 +18,41 @@ export function useEntryEditor(
     [notice, setNotice] = useState('');
   const [deleted, setDeleted] = useState(false);
   const active = useRef(true),
-    lock = useRef(false);
+    lock = useRef(false),
+    readVersion = useRef({ value: 0 });
   useEffect(() => {
+    const reads = readVersion.current;
     active.current = true;
     return () => {
       active.current = false;
+      reads.value++;
     };
   }, []);
-  async function reload(resetDate: boolean) {
-    const current = await services.repository.get(initial.id);
-    if (active.current && current) {
-      setEntry(current);
-      if (resetDate) setDate(current.date ?? '');
+  const reload = useCallback(
+    async (resetDate: boolean) => {
+      const request = ++readVersion.current.value;
+      const current = await services.repository.get(initial.id);
+      if (active.current && request === readVersion.current.value && current) {
+        setEntry(current);
+        if (resetDate) setDate(current.date ?? '');
+      }
+      return current;
+    },
+    [services, initial.id],
+  );
+  useEffect(() => {
+    async function refreshState() {
+      try {
+        await reload(false);
+      } catch {
+        // Retain the visible entry; explicit actions surface their own errors.
+      }
     }
-    return current;
-  }
+    void refreshState();
+    return services.actions.queue.subscribe(() => {
+      void refreshState();
+    });
+  }, [services, reload]);
   async function run(action: () => Promise<void>, resetAfterSuccess = false) {
     if (lock.current) return;
     lock.current = true;

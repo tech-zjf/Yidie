@@ -1,68 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
-import { createEntryRepository } from './entryRepository';
 import { initializeDatabase } from './initializeDatabase';
 import { schema } from './schema.generated';
-import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
-import type { ImportedPhoto, PhotoProcessor, Sticker } from '../domain/records';
+import type { PhotoProcessor } from '../domain/records';
+import { fixture, photo, sticker, ready } from './testSupport';
 import { createEntryActions } from '../domain/entryActions';
 import { importPhoto } from '../domain/importPhoto';
-
-function fixture() {
-  const sqlite = new DatabaseSync(':memory:');
-  sqlite.exec('PRAGMA foreign_keys=ON');
-  const db: SqlDatabase = {
-    execAsync: async (sql) => {
-      sqlite.exec(sql);
-    },
-    runAsync: async (sql, ...params) => ({
-      changes: Number(sqlite.prepare(sql).run(...params).changes),
-    }),
-    getFirstAsync: async <T>(sql: string, ...params: (string | number | null)[]) =>
-      (sqlite.prepare(sql).get(...params) ?? null) as T | null,
-    getAllAsync: async <T>(sql: string, ...params: (string | number | null)[]) =>
-      sqlite.prepare(sql).all(...params) as T[],
-  };
-  const write: WriteTransaction = async (action) => {
-    sqlite.exec('BEGIN IMMEDIATE');
-    try {
-      const result = await action(db);
-      sqlite.exec('COMMIT');
-      return result;
-    } catch (error) {
-      sqlite.exec('ROLLBACK');
-      throw error;
-    }
-  };
-  return { sqlite, db, write, repository: createEntryRepository(db, write) };
-}
-function photo(id: string): ImportedPhoto {
-  return {
-    id,
-    originalPath: `originals/${id}.source`,
-    contentHash: 'a'.repeat(64),
-    exifDateTime: null,
-    createdAt: null,
-  };
-}
-function sticker(id: string): Sticker {
-  return {
-    stickerPath: `stickers/${id}.png`,
-    thumbnailPath: `previews/${id}.png`,
-    width: 100,
-    height: 200,
-    instanceCount: 1,
-  };
-}
-async function ready(
-  r: ReturnType<typeof fixture>,
-  id: string,
-  date: string | null = '2026-06-12',
-) {
-  const ticket = await r.repository.begin(photo(id), { date, source: date ? 'user' : 'unknown' });
-  await r.repository.finish(ticket, sticker(id));
-}
 
 test('fresh schema and v1 migration preserve records and recover interrupted jobs', async (t) => {
   const r = fixture();
@@ -74,7 +17,7 @@ test('fresh schema and v1 migration preserve records and recover interrupted job
     VALUES ('interrupted','unknown','originals/interrupted.source','running',0,1,'now','now');
     INSERT INTO processing_jobs VALUES ('interrupted','interrupted','running',0,1,NULL,'now','now')`);
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 2);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 3);
   assert.equal((await r.repository.get('interrupted'))?.status, 'paused');
   assert.equal(r.sqlite.prepare('SELECT state FROM processing_jobs').get()?.state, 'paused');
   assert.deepEqual(await r.repository.pendingDeletions(), []);
