@@ -11,6 +11,9 @@ args = parser.parse_args()
 source = (ROOT / 'design/prototype.source.html').read_text()
 asset = base64.b64encode((ROOT / 'design/assets/outfit-sprites.webp').read_bytes()).decode()
 fragment = source.replace('__SPRITE_DATA__', 'data:image/webp;base64,' + asset)
+for key, name in [('__FONT_ROMAN__', 'YidieDisplay'), ('__FONT_ITALIC__', 'YidieDisplayItalic')]:
+    data = base64.b64encode((ROOT / f'design/assets/fonts/{name}.woff2').read_bytes()).decode()
+    fragment = fragment.replace(key, 'data:font/woff2;base64,' + data)
 assert len(fragment.encode()) < 1_000_000
 (ROOT / 'design/prototype.fragment.html').write_text(fragment)
 wrapper = '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>衣叠 · 交互设计</title><style>body{margin:0;background:#f6f6f4;padding:20px 8px}html{scrollbar-width:none}button{cursor:pointer}@media(max-width:360px){body{padding:20px 0}}</style></head><body>'

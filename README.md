@@ -12,7 +12,7 @@
 
 - [交互原型](design/index.html)：11 个设计入口，点击日期可展开，顶部按钮切换各模块。
 - [界面总览](design/overview.html)：并排查看主要页面，适合设计评审。
-- [月历截图](design/screenshots/calendar.jpg)、[当天展开截图](design/screenshots/day.jpg)。
+- [月历截图](design/screenshots/calendar.png)、[当天展开截图](design/screenshots/day.png)。
 
 上述 HTML 可以直接在浏览器中打开，不需要安装依赖或联网。修改 `design/prototype.source.html` 后运行 `python3 scripts/build_preview.py` 重建。预览页面不是 App 的代码基础，正式 UI 使用 React Native 实现。
 
@@ -39,6 +39,7 @@
 6. [命名选择](docs/06-naming.md)
 7. [验证清单](docs/07-verification.md)
 8. [资料来源](docs/SOURCES.md)
+9. [落地前全量审查](docs/08-audit.md)
 
 ## 下一步从哪里开始
 
@@ -55,4 +56,4 @@ Yidie/
 
 本地检查：`python3 scripts/check_packet.py`。这只验证交付包、SQL 约束和原型脚本语法，不代表 iOS App 已通过测试。
 
-代码许可采用 MIT，见 [LICENSE](LICENSE)。示例图片来源单独记录在 [素材说明](design/assets/PROVENANCE.md)。未创建 GitHub 远程仓库、公开发布或上架。
+代码许可采用 MIT，见 [LICENSE](LICENSE)。示例图片来源单独记录在 [素材说明](design/assets/PROVENANCE.md)。尚未上架；源码公开不代表已经通过真机发布验收。

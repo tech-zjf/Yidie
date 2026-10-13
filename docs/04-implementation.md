@@ -4,7 +4,7 @@
 
 ## 阶段 0：产品与仓库基线
 
-本次已整理 PRD、研究、技术方案、11 个 UI 入口、数据契约和检查脚本，项目目录命名为 Yidie。保留独立本地 Git 仓库，不自动关联远程仓库。首个基线提交应包含文档、设计和素材来源，不包含真实用户照片。
+本次已整理 PRD、研究、技术方案、11 个 UI 入口、数据契约和检查脚本，项目目录命名为 Yidie。创建独立 Git 仓库，并按用户授权发布到 GitHub 的 tech-zjf/Yidie。首个基线提交应包含文档、设计和素材来源，不包含真实用户照片。
 
 UI 已有交互设计，但需要由你决定视觉是否达到想做的程度。尤其体验 6 月 12 日的多张展开，并查看满月排版。此阶段不需要安装 Expo 或付费服务。
 
@@ -12,12 +12,12 @@ UI 已有交互设计，但需要由你决定视觉是否达到想做的程度�
 
 前置：安装并确认 Node LTS、包管理器、Xcode、iOS SDK 和模拟器可用。创建时查阅 Expo 当前版本兼容要求，锁定最终版本与 lockfile；不要把文档中的 latest 当成长期构建依赖。
 
-在项目根目录执行以下起始步骤；这些命令尚未在本次交付中运行：
+用户已确认采用新版 Expo SDK 57，并稍后升级 macOS 与 Xcode。最低工具链要求 macOS 26.2+、Xcode 26.4+。以下为初始基线步骤，实际实施状态见 README：
 
 ```sh
-npx create-expo-app@latest apps/mobile
+npx create-expo-app@5.0.0 apps/mobile --template expo-template-blank-typescript@57.0.30
 cd apps/mobile
-npx expo install expo-dev-client expo-image expo-sqlite expo-file-system expo-image-picker expo-media-library expo-sharing react-native-reanimated react-native-gesture-handler
+npx expo install expo-dev-client expo-image expo-sqlite expo-file-system expo-media-library expo-sharing react-native-reanimated react-native-gesture-handler
 npx expo install expo-build-properties
 npx create-expo-module@latest --local
 ```
@@ -90,7 +90,7 @@ npx create-expo-module@latest --local
 
 准备 20–30 秒录屏：批量导入 → 自动分组 → 同日堆叠 → 横向展开 → 月历导出。README 首屏放动图、中文定位、英文简介、一条明确的本地构建路径。独立介绍 Native Vision 模块和日期边界，给开发者具体的学习理由。
 
-公开仓库前检查 demo 素材权利、许可证、名称占用、签名配置和隐私内容，更新真正的仓库链接。用户决定公开发布时再创建远程仓库与上传；本次只准备本地项目。后续可提供 TestFlight 测试，开发者计划和外部测试流程另行确认。
+公开仓库前检查 demo 素材权利、许可证、名称占用、签名配置和隐私内容，更新真正的仓库链接。用户已授权创建 GitHub 仓库并提交；公开内容按本次审查范围执行。后续可提供 TestFlight 测试，开发者计划和外部测试流程另行确认。
 
 招募 5 位体验者，按研究文档的继续/停止条件评估，不把增加功能当作低关注度的默认解法。
 

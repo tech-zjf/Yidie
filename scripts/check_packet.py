@@ -7,7 +7,11 @@ import subprocess
 import tempfile
 
 root = Path(__file__).resolve().parents[1]
-for file in root.rglob('*.md'):
+tracked = subprocess.check_output(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], cwd=root).decode().split('\0')
+for name in set(tracked):
+    file = root / name
+    if file.suffix != '.md' or not file.is_file():
+        continue
     for target in re.findall(r'\]\(([^)]+)\)', file.read_text()):
         if '://' in target or target.startswith('#'):
             continue
