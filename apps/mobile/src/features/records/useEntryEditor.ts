@@ -160,6 +160,7 @@ export function useEntryEditor(
           styleCommitted.current = true;
           await services.repository.updateStickerStyle(entry.id, entry.revision, stylePreview);
           stagedVersion.current = null;
+          setStylePreview(null);
           await services.photos
             .pruneStickerStyles(entry.id, stylePreview.styleRevision)
             .catch(() => {});
@@ -170,6 +171,7 @@ export function useEntryEditor(
             .discardStickerStyleVersion(entry.id, stylePreview.styleRevision)
             .catch(() => {});
           stagedVersion.current = null;
+          if (active.current) setStylePreview(null);
           throw cause;
         }
       }, true);

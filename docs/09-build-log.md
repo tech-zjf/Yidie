@@ -13,7 +13,7 @@ Updated 2026-10-14. This file records durable implementation and verification fa
 
 ## Latest local checks
 
-In the current uncommitted development build:
+For the current development source:
 
 - TypeScript strict checks, ESLint, Prettier, 51 domain/SQLite tests, native backup/file-catalog tests (including a checksum-consistent manifest with a database path-traversal reference) and iOS core typecheck pass.
 - `python3 scripts/check_packet.py` passes document/SQL/preview contracts.
