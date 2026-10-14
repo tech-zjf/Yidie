@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Animated,
-  AccessibilityInfo,
   Easing,
   FlatList,
   Modal,
@@ -22,6 +21,7 @@ import { copy } from '../../ui/copy';
 import type { AppServices } from '../../services';
 import { EntryEditor } from '../records/EntryEditor';
 import { SheetHandle } from '../../ui/SheetHandle';
+import { useReducedMotion } from '../../ui/useReducedMotion';
 
 export function DaySheet({
   date,
@@ -45,20 +45,7 @@ export function DaySheet({
   const [editing, setEditing] = useState<Entry | null>(null);
   const [progress] = useState(() => new Animated.Value(0));
   const [closing, setClosing] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  useEffect(() => {
-    let active = true;
-    async function readReduceMotion() {
-      const enabled = await AccessibilityInfo.isReduceMotionEnabled();
-      if (active) setReduceMotion(enabled);
-    }
-    void readReduceMotion();
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
-    return () => {
-      active = false;
-      subscription.remove();
-    };
-  }, []);
+  const reduceMotion = useReducedMotion();
   useEffect(() => {
     if (date === null) return;
     if (reduceMotion) {

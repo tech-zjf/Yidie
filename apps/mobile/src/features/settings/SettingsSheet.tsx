@@ -19,6 +19,7 @@ import { Text } from '../../ui/Text';
 import { copy } from '../../ui/copy';
 import { colors, fonts } from '../../ui/tokens';
 import type { MonthExportPayload } from '../../domain/monthLayout';
+import { useReducedMotion } from '../../ui/useReducedMotion';
 
 function fileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -42,8 +43,13 @@ export function SettingsSheet({
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const closing = useRef(false);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      progress.setValue(1);
+      return;
+    }
     const frame = requestAnimationFrame(() => {
       Animated.spring(progress, {
         toValue: 1,
@@ -54,11 +60,15 @@ export function SettingsSheet({
       }).start();
     });
     return () => cancelAnimationFrame(frame);
-  }, [progress]);
+  }, [progress, reduceMotion]);
 
   const close = useCallback(() => {
     if (closing.current || busy) return;
     closing.current = true;
+    if (reduceMotion) {
+      onClose();
+      return;
+    }
     Animated.timing(progress, {
       toValue: 0,
       duration: 210,
@@ -68,7 +78,7 @@ export function SettingsSheet({
       if (finished) onClose();
       else closing.current = false;
     });
-  }, [busy, onClose, progress]);
+  }, [busy, onClose, progress, reduceMotion]);
 
   async function exportBackup() {
     if (busy) return;

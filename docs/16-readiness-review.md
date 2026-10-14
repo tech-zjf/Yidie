@@ -30,7 +30,7 @@ Review date: 2026-10-14. This describes the current development build, not a rel
 ## Verified in this worktree
 
 - TypeScript, ESLint, Prettier, 51 domain/SQLite tests, native backup/file inventory tests, Swift core typecheck, repository/SQL contracts, and packet checks pass once run with the configured Node runtime.
-- iOS JavaScript Release export passes for the current source. An earlier iPhone 18 Pro / iOS 27 Simulator Release build, install, and launch passed, but its screenshot predates the latest editor-state correction and shows only the empty home. The Mac is currently locked and CoreSimulatorService is unavailable, so a fresh Xcode build and interactive walkthrough remain unverified.
+- iOS JavaScript Release export passes for the current source. An earlier iPhone 18 Pro / iOS 27 Simulator Release build, install, and launch passed, but its screenshot predates the latest editor-state and Reduce Motion corrections and shows only the empty home. The Mac is currently locked and CoreSimulatorService is unavailable, so a fresh Xcode build and interactive walkthrough remain unverified.
 - No physical iPhone, Photos library, Developer Mode, signing identity, certificate, or keychain was accessed or changed. Xcode regenerated the ignored local iOS project; the Simulator build had code signing disabled.
 
 This is suitable as a **development milestone** for GitHub, not a complete or generally installable v0.1 release. The principal blockers are Simulator interaction coverage and a user-authorized real-device Vision photo test. The detailed security-state history is in [the device test safety runbook](15-device-test-safety-runbook.md); the active checklist is [TODO.md](../TODO.md).
