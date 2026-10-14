@@ -17,7 +17,7 @@ For the current development source:
 
 - TypeScript strict checks, ESLint, Prettier, 51 domain/SQLite tests, native backup/file-catalog tests (including a checksum-consistent manifest with a database path-traversal reference) and iOS core typecheck pass.
 - `python3 scripts/check_packet.py` passes document/SQL/preview contracts.
-- Full iOS Simulator Release build passed for the current source. Installation and app launch were verified on the existing iPhone 18 Pro / iOS 27 Simulator in the prior run; the subsequent CoreSimulator service failure prevented reinstalling this build. The checked-in screenshot records the empty calendar home; populated count-badge, outline-edit, backup and share-sheet flows have not received an interactive walkthrough.
+- `EXPO_NO_TELEMETRY=1 expo export --platform ios` passes for the current source. The latest change also clears the staged outline preview after a successful save or rejected stale save. An earlier Simulator Release build installed and launched on iPhone 18 Pro / iOS 27, but that screenshot predates the latest source correction. A fresh Xcode rebuild and UI walkthrough could not be completed in this run: the Mac is locked and CoreSimulatorService is unavailable; a temporary DerivedData build also lacked the CocoaPods module products. Rebuild and recheck before claiming current-source Simulator acceptance. Populated count-badge, outline-edit, backup and share-sheet flows still need an interactive walkthrough.
 - A prior iPhone 17 Pro simulator walkthrough covered local photo import, EXIF date, persistence, day browsing and failure handling. Vision foreground masking failed to create a simulator inference context. Simulator results do not establish physical-device cutout quality.
 
 ## Boundaries that remain
