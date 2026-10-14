@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "衣叠",
+    "name": "Yidie",
     "slug": "yidie",
     "version": "0.1.0",
+    "icon": "./assets/icon.png",
     "platforms": ["ios"],
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -11,16 +12,28 @@
       "bundleIdentifier": "com.techzjf.yidie",
       "supportsTablet": false,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "选择你想记录的穿搭照片，在这台 iPhone 上制作贴纸。照片不会上传。",
+        "CFBundleDisplayName": "Yidie",
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleLocalizations": ["en"],
+        "NSPhotoLibraryUsageDescription": "Choose outfit photos to make stickers on this iPhone. Photos are never uploaded.",
         "PHPhotoLibraryPreventAutomaticLimitedAccessAlert": true,
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "plugins": [
-      ["expo-build-properties", { "ios": { "deploymentTarget": "17.0" } }],
+      [
+        "expo-build-properties",
+        { "ios": { "deploymentTarget": "17.0", "enableSceneSupport": true } }
+      ],
       [
         "expo-font",
-        { "fonts": ["./assets/fonts/YidieDisplay.ttf", "./assets/fonts/YidieDisplayItalic.ttf"] }
+        {
+          "fonts": [
+            "./assets/fonts/YidieDisplay.ttf",
+            "./assets/fonts/YidieDisplayItalic.ttf",
+            "./assets/fonts/BagelFatOne-Regular.ttf"
+          ]
+        }
       ],
       "expo-image",
       "expo-sqlite"

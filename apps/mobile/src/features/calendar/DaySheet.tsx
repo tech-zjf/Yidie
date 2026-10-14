@@ -1,5 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  Animated,
+  AccessibilityInfo,
+  Easing,
   FlatList,
   Modal,
   PanResponder,
@@ -8,7 +11,6 @@ import {
   StyleSheet,
   View,
   useWindowDimensions,
-  type ViewToken,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RecordImage } from '../records/RecordImage';
@@ -19,8 +21,7 @@ import { colors, fonts } from '../../ui/tokens';
 import { copy } from '../../ui/copy';
 import type { AppServices } from '../../services';
 import { EntryEditor } from '../records/EntryEditor';
-
-const photoViewability = { itemVisiblePercentThreshold: 60 };
+import { SheetHandle } from '../../ui/SheetHandle';
 
 export function DaySheet({
   date,
@@ -42,40 +43,125 @@ export function DaySheet({
   const { height, fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState<Entry | null>(null);
-  // Only the handle owns vertical dismissal; the photo strip owns horizontal swipes.
-  const dismissGesture = PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gesture) =>
-      gesture.dy > 10 && Math.abs(gesture.dy) > Math.abs(gesture.dx) * 2,
-    onPanResponderRelease: (_, gesture) => {
-      if (gesture.dy > 56) onClose();
+  const [progress] = useState(() => new Animated.Value(0));
+  const [closing, setClosing] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    let active = true;
+    async function readReduceMotion() {
+      const enabled = await AccessibilityInfo.isReduceMotionEnabled();
+      if (active) setReduceMotion(enabled);
+    }
+    void readReduceMotion();
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => {
+      active = false;
+      subscription.remove();
+    };
+  }, []);
+  useEffect(() => {
+    if (date === null) return;
+    if (reduceMotion) {
+      progress.setValue(1);
+      return;
+    }
+    progress.setValue(0);
+    const frame = requestAnimationFrame(() => {
+      Animated.spring(progress, {
+        toValue: 1,
+        damping: 26,
+        stiffness: 245,
+        mass: 0.9,
+        useNativeDriver: true,
+      }).start();
+    });
+    return () => {
+      cancelAnimationFrame(frame);
+      progress.stopAnimation();
+    };
+  }, [date, progress, reduceMotion]);
+
+  const closeAfterAnimation = useCallback(
+    (afterClose: () => void = () => {}) => {
+      if (closing) return;
+      setClosing(true);
+      if (reduceMotion) {
+        setEditing(null);
+        onClose();
+        afterClose();
+        onDismiss();
+        setClosing(false);
+        return;
+      }
+      Animated.timing(progress, {
+        toValue: 0,
+        duration: 230,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished) {
+          setClosing(false);
+          return;
+        }
+        setEditing(null);
+        onClose();
+        afterClose();
+        onDismiss();
+        setClosing(false);
+      });
     },
+    [closing, onClose, onDismiss, progress, reduceMotion],
+  );
+
+  const sheetHeight = editing || fontScale > 1.4 ? height - insets.top - 12 : height * 0.72;
+  const backdropOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.28] });
+  const sheetTranslateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [sheetHeight + 32, 0],
   });
+  // Only the handle owns vertical dismissal; the photo strip owns horizontal swipes.
+  const dismissGesture = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          gesture.dy > 10 && Math.abs(gesture.dy) > Math.abs(gesture.dx) * 2,
+        onPanResponderRelease: (_, gesture) => {
+          if (gesture.dy > 56) closeAfterAnimation();
+        },
+      }),
+    [closeAfterAnimation],
+  );
   return (
     <Modal
       visible={date !== null}
       transparent
-      animationType="fade"
-      onRequestClose={onClose}
-      onDismiss={() => {
-        setEditing(null);
-        onDismiss();
-      }}
+      animationType="none"
+      onRequestClose={() => closeAfterAnimation()}
     >
       <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} />
-        <View
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, styles.backdrop, { opacity: backdropOpacity }]}
+        />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => closeAfterAnimation()}
+          accessible={false}
+        />
+        <Animated.View
           style={[
             styles.sheet,
             {
-              height: editing || fontScale > 1.4 ? height - insets.top - 12 : height * 0.72,
+              height: sheetHeight,
               paddingBottom: Math.max(insets.bottom, 16),
+              transform: [{ translateY: sheetTranslateY }],
             },
           ]}
           accessibilityViewIsModal
-          onAccessibilityEscape={onClose}
+          onAccessibilityEscape={() => closeAfterAnimation()}
         >
-          <View style={styles.handleArea} {...dismissGesture.panHandlers} accessible={false}>
-            <View style={styles.handle} />
+          <View {...dismissGesture.panHandlers} accessible={false}>
+            <SheetHandle />
           </View>
           {editing ? (
             <EntryEditor
@@ -91,12 +177,12 @@ export function DaySheet({
               date={date}
               entries={entries}
               services={services}
-              onClose={onClose}
-              onAdd={onAdd}
+              onClose={() => closeAfterAnimation()}
+              onAdd={() => closeAfterAnimation(onAdd)}
               onEdit={setEditing}
             />
           )}
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -119,18 +205,6 @@ function DayContents({
 }) {
   const { width, height } = useWindowDimensions();
   const itemWidth = width - 64;
-  const [visibleId, setVisibleId] = useState<string | null>(null);
-  const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken<Entry>[] }) => {
-      const first = viewableItems.find((item) => item.isViewable);
-      if (first) setVisibleId(first.item.id);
-    },
-    [],
-  );
-  const position = Math.max(
-    0,
-    entries.findIndex((entry) => entry.id === visibleId),
-  );
   return (
     <>
       <View style={styles.header}>
@@ -154,31 +228,37 @@ function DayContents({
           decelerationRate="fast"
           contentContainerStyle={styles.photos}
           style={{ flexGrow: 0 }}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={photoViewability}
-          renderItem={({ item }) => (
-            <View style={{ width: itemWidth }}>
+          renderItem={({ item, index }) => (
+            <View style={[styles.photoPage, { width: itemWidth }]}>
               <RecordImage
                 entry={item}
                 services={services}
                 variant="detail"
                 style={{ width: '100%', height: Math.min(300, height * 0.3) }}
               />
-              {item.status !== 'ready' && (
-                <Text style={styles.state}>{copy.recordState[item.status]}</Text>
-              )}
-              <Button label={copy.edit} onPress={() => onEdit(item)} />
+              <View style={styles.itemMeta}>
+                {item.status !== 'ready' && (
+                  <Text style={styles.state}>
+                    {item.status === 'failed' && item.errorCode
+                      ? (copy.errors[item.errorCode] ?? copy.recordState[item.status])
+                      : copy.recordState[item.status]}
+                  </Text>
+                )}
+                <Button
+                  label={copy.edit}
+                  labelStyle={styles.actionLabel}
+                  onPress={() => onEdit(item)}
+                />
+                <Text style={styles.position} accessibilityLiveRegion="polite">
+                  {copy.dayPosition(index + 1, entries.length)}
+                </Text>
+              </View>
             </View>
           )}
           ListEmptyComponent={
             <Text style={[styles.empty, { width: itemWidth }]}>{copy.noDay}</Text>
           }
         />
-        {entries.length > 0 && (
-          <Text style={styles.position} accessibilityLiveRegion="polite">
-            {copy.dayPosition(position + 1, entries.length)}
-          </Text>
-        )}
       </ScrollView>
       <View style={styles.footer}>
         <Button primary label={copy.addToDay} onPress={onAdd} />
@@ -188,21 +268,36 @@ function DayContents({
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.28)' },
+  overlay: { flex: 1, justifyContent: 'flex-end' },
+  backdrop: { backgroundColor: '#000000' },
   sheet: {
     backgroundColor: colors.paper,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     overflow: 'hidden',
   },
-  handleArea: { height: 28, alignItems: 'center', justifyContent: 'center' },
-  handle: { width: 32, height: 4, borderRadius: 2, backgroundColor: '#DADADA' },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 20 },
   title: { fontFamily: fonts.month, fontSize: 42, lineHeight: 56, letterSpacing: -1 },
   help: { color: colors.muted, fontSize: 13 },
   photos: { paddingHorizontal: 24, gap: 16 },
-  state: { color: colors.muted, fontSize: 13, textAlign: 'center', marginTop: 8 },
+  photoPage: { alignItems: 'stretch' },
+  itemMeta: { alignItems: 'center', paddingTop: 8 },
+  state: {
+    alignSelf: 'stretch',
+    color: colors.muted,
+    fontFamily: fonts.accent,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+  actionLabel: { fontFamily: fonts.accent, fontSize: 16 },
   empty: { paddingVertical: 64, textAlign: 'center', color: colors.muted },
-  position: { textAlign: 'center', fontSize: 13, color: colors.muted, paddingVertical: 8 },
+  position: {
+    fontFamily: fonts.number,
+    textAlign: 'center',
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.muted,
+  },
   footer: { paddingHorizontal: 24, paddingTop: 12 },
 });

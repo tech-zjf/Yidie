@@ -9,6 +9,7 @@ import { colors, fonts } from '../../ui/tokens';
 import { copy } from '../../ui/copy';
 import type { Entry } from '../../domain/records';
 import { EntryEditor } from '../records/EntryEditor';
+import { SheetHandle } from '../../ui/SheetHandle';
 export function RecordList({
   services,
   onClose,
@@ -38,15 +39,12 @@ export function RecordList({
         />
       ) : (
         <View style={styles.page} accessibilityViewIsModal>
+          <SheetHandle />
           <View style={styles.heading}>
             <Text accessibilityRole="header" style={styles.title}>
               {copy.all}
             </Text>
             <Button label={copy.close} onPress={onClose} />
-          </View>
-          <View style={styles.intro}>
-            <Text style={styles.introTitle}>{copy.recordsIntro}</Text>
-            <Text style={styles.muted}>{copy.recordsOrder}</Text>
           </View>
           <FlatList
             key={columns}
@@ -75,7 +73,7 @@ export function RecordList({
                 style={{ width: cardWidth, marginBottom: 18 }}
                 onPress={() => setEditing(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`${item.date ?? copy.pending}，${copy.editRecord}`}
+                accessibilityLabel={`${item.date ?? copy.pending}, ${copy.editRecord}`}
               >
                 <View style={styles.photo}>
                   <RecordImage
@@ -103,7 +101,7 @@ export function RecordList({
   );
 }
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.paper, paddingTop: 24 },
+  page: { flex: 1, backgroundColor: colors.paper, paddingTop: 8 },
   heading: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -112,11 +110,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   title: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 34, flexShrink: 1 },
-  intro: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 28, gap: 6 },
-  introTitle: { fontSize: 17, lineHeight: 28 },
-  muted: { fontSize: 12, color: colors.muted },
   columns: { gap: 14 },
-  content: { paddingHorizontal: 24, paddingBottom: 40 },
+  content: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
   photo: { borderRadius: 20, overflow: 'hidden', backgroundColor: colors.wash },
   caption: { position: 'absolute', bottom: 12, left: 8, right: 8, alignItems: 'center' },
   date: {

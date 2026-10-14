@@ -10,6 +10,7 @@ import { usePhotoLibrary } from './usePhotoLibrary';
 import { PhotoTile } from './PhotoTile';
 import { BatchReview } from './BatchReview';
 import { QueuePanel } from '../processing/QueuePanel';
+import { SheetHandle } from '../../ui/SheetHandle';
 
 export function PhotoImportSheet({
   services,
@@ -54,9 +55,16 @@ export function PhotoImportSheet({
     );
   } else if (!library.permission) {
     content = (
-      <View style={{ gap: 16, paddingTop: 40 }}>
-        <Text>{copy.permissionHelp}</Text>
-        <Button primary label={copy.permissionButton} onPress={library.authorize} disabled={busy} />
+      <View style={styles.permissionState}>
+        <View style={styles.permissionAction}>
+          <Text style={styles.permissionHelp}>{copy.permissionHelp}</Text>
+          <Button
+            primary
+            label={copy.permissionButton}
+            onPress={library.authorize}
+            disabled={busy}
+          />
+        </View>
       </View>
     );
   } else {
@@ -81,9 +89,18 @@ export function PhotoImportSheet({
           )}
           ListEmptyComponent={<Text>{copy.noPhotos}</Text>}
           ListFooterComponent={
-            library.hasMore || library.error ? (
-              <Button label={copy.morePhotos} onPress={library.loadMore} disabled={busy} />
-            ) : null
+            <View style={styles.photoActions}>
+              {library.limited && (
+                <Button
+                  label={copy.managePhotoAccess}
+                  onPress={library.manageAccess}
+                  disabled={busy}
+                />
+              )}
+              {(library.hasMore || library.error) && (
+                <Button label={copy.morePhotos} onPress={library.loadMore} disabled={busy} />
+              )}
+            </View>
           }
         />
         <Text style={styles.muted}>{copy.batch.limit(batchLimit)}</Text>
@@ -106,6 +123,7 @@ export function PhotoImportSheet({
       }}
     >
       <View style={styles.screen} accessibilityViewIsModal>
+        <SheetHandle />
         <View style={styles.header}>
           <Text style={styles.heading}>{title}</Text>
           <Button label={copy.close} onPress={onClose} disabled={busy} />
@@ -133,9 +151,20 @@ export function PhotoImportSheet({
   );
 }
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.paper, padding: 20, paddingBottom: 32, gap: 12 },
+  screen: {
+    flex: 1,
+    backgroundColor: colors.paper,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 32,
+    gap: 12,
+  },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 30, flexShrink: 1 },
   muted: { color: colors.muted, fontSize: 13 },
+  permissionState: { flex: 1, justifyContent: 'center' },
+  permissionAction: { gap: 18, width: '100%' },
+  permissionHelp: { textAlign: 'center', color: colors.ink, fontSize: 15, lineHeight: 22 },
   loading: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
+  photoActions: { gap: 8, paddingVertical: 8 },
 });

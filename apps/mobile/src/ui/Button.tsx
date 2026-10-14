@@ -1,8 +1,9 @@
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, type StyleProp, type TextStyle } from 'react-native';
 import { Text } from './Text';
 import { colors } from './tokens';
 export function Button({
   label,
+  labelStyle,
   accessibilityLabel,
   onPress,
   primary = false,
@@ -10,6 +11,7 @@ export function Button({
   destructive = false,
 }: {
   label: string;
+  labelStyle?: StyleProp<TextStyle>;
   accessibilityLabel?: string;
   onPress: () => void;
   primary?: boolean;
@@ -32,7 +34,7 @@ export function Button({
         { opacity: disabled ? 0.4 : pressed ? 0.65 : 1 },
       ]}
     >
-      <Text style={{ color: textColor }}>{label}</Text>
+      <Text style={[{ color: textColor }, labelStyle]}>{label}</Text>
     </Pressable>
   );
 }

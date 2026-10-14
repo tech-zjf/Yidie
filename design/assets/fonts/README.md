@@ -1,7 +1,7 @@
-# 字体
+# Fonts
 
-拉丁月份与日期采用 Fraunces 的本地静态子集（600 字重，48 光学字号，SOFT 30、WONK 1），修改后的字体命名为 Yidie Display / Yidie Display Italic。中文使用设备已有的苹方 SC（常规与中等），不分发 Apple 字体文件。
+The English interface uses Bagel Fat One for short display copy and headings. Readable body copy, labels, and actions use the built-in iOS Avenir Next family; Apple system fonts are not redistributed. Fraunces is a bundled local subset for month titles and calendar numerals (600 weight, 48 optical size, SOFT 30, WONK 1), renamed Yidie Display / Yidie Display Italic. The calendar typography stays independent from the display-copy font.
 
-原始文件来自 [Google Fonts 的 Fraunces 目录](https://github.com/google/fonts/tree/main/ofl/fraunces)，采用 [SIL Open Font License 1.1](OFL.txt)。原始 TTF 和许可证保留用于复现。改名后的 TTF 用于 App，WOFF2 用于离线设计预览，无运行时字体请求。
+Fraunces comes from [Google Fonts' Fraunces directory](https://github.com/google/fonts/tree/main/ofl/fraunces). Bagel Fat One comes from the [font author's repository](https://github.com/JAMO-TYPEFACE/BagelFat). Both use the SIL Open Font License 1.1; the corresponding license files are kept here. Original TTF files and licenses are kept for reproducibility. The renamed Fraunces TTF files and Bagel Fat One TTF are bundled with the app. No runtime font requests are made.
 
-维护者安装 `fonttools` 和 `brotli` 后运行 `python scripts/build_fonts.py` 重建。普通开发者使用仓库内已生成的文件即可。
+To rebuild the font subset, maintainers can install `fonttools` and `brotli`, then run `python scripts/build_fonts.py`. Other developers can use the generated files already in the repository.

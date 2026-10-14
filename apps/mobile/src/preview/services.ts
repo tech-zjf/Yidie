@@ -38,6 +38,8 @@ export async function previewServices(entries: Entry[]): Promise<AppServices> {
     capabilities: () => ({ simulator: true, minimumIOS: 17 }),
     prepareStorage: readOnly,
     requestPermission: readOnly,
+    permissionStatus: () => 'denied',
+    presentLimitedLibraryPicker: readOnly,
     listPhotos: readOnly,
     thumbnail: readOnly,
     importPhoto: readOnly,

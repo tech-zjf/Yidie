@@ -1,5 +1,6 @@
 import ExpoModulesCore
 import Photos
+import PhotosUI
 
 public class YidieNativeModule: Module {
   private func reject(_ error: Error, _ promise: Promise) {
@@ -27,7 +28,22 @@ public class YidieNativeModule: Module {
     }
     AsyncFunction("requestPermission") { (promise: Promise) in
       PHPhotoLibrary.requestAuthorization(for: .readWrite) { status in
-        promise.resolve(status == .authorized ? "authorized" : status == .limited ? "limited" : "denied")
+        promise.resolve(Self.permissionName(status))
+      }
+    }
+    Function("permissionStatus") { () -> String in
+      Self.permissionName(PHPhotoLibrary.authorizationStatus(for: .readWrite))
+    }
+    AsyncFunction("presentLimitedLibraryPicker") { (promise: Promise) in
+      DispatchQueue.main.async {
+        guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited,
+              let presenter = self.appContext?.utilities?.currentViewController() else {
+          promise.reject("PHOTO_PERMISSION_UNAVAILABLE", "PHOTO_PERMISSION_UNAVAILABLE")
+          return
+        }
+        PHPhotoLibrary.shared().presentLimitedLibraryPicker(from: presenter) { _ in
+          promise.resolve(nil)
+        }
       }
     }
     AsyncFunction("listPhotos") { (offset: Int, limit: Int) in try LocalPhotos.list(offset: offset, limit: limit) }
@@ -68,6 +84,14 @@ public class YidieNativeModule: Module {
         do { try NativeFileStore.discard(id); promise.resolve(nil) }
         catch { self.reject(error, promise) }
       }
+    }
+  }
+
+  private static func permissionName(_ status: PHAuthorizationStatus) -> String {
+    switch status {
+    case .authorized: return "authorized"
+    case .limited: return "limited"
+    default: return "denied"
     }
   }
 }

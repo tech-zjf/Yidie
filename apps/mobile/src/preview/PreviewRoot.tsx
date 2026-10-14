@@ -22,6 +22,7 @@ export default function PreviewRoot() {
   const [ready] = useFonts({
     YidieDisplay: require('../../assets/fonts/YidieDisplay.ttf'),
     YidieDisplayItalic: require('../../assets/fonts/YidieDisplayItalic.ttf'),
+    BagelFatOne: require('../../assets/fonts/BagelFatOne-Regular.ttf'),
   });
   useEffect(() => {
     let active = true;
@@ -40,7 +41,7 @@ export default function PreviewRoot() {
         <Modal visible={controls} animationType="slide" onRequestClose={() => setControls(false)}>
           <SafeAreaView style={{ flex: 1, padding: 20, backgroundColor: colors.paper }}>
             <Text style={{ textAlign: 'center', fontSize: 12 }}>
-              UI 预览 · 几何占位图 · 不读写真实照片
+              UI preview · sample artwork · no real photos are accessed or changed
             </Text>
             <ScrollView>
               {scenarios.map((title, i) => (
@@ -55,7 +56,7 @@ export default function PreviewRoot() {
                 />
               ))}
               <Button
-                label="导入确认"
+                label="Import review"
                 onPress={() => {
                   setDrafts(importFixture());
                   setShowImport(true);
@@ -63,7 +64,7 @@ export default function PreviewRoot() {
                 }}
               />
             </ScrollView>
-            <Button label="关闭场景选择" onPress={() => setControls(false)} />
+            <Button label="Close preview menu" onPress={() => setControls(false)} />
           </SafeAreaView>
         </Modal>
         {ready &&
@@ -92,12 +93,12 @@ export default function PreviewRoot() {
                     setDrafts(changeDraftDates(drafts, ids, value));
                     return true;
                   } catch {
-                    Alert.alert('请输入有效日期');
+                    Alert.alert('Enter a valid date.');
                     return false;
                   }
                 }}
-                onRetry={() => Alert.alert('仅预览，不读取相册')}
-                onConfirm={() => Alert.alert('仅预览，不写入本地记录')}
+                onRetry={() => Alert.alert('Preview only. Your photo library is not accessed.')}
+                onConfirm={() => Alert.alert('Preview only. No local records were saved.')}
               />
             </SafeAreaView>
           ) : (
@@ -109,7 +110,7 @@ export default function PreviewRoot() {
             />
           ))}
         <View style={{ position: 'absolute', top: 90, right: 8 }}>
-          <Button label="预览场景" onPress={() => setControls(true)} />
+          <Button label="Preview scenes" onPress={() => setControls(true)} />
         </View>
       </View>
     </SafeAreaProvider>

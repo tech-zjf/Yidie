@@ -15,6 +15,7 @@ export function AppRoot() {
   const [fontsReady, fontError] = useFonts({
     YidieDisplay: require('../assets/fonts/YidieDisplay.ttf'),
     YidieDisplayItalic: require('../assets/fonts/YidieDisplayItalic.ttf'),
+    BagelFatOne: require('../assets/fonts/BagelFatOne-Regular.ttf'),
   });
   useEffect(() => {
     let active = true;

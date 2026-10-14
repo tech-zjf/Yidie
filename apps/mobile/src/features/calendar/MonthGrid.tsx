@@ -1,5 +1,5 @@
-import { memo } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { memo, useMemo, useRef } from 'react';
+import { PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { RecordImage } from '../records/RecordImage';
 import { entryImage } from '../../domain/entryImage';
 import type { AppServices } from '../../services';
@@ -16,6 +16,7 @@ export const MonthGrid = memo(function MonthGrid({
   entries,
   services,
   onDay,
+  onSwipeMonth,
   today = localDate(),
 }: {
   year: number;
@@ -23,12 +24,30 @@ export const MonthGrid = memo(function MonthGrid({
   entries: Entry[];
   services: AppServices;
   onDay: (date: string) => void;
+  onSwipeMonth: (delta: number) => void;
   today?: string;
 }) {
   const { width, fontScale } = useWindowDimensions();
+  const swipeMonth = useRef(onSwipeMonth);
+  swipeMonth.current = onSwipeMonth;
+  const monthSwipe = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          Math.abs(gesture.dx) > 18 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.35,
+        onPanResponderRelease: (_, gesture) => {
+          if (Math.abs(gesture.dx) >= 56) swipeMonth.current(gesture.dx < 0 ? 1 : -1);
+        },
+      }),
+    [],
+  );
   const cells = monthCells(year, month),
     cellWidth = (width - (width <= 360 ? 12 : 32)) / 7;
-  const cellHeight = Math.max(cells.length === 42 ? 66 : 82, 44 * fontScale);
+  const compact = width <= 390;
+  const cellHeight = Math.max(
+    cells.length === 42 ? (compact ? 54 : 58) : compact ? 62 : 68,
+    44 * fontScale,
+  );
   const days = new Map<string, Entry[]>();
   for (const entry of entries) {
     if (!entry.date) continue;
@@ -37,7 +56,7 @@ export const MonthGrid = memo(function MonthGrid({
     else days.set(entry.date, [entry]);
   }
   return (
-    <View>
+    <View {...monthSwipe.panHandlers}>
       <View style={styles.week}>
         {copy.weekdays.map((day, i) => (
           <Text key={i} style={[styles.weekday, { width: cellWidth }]}>

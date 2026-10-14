@@ -12,6 +12,7 @@ import { RecordList } from './RecordList';
 import { useCalendar } from './useCalendar';
 import { PhotoImportSheet } from '../import/PhotoImportSheet';
 import { QueuePanel } from '../processing/QueuePanel';
+import { BrandMark } from '../../ui/BrandMark';
 
 export function CalendarScreen({
   services,
@@ -29,25 +30,35 @@ export function CalendarScreen({
   return (
     <SafeAreaView style={styles.page}>
       <View style={styles.top}>
-        <Text style={styles.brand}>{copy.name}</Text>
+        <View style={styles.wordmark} accessibilityLabel={copy.name}>
+          <BrandMark />
+          <Text style={styles.brand}>{copy.name}</Text>
+        </View>
         <Button
           label={copy.settings}
           onPress={() =>
             Alert.alert(
-              copy.stage,
+              copy.aboutTitle,
               copy.about +
                 (services.photos.capabilities().simulator ? '\n\n' + copy.simulator : ''),
             )
           }
         />
       </View>
-      <ScrollView contentContainerStyle={{ paddingHorizontal: padding, paddingBottom: 24 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: padding, paddingBottom: 12 }}
+      >
         <View style={styles.month}>
-          <Button
-            label="‹"
+          <Pressable
+            accessibilityRole="button"
             accessibilityLabel={copy.previous}
+            hitSlop={8}
             onPress={() => model.changeMonth(-1)}
-          />
+            style={[styles.monthArrow, styles.monthArrowLeft]}
+          >
+            <View style={[styles.chevron, styles.chevronLeft]} />
+          </Pressable>
           <Text
             accessibilityRole="header"
             style={styles.title}
@@ -56,7 +67,15 @@ export function CalendarScreen({
           >
             {copy.months[model.month.month - 1]} ’{String(model.month.year).slice(-2)}
           </Text>
-          <Button label="›" accessibilityLabel={copy.next} onPress={() => model.changeMonth(1)} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={copy.next}
+            hitSlop={8}
+            onPress={() => model.changeMonth(1)}
+            style={[styles.monthArrow, styles.monthArrowRight]}
+          >
+            <View style={[styles.chevron, styles.chevronRight]} />
+          </Pressable>
         </View>
         <MonthGrid
           {...model.month}
@@ -64,10 +83,11 @@ export function CalendarScreen({
           services={services}
           today={today}
           onDay={model.setDay}
+          onSwipeMonth={model.changeMonth}
         />
         {model.entries.length === 0 && (
           <View style={styles.empty}>
-            <Text>{copy.empty}</Text>
+            <Text style={styles.emptyTitle}>{copy.empty}</Text>
             <Text style={styles.hint}>{copy.monthEmptyHelp}</Text>
           </View>
         )}
@@ -80,7 +100,13 @@ export function CalendarScreen({
       </ScrollView>
       <QueuePanel services={services} />
       <View style={styles.footer}>
-        <Button label={copy.all} onPress={() => model.setShowAll(true)} />
+        <View style={styles.footerLeft}>
+          <Button
+            label={copy.all}
+            labelStyle={{ fontSize: 13 }}
+            onPress={() => model.setShowAll(true)}
+          />
+        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={copy.add}
@@ -89,7 +115,6 @@ export function CalendarScreen({
         >
           <Text style={styles.plus}>+</Text>
         </Pressable>
-        <Text style={styles.hint}>{copy.name}</Text>
       </View>
       <DaySheet
         date={model.day}
@@ -144,35 +169,60 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  brand: { fontFamily: fonts.heading, letterSpacing: 4, fontSize: 17 },
+  wordmark: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  brand: { fontFamily: fonts.heading, letterSpacing: 1, fontSize: 21, lineHeight: 30 },
   month: {
-    marginTop: 46,
-    marginBottom: 30,
-    flexDirection: 'row',
+    position: 'relative',
+    marginTop: 28,
+    marginBottom: 18,
+    height: 68,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  monthArrow: {
+    position: 'absolute',
+    top: 8,
+    width: 52,
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  monthArrowLeft: { left: 0 },
+  monthArrowRight: { right: 0 },
+  chevron: {
+    width: 12,
+    height: 12,
+    borderTopWidth: 2.5,
+    borderRightWidth: 2.5,
+    borderColor: colors.action,
+  },
+  chevronLeft: { transform: [{ rotate: '-135deg' }] },
+  chevronRight: { transform: [{ rotate: '45deg' }] },
   title: {
     fontFamily: fonts.month,
     fontSize: 53,
     lineHeight: 68,
     letterSpacing: -2,
+    textAlign: 'center',
+    maxWidth: '78%',
     flexShrink: 1,
   },
   empty: { alignItems: 'center', gap: 8, marginTop: 24 },
+  emptyTitle: { fontFamily: fonts.heading, fontSize: 19, lineHeight: 26, textAlign: 'center' },
   hint: { fontSize: 12, color: colors.muted },
   footer: {
+    position: 'relative',
     paddingHorizontal: 24,
-    paddingVertical: 18,
-    flexDirection: 'row',
+    height: 92,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
+  footerLeft: { position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center' },
   add: {
     borderRadius: 30,
     backgroundColor: colors.blue,
     minHeight: 56,
-    width: 140,
+    width: 112,
     alignItems: 'center',
     justifyContent: 'center',
   },

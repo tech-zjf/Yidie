@@ -32,11 +32,11 @@ function record(index: number, date: string | null, status: Entry['status'] = 'r
   };
 }
 export const scenarios = [
-  '日常与同日多张',
-  '31天六周满月',
-  '四周月份',
-  '空白月历',
-  '处理与失败状态',
+  'Everyday · multiple outfits',
+  '31 days · six weeks',
+  'Four-week month',
+  'Empty calendar',
+  'Processing and failures',
 ] as const;
 export function calendarFixture(scenario: number) {
   if (scenario === 1)

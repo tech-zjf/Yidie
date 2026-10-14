@@ -4,6 +4,8 @@ export interface LocalModule extends ImageFileStore {
   capabilities(): { simulator: boolean; minimumIOS: number };
   prepareStorage(): Promise<{ rootUri: string; databaseUri: string }>;
   requestPermission(): Promise<'authorized' | 'limited' | 'denied'>;
+  permissionStatus(): 'authorized' | 'limited' | 'denied';
+  presentLimitedLibraryPicker(): Promise<void>;
   listPhotos(offset: number, limit: number): Promise<Asset[]>;
   thumbnail(assetId: string): Promise<string | null>;
   importPhoto(assetId: string): Promise<ImportedPhoto>;

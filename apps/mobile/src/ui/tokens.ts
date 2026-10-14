@@ -9,8 +9,9 @@ export const colors = {
   danger: '#BA3B36',
 } as const;
 export const fonts = {
-  body: 'PingFangSC-Regular',
-  heading: 'PingFangSC-Medium',
+  body: 'AvenirNext-Regular',
+  heading: 'BagelFatOne',
+  accent: 'AvenirNext-Medium',
   number: 'YidieDisplay',
   month: 'YidieDisplayItalic',
 } as const;
