@@ -68,11 +68,24 @@ test('month layout shares bounded stack, count badge, and safe geometry', () => 
     today: '2026-06-17',
   });
   assert.equal(exported.monthTitle, 'Jun ’26');
+  assert.equal(exported.includeSignature, false);
   assert.equal(exported.cells[17]?.count, 4);
   assert.equal(exported.cells[17]?.stickers.length, 3);
   assert.deepEqual(
     exported.cells[17]?.stickers.map((sticker) => sticker.id),
     ['a', 'b', 'c'],
+  );
+  assert.equal(
+    monthExportPayload({
+      year: 2026,
+      month: 6,
+      screenWidth: 375,
+      fontScale: 1,
+      entries: [],
+      today: '2026-06-17',
+      includeSignature: true,
+    }).includeSignature,
+    true,
   );
 
   const accessibleSize = monthLayout({

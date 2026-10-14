@@ -13,7 +13,7 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 | Import and processing | User-selected PhotoKit assets, date review, duplicate handling, local persistent serial queue, retry and recovery | Domain/SQLite tests pass; Vision quality and system photo-picker behavior are not accepted on this Simulator |
 | Date editing | Native date picker, cancel-safe selection and date relocation | Source builds and static tests pass; native picker interaction remains to be accepted |
 | Local backup | User-controlled `.yidie` package, SQLite snapshot, checksums, strict path/schema validation, staged restore and startup rollback | Deterministic native tests cover corruption, database path traversal, future schema, storage limits, cancellation, current-library preservation and interrupted swaps; Files picker end-to-end flow remains open |
-| Image sharing | Transparent sticker PNG and 3× month PNG rendered from shared calendar geometry; native share sheet | Source and build checks; interactive share/cancel behavior remains open |
+| Image sharing | Transparent sticker PNG and 3× month PNG rendered from shared calendar geometry; optional default-off Yidie signature; native share sheet | Payload tests cover the opt-in default; interactive signature and share/cancel behavior remain open |
 | Privacy and product boundaries | No backend, account, analytics or cloud inference; app-owned local records and explicit backup warning | Source review; never uninstall without a user-verified backup |
 
 ## Acceptance still required

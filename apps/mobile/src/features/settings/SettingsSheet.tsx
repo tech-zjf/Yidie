@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -42,6 +43,7 @@ export function SettingsSheet({
   const [progress] = useState(() => new Animated.Value(0));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
+  const [includeSignature, setIncludeSignature] = useState(false);
   const closing = useRef(false);
   const reduceMotion = useReducedMotion();
 
@@ -102,7 +104,7 @@ export function SettingsSheet({
     setBusy(true);
     setMessage('');
     try {
-      const shared = await services.photos.shareMonth(monthExport);
+      const shared = await services.photos.shareMonth({ ...monthExport, includeSignature });
       setMessage(shared ? copy.monthExported : copy.shareCancelled);
     } catch (cause) {
       setMessage(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
@@ -208,6 +210,19 @@ export function SettingsSheet({
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
             <Text style={styles.section}>{copy.exportSection}</Text>
             <Text style={styles.help}>{copy.exportMonthHelp}</Text>
+            <View style={styles.option}>
+              <View style={styles.optionCopy}>
+                <Text style={styles.optionTitle}>{copy.signature}</Text>
+                <Text style={styles.optionHelp}>{copy.signatureHelp}</Text>
+              </View>
+              <Switch
+                accessibilityLabel={copy.signature}
+                value={includeSignature}
+                onValueChange={setIncludeSignature}
+                trackColor={{ false: colors.line, true: colors.action }}
+                thumbColor={colors.paper}
+              />
+            </View>
             <Button
               label={busy ? copy.processing : copy.shareMonth}
               onPress={exportMonth}
@@ -258,6 +273,10 @@ const styles = StyleSheet.create({
   },
   title: { fontFamily: fonts.heading, fontSize: 25, lineHeight: 34 },
   content: { gap: 14, paddingHorizontal: 24, paddingTop: 8 },
+  option: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 4 },
+  optionCopy: { flex: 1, gap: 4 },
+  optionTitle: { fontSize: 16, color: colors.ink },
+  optionHelp: { fontSize: 13, lineHeight: 18, color: colors.muted },
   section: { fontFamily: fonts.heading, fontSize: 19, lineHeight: 28 },
   help: { color: colors.muted, fontSize: 14, lineHeight: 21 },
   privacy: { color: colors.muted, fontSize: 13, lineHeight: 19, marginTop: 8 },

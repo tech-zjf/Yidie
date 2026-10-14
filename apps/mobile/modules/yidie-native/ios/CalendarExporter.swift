@@ -33,6 +33,7 @@ private struct CalendarExportRequest: Decodable {
   let cellWidth: CGFloat
   let cellHeight: CGFloat
   let today: String
+  let includeSignature: Bool?
   let monthTitle: String
   let weekdays: [String]
   let cells: [CalendarCell?]
@@ -133,6 +134,13 @@ enum CalendarExporter {
                  color: .black, centeredAt: CGPoint(x: badgeRect.midX, y: badgeRect.minY + 2), width: badgeRect.width)
           }
         }
+      }
+      if request.includeSignature == true {
+        let signatureFont = UIFont(name: "AvenirNext-Medium", size: 9) ?? .systemFont(ofSize: 9, weight: .medium)
+        draw("Yidie", font: signatureFont,
+             color: UIColor(red: 145 / 255, green: 145 / 255, blue: 145 / 255, alpha: 1),
+             centeredAt: CGPoint(x: width - sideInset - 18, y: calendarBottom + 6),
+             width: 64)
       }
     }
     if let drawError { throw YidieError(code: drawError) }

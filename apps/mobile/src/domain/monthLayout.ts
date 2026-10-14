@@ -31,6 +31,7 @@ export interface MonthExportPayload {
   cellWidth: number;
   cellHeight: number;
   today: string;
+  includeSignature: boolean;
   monthTitle: string;
   weekdays: string[];
   cells: ({
@@ -118,7 +119,7 @@ export function monthLayout(input: {
 }
 
 export function monthExportPayload(
-  input: Parameters<typeof monthLayout>[0] & { today: string },
+  input: Parameters<typeof monthLayout>[0] & { today: string; includeSignature?: boolean },
 ): MonthExportPayload {
   const layout = monthLayout(input);
   return {
@@ -128,6 +129,7 @@ export function monthExportPayload(
     cellWidth: layout.cellWidth,
     cellHeight: layout.cellHeight,
     today: input.today,
+    includeSignature: input.includeSignature ?? false,
     monthTitle: `${new Intl.DateTimeFormat('en-US', { month: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(input.year, input.month - 1, 1)))} ’${String(input.year).slice(-2)}`,
     weekdays: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
     cells: layout.cells.map((cell) =>

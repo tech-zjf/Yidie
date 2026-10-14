@@ -23,6 +23,8 @@ export const copy = {
   backupSection: 'Your data, on this iPhone',
   exportSection: 'Share your calendar',
   exportMonthHelp: 'Save this month as a high-resolution image.',
+  signature: 'Add Yidie signature',
+  signatureHelp: 'A small mark on the exported image. Off by default.',
   backupHelp: 'Backups are saved only when you choose a location. They are not encrypted.',
   exportBackup: 'Create a backup',
   restoreBackup: 'Restore a backup',

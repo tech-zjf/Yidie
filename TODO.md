@@ -20,6 +20,7 @@ This is the single working checklist for the first public, installable release. 
 ## P1 — finish the promised user flows
 
 - [x] Implement local sharing of a single transparent sticker and a high-resolution month image using the calendar's shared layout geometry. The native share-sheet interaction remains to be accepted in Simulator.
+- [x] Add an optional, default-off Yidie signature to month exports; draw it in the native renderer only when requested. The visual export and share flow still need Simulator acceptance.
 - [x] Add native date selection to record editing, with cancel-safe behavior and correct calendar relocation after confirmation; Simulator acceptance remains due.
 - [ ] Rebuild the latest source and verify same-day stack/count badge, horizontal browsing, sticker outline preview/save, empty/error/loading states, and sheet motion on supported simulator sizes. Earlier Release empty-calendar launch passed; the current editor-state and Reduce Motion corrections have a successful JS export but no fresh Xcode build because the Mac is locked and CoreSimulatorService is unavailable. Populated scenarios have not been interactively accepted.
 - [ ] Validate VoiceOver labels/focus, large text, reduced motion, smallest supported screen, and six-week months.
