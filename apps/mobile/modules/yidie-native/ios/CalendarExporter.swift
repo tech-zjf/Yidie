@@ -185,17 +185,22 @@ enum CalendarExporter {
     context.saveGState()
     context.translateBy(x: frame.midX, y: frame.midY)
     context.rotate(by: sticker.rotation * .pi / 180)
-    let drawRect = kind == "sticker" ? CGRect(x: -frame.width / 2, y: -frame.height / 2, width: frame.width, height: frame.height) : aspectFill(image.size, into: CGRect(x: -frame.width / 2, y: -frame.height / 2, width: frame.width, height: frame.height))
+    let localFrame = CGRect(x: -frame.width / 2, y: -frame.height / 2, width: frame.width, height: frame.height)
     if kind == "photoPreview" {
-      context.clip(to: CGRect(x: -frame.width / 2, y: -frame.height / 2, width: frame.width, height: frame.height))
+      context.addPath(UIBezierPath(roundedRect: localFrame, cornerRadius: 8).cgPath)
+      context.clip()
+      UIColor(red: 245 / 255, green: 245 / 255, blue: 243 / 255, alpha: 1).setFill()
+      context.fill(localFrame)
+      image.draw(in: aspectFit(image.size, into: localFrame))
+    } else {
+      image.draw(in: localFrame)
     }
-    image.draw(in: drawRect)
     context.restoreGState()
   }
 
-  private static func aspectFill(_ source: CGSize, into rect: CGRect) -> CGRect {
+  private static func aspectFit(_ source: CGSize, into rect: CGRect) -> CGRect {
     guard source.width > 0, source.height > 0 else { return rect }
-    let scale = max(rect.width / source.width, rect.height / source.height)
+    let scale = min(rect.width / source.width, rect.height / source.height)
     let size = CGSize(width: source.width * scale, height: source.height * scale)
     return CGRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2, width: size.width, height: size.height)
   }
