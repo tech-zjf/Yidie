@@ -30,7 +30,7 @@ This is the single working checklist for the first public, installable release. 
 
 - [x] Replace stale/duplicated status prose with one README, one live delivery board, one current release-gate document, and a short chronological changelog.
 - [x] Document local setup, architecture, privacy/data boundaries, known limitations, test commands, signing, and troubleshooting in concise English; link Chinese project notes where useful.
-- [ ] Confirm the new CI workflow runs green on GitHub for lockfile install, static checks, tests, and JS export. Add native build checks only on a pinned supported macOS/Xcode runner.
+- [ ] Publish the prepared `.github/workflows/ci.yml` and confirm it runs green for lockfile install, static checks, tests, and JS export. GitHub currently rejects workflow writes because the connected OAuth app lacks the `workflow` scope; do not change that authorization until the owner approves. Add native build checks only on a pinned supported macOS/Xcode runner.
 - [x] Add issue templates, security contact/reporting guidance, and contribution instructions that protect personal data.
 - [ ] Capture a populated app-screen demo for the README and X after the simulator walkthrough is visually verified; include captions and use synthetic or explicitly consented imagery. A clearly labeled empty-calendar screenshot is available meanwhile.
 - [ ] Publish a small, honest launch sequence: product problem and demo, local-only architecture, one engineering lesson, invitation to test/contribute; track repository visits, stars, issues, and tester feedback without promising reach.
