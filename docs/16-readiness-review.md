@@ -1,6 +1,6 @@
 # Current review and release gate
 
-Review date: 2026-10-14. This describes the current development build, not a release approval. Implementation, automated checks, Simulator interaction, and physical-device acceptance are tracked separately.
+Review date: 2026-10-15. This describes the current development build, not a release approval. Implementation, automated checks, Simulator interaction, and physical-device acceptance are tracked separately.
 
 ## Implemented in source
 
