@@ -29,7 +29,7 @@
 | Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted   |
 | Sticker outline preview and editing                              | Implemented locally; verify with an opt-in test photo on device  |
 | Backup/restore and native date picker                            | Source and deterministic backup tests pass; picker interaction due |
-| Transparent sticker and month image sharing                      | Implemented locally; native share-sheet interaction due          |
+| Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; native share-sheet interaction due |
 | Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                 |
 | Public App Store or general device distribution                  | Not available                                                    |
 
