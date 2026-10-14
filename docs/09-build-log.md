@@ -15,7 +15,7 @@ Updated 2026-10-14. This file records durable implementation and verification fa
 
 In the current uncommitted development build:
 
-- TypeScript strict checks, ESLint, Prettier, 51 domain/SQLite tests, native backup/file-catalog tests and iOS core typecheck pass.
+- TypeScript strict checks, ESLint, Prettier, 51 domain/SQLite tests, native backup/file-catalog tests (including a checksum-consistent manifest with a database path-traversal reference) and iOS core typecheck pass.
 - `python3 scripts/check_packet.py` passes document/SQL/preview contracts.
 - Full iOS Simulator Release build passed for the current source. Installation and app launch were verified on the existing iPhone 18 Pro / iOS 27 Simulator in the prior run; the subsequent CoreSimulator service failure prevented reinstalling this build. The checked-in screenshot records the empty calendar home; populated count-badge, outline-edit, backup and share-sheet flows have not received an interactive walkthrough.
 - A prior iPhone 17 Pro simulator walkthrough covered local photo import, EXIF date, persistence, day browsing and failure handling. Vision foreground masking failed to create a simulator inference context. Simulator results do not establish physical-device cutout quality.

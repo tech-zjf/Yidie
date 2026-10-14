@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import SQLite3
 
 enum BackupTestFailure: Error {
@@ -45,6 +46,11 @@ func rewriteManifest(_ package: URL, _ update: (inout [String: Any]) -> Void) th
   update(&manifest)
   let data = try JSONSerialization.data(withJSONObject: manifest, options: [.sortedKeys])
   try data.write(to: url, options: .atomic)
+}
+
+func sha256(_ url: URL) throws -> String {
+  let digest = SHA256.hash(data: try Data(contentsOf: url))
+  return digest.map { String(format: "%02x", $0) }.joined()
 }
 
 func expectBackupError(_ expected: String, operation: () throws -> Void) throws {
@@ -112,6 +118,39 @@ func runBackupTests() throws {
   }
   try check(FileManager.default.fileExists(atPath: currentMarker.path), "Checksum failure changed current library")
 
+  let pathTraversal = temporary.appendingPathComponent("PathTraversal.yidie", isDirectory: true)
+  try FileManager.default.copyItem(at: package, to: pathTraversal)
+  let pathTraversalDatabase = pathTraversal.appendingPathComponent("database/yidie.sqlite")
+  var pathTraversalConnection: OpaquePointer?
+  guard sqlite3_open(pathTraversalDatabase.path, &pathTraversalConnection) == SQLITE_OK,
+        let pathTraversalConnection else {
+    throw BackupTestFailure.assertion("Could not open path traversal fixture")
+  }
+  let inserted = sqlite3_exec(
+    pathTraversalConnection,
+    "INSERT INTO entries (original_path) VALUES ('../outside.source')",
+    nil,
+    nil,
+    nil
+  )
+  sqlite3_close(pathTraversalConnection)
+  try check(inserted == SQLITE_OK, "Could not add path traversal record")
+  let pathTraversalSize = try FileManager.default.attributesOfItem(atPath: pathTraversalDatabase.path)[.size] as? NSNumber
+  guard let pathTraversalSize else { throw BackupTestFailure.assertion("Could not read traversal database size") }
+  let pathTraversalHash = try sha256(pathTraversalDatabase)
+  try rewriteManifest(pathTraversal) { manifest in
+    manifest["entryCount"] = 1
+    manifest["totalBytes"] = pathTraversalSize.int64Value
+    var files = manifest["files"] as! [[String: Any]]
+    files[0]["byteCount"] = pathTraversalSize.int64Value
+    files[0]["sha256"] = pathTraversalHash
+    manifest["files"] = files
+  }
+  try expectBackupError("INVALID_BACKUP") {
+    _ = try LocalBackup.stageRestore(from: pathTraversal, support: support)
+  }
+  try check(FileManager.default.fileExists(atPath: currentMarker.path), "Path traversal backup changed current library")
+
   let oversized = temporary.appendingPathComponent("Oversized.yidie", isDirectory: true)
   try FileManager.default.copyItem(at: package, to: oversized)
   let oversizedImage = oversized.appendingPathComponent("stickers/AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA-v0.png")
@@ -155,7 +194,7 @@ func runBackupTests() throws {
   try check(!FileManager.default.fileExists(atPath: committedPrevious.path), "Committed restore kept the old library")
   try check(FileManager.default.fileExists(atPath: live.appendingPathComponent("old-library-marker").path), "Committed recovery changed the live library")
 
-  print("PASS local backup: snapshot, staging/cancellation, checksum, size and storage rejection, future format/schema rejection, current-library preservation, activation, and pending/committed crash recovery")
+  print("PASS local backup: snapshot, staging/cancellation, checksum and path rejection, size/storage/future-version rejection, current-library preservation, activation, and pending/committed crash recovery")
 }
 
 do {

@@ -15,7 +15,7 @@ This is the single working checklist for the first public, installable release. 
 - [x] Validate package layout, format/schema versions, checksums, file paths, counts, SQLite integrity, and size limits before restore.
 - [x] Stage restores separately and use a startup-recoverable directory swap; rollback retains the current library if activation fails before commit.
 - [x] Make backup/restore discoverable in Settings and explain that backup packages are unencrypted and uninstalling without a backup can remove local records.
-- [x] Add deterministic native tests for package corruption, future versions, storage limits, cancellation, and interrupted swaps; run the standalone backup harness. The Files picker end-to-end flow still needs Simulator interaction.
+- [x] Add deterministic native tests for package corruption, path traversal, future versions, storage limits, cancellation, and interrupted swaps; run the standalone backup harness. The Files picker end-to-end flow still needs Simulator interaction.
 
 ## P1 — finish the promised user flows
 
