@@ -1,6 +1,7 @@
-import { Alert, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { RecordImage } from './RecordImage';
-import type { Entry } from '../../domain/records';
+import type { Entry, StickerBorderColor } from '../../domain/records';
 import type { AppServices } from '../../services';
 import { Button } from '../../ui/Button';
 import { DateField } from '../../ui/DateField';
@@ -38,20 +39,102 @@ export function EntryEditor({
           <Text accessibilityRole="alert">{model.notice}</Text>
         ) : (
           <>
-            <RecordImage
-              entry={current}
-              services={services}
-              variant="detail"
-              style={styles.image}
-              accessibilityLabel={copy.outfitPhoto}
-            />
-            <Text style={styles.muted}>{copy.recordState[current.status]}</Text>
+            {model.stylePreview ? (
+              <Image
+                source={{
+                  uri: services.rootUri + model.stylePreview.thumbnailPath,
+                  cacheKey: model.stylePreview.thumbnailPath,
+                }}
+                contentFit="contain"
+                style={styles.image}
+                accessibilityLabel={copy.outfitPhoto}
+              />
+            ) : (
+              <RecordImage
+                entry={current}
+                services={services}
+                variant="detail"
+                style={styles.image}
+                accessibilityLabel={copy.outfitPhoto}
+              />
+            )}
+            <Text style={styles.muted}>
+              {model.stylePreview ? copy.previewNotSaved : copy.recordState[current.status]}
+            </Text>
             {!!model.error && (
               <Text accessibilityRole="alert" style={{ color: colors.danger }}>
                 {model.error}
               </Text>
             )}
             {!!model.notice && <Text accessibilityRole="alert">{model.notice}</Text>}
+            {current.status === 'ready' && (
+              <View style={styles.styleSection}>
+                <Text accessibilityRole="header" style={styles.sectionTitle}>
+                  {copy.stickerStyle}
+                </Text>
+                <Text style={styles.muted}>{copy.outlineWidth}</Text>
+                <View style={styles.options}>
+                  {[0, 2, 4, 6, 8].map((width) => (
+                    <Pressable
+                      key={width}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: model.borderWidth === width }}
+                      accessibilityLabel={copy.outlineWidthOption(width)}
+                      onPress={() => model.setBorderWidth(width)}
+                      style={[
+                        styles.widthOption,
+                        model.borderWidth === width && styles.selectedOption,
+                      ]}
+                    >
+                      <Text style={model.borderWidth === width ? styles.selectedText : undefined}>
+                        {width === 0 ? copy.none : width}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Text style={styles.muted}>{copy.outlineColor}</Text>
+                <View style={styles.options}>
+                  {(
+                    [
+                      ['#FFFFFF', copy.white],
+                      ['#242424', copy.inkColor],
+                      ['#0786A8', copy.blue],
+                    ] as [StickerBorderColor, string][]
+                  ).map(([color, label]) => (
+                    <Pressable
+                      key={color}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: model.borderColor === color }}
+                      accessibilityLabel={label}
+                      onPress={() => model.setBorderColor(color)}
+                      style={[
+                        styles.colorOption,
+                        { backgroundColor: color },
+                        model.borderColor === color && styles.selectedColor,
+                      ]}
+                    />
+                  ))}
+                </View>
+                <Text style={styles.muted}>{copy.styleHelp}</Text>
+                <Button
+                  label={model.busy ? copy.processing : copy.previewStyle}
+                  onPress={model.previewStyle}
+                  disabled={
+                    disabled ||
+                    (model.borderWidth === current.borderWidth &&
+                      model.borderColor === current.borderColor)
+                  }
+                />
+                {!!model.stylePreview && (
+                  <Button
+                    primary
+                    label={copy.saveStyle}
+                    onPress={model.saveStickerStyle}
+                    disabled={disabled}
+                  />
+                )}
+              </View>
+            )}
             <View style={styles.field}>
               <DateField value={model.date} onChange={model.setDate} disabled={disabled} />
               <Button
@@ -109,5 +192,26 @@ const styles = StyleSheet.create({
   content: { padding: 24, paddingBottom: 40, gap: 16 },
   image: { width: '100%', height: 260 },
   field: { gap: 12 },
+  styleSection: { gap: 10, paddingTop: 8 },
+  sectionTitle: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 28 },
+  options: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  widthOption: {
+    minWidth: 44,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.wash,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedOption: { backgroundColor: colors.action },
+  selectedText: { color: colors.paper },
+  colorOption: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: colors.muted,
+  },
+  selectedColor: { borderWidth: 3, borderColor: colors.action },
   muted: { color: colors.muted, fontSize: 13 },
 });

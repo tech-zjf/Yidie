@@ -79,6 +79,28 @@ export const MonthGrid = memo(function MonthGrid({
             }),
             { width: cellWidth, height: cellHeight },
           );
+          const rotatedBounds = layout.map((item) => {
+            const radians = (item.rotation * Math.PI) / 180;
+            const boundWidth =
+              Math.abs(item.width * Math.cos(radians)) + Math.abs(item.height * Math.sin(radians));
+            const boundHeight =
+              Math.abs(item.width * Math.sin(radians)) + Math.abs(item.height * Math.cos(radians));
+            return {
+              top: item.y + item.height / 2 - boundHeight / 2,
+              right: item.x + item.width / 2 + boundWidth / 2,
+            };
+          });
+          const badgeTop = Math.max(
+            0,
+            Math.min(cellHeight - 18, Math.min(...rotatedBounds.map((bounds) => bounds.top)) - 8),
+          );
+          const badgeRight = Math.max(
+            0,
+            Math.min(
+              cellWidth - 18,
+              cellWidth - Math.max(...rotatedBounds.map((bounds) => bounds.right)) - 8,
+            ),
+          );
           return (
             <Pressable
               key={date}
@@ -100,22 +122,32 @@ export const MonthGrid = memo(function MonthGrid({
                   {Number(date.slice(-2))}
                 </Text>
               ) : (
-                visible.map((entry, i) => (
-                  <RecordImage
-                    key={entry.id}
-                    entry={entry}
-                    services={services}
-                    style={{
-                      position: 'absolute',
-                      left: layout[i].x,
-                      top: layout[i].y,
-                      width: layout[i].width,
-                      height: layout[i].height,
-                      zIndex: 3 - i,
-                      transform: [{ rotate: `${layout[i].rotation}deg` }],
-                    }}
-                  />
-                ))
+                <>
+                  {visible.map((entry, i) => (
+                    <RecordImage
+                      key={entry.id}
+                      entry={entry}
+                      services={services}
+                      style={{
+                        position: 'absolute',
+                        left: layout[i].x,
+                        top: layout[i].y,
+                        width: layout[i].width,
+                        height: layout[i].height,
+                        zIndex: 3 - i,
+                        transform: [{ rotate: `${layout[i].rotation}deg` }],
+                      }}
+                    />
+                  ))}
+                  {day.length > 1 && (
+                    <View
+                      style={[styles.countBadge, { top: badgeTop, right: badgeRight }]}
+                      pointerEvents="none"
+                    >
+                      <Text style={styles.countText}>{day.length > 99 ? '99+' : day.length}</Text>
+                    </View>
+                  )}
+                </>
               )}
             </Pressable>
           );
@@ -130,4 +162,18 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: { alignItems: 'center', justifyContent: 'center' },
   number: { fontFamily: fonts.number, fontSize: 28, lineHeight: 36, letterSpacing: -0.8 },
+  countBadge: {
+    position: 'absolute',
+    zIndex: 8,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    backgroundColor: colors.paper,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.muted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countText: { color: colors.ink, fontSize: 10, lineHeight: 12, fontFamily: fonts.number },
 });

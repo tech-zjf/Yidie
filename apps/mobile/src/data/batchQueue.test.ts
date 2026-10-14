@@ -260,7 +260,7 @@ test('v2 migration preserves archived entries and pending deletions while recove
       VALUES ('ready','2026-06-12','user','originals/ready.source','stickers/ready.png','previews/ready.png',100,200,'ready',0,2,'now','now');
     UPDATE days SET cover_entry_id='ready' WHERE record_date='2026-06-12';`);
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 4);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
   assert.equal((await r.repository.get('ready'))?.isCover, true);
   assert.equal((await r.repository.get('ready'))?.status, 'ready');
   assert.equal(

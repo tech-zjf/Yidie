@@ -6,6 +6,7 @@ export const colors = {
   blue: '#21A8DC',
   action: '#087FAB',
   wash: '#F5F5F3',
+  line: '#DDDDDA',
   danger: '#BA3B36',
 } as const;
 export const fonts = {

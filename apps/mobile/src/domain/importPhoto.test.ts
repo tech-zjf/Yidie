@@ -20,10 +20,14 @@ const photo: ImportedPhoto = {
 };
 const sticker: Sticker = {
   stickerPath: 'stickers/sample.png',
+  cutoutPath: 'cutouts/sample.png',
   thumbnailPath: 'previews/sample.png',
   width: 100,
   height: 200,
   instanceCount: 1,
+  borderWidth: 4,
+  borderColor: '#FFFFFF',
+  styleRevision: 0,
 };
 function rig(failure?: string) {
   const events: string[] = [];

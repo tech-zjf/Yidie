@@ -17,12 +17,31 @@ test('fresh schema and v1 migration preserve records and recover interrupted job
     VALUES ('interrupted','unknown','originals/interrupted.source','running',0,1,'now','now');
     INSERT INTO processing_jobs VALUES ('interrupted','interrupted','running',0,1,NULL,'now','now')`);
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 4);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
   assert.equal((await r.repository.get('interrupted'))?.status, 'paused');
   assert.equal(r.sqlite.prepare('SELECT state FROM processing_jobs').get()?.state, 'paused');
   assert.deepEqual(await r.repository.pendingDeletions(), []);
   await initializeDatabase(r.db, r.write); // Restart is idempotent.
   assert.equal((await r.repository.list()).length, 1);
+});
+
+test('fresh install applies every migration once and has editable sticker columns', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
+  const columns = new Set(
+    (r.sqlite.prepare('PRAGMA table_info(entries)').all() as { name: string }[]).map(
+      (column) => column.name,
+    ),
+  );
+  assert.ok(columns.has('cutout_path'));
+  assert.ok(columns.has('border_color'));
+  assert.ok(columns.has('style_revision'));
+  assert.equal(
+    r.sqlite.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get()?.value,
+    '5',
+  );
 });
 
 test('moving a cover preserves destination cover; unknown dates can be filed and unfiled', async (t) => {
@@ -47,6 +66,37 @@ test('moving a cover preserves destination cover; unknown dates can be filed and
   assert.equal((await r.repository.get('a'))?.dateSource, 'user');
   await assert.rejects(r.repository.changeDate('a', 3, '2026-02-29'), /INVALID_DATE/);
   assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
+});
+
+test('sticker style updates are local metadata transactions guarded by the entry revision', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+  await ready(r, 'a');
+  const style = {
+    stickerPath: 'stickers/a-v1.png',
+    cutoutPath: 'cutouts/a.png',
+    thumbnailPath: 'previews/a-v1.png',
+    width: 220,
+    height: 300,
+    instanceCount: 1,
+    borderWidth: 8,
+    borderColor: '#242424' as const,
+    styleRevision: 1,
+  };
+  await r.repository.updateStickerStyle('a', 0, style);
+  const entry = await r.repository.get('a');
+  assert.equal(entry?.stickerPath, style.stickerPath);
+  assert.equal(entry?.borderWidth, 8);
+  assert.equal(entry?.borderColor, '#242424');
+  assert.equal(entry?.styleRevision, 1);
+  assert.equal(entry?.revision, 1);
+  await assert.rejects(r.repository.updateStickerStyle('a', 0, style), /STALE_RESULT/);
+  await assert.rejects(
+    r.repository.updateStickerStyle('a', 1, { ...style, stickerPath: 'outside/a.png' }),
+    /INVALID_STICKER_STYLE/,
+  );
+  assert.equal((await r.repository.get('a'))?.stickerPath, style.stickerPath);
 });
 
 test('stale editors and in-flight edits are rejected without partial mutations', async (t) => {

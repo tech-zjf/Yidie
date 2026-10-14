@@ -13,6 +13,14 @@ let second = "BBBBBBBB-0000-4000-8000-000000000002"
 let linked = "CCCCCCCC-0000-4000-8000-000000000003"
 let content = Data("fixture".utf8)
 for (folder, ext) in ImageFileCatalog.extensions { try content.write(to: root.appendingPathComponent("\(folder)/\(id).\(ext)")) }
+for revision in [0, 1] {
+  try content.write(to: root.appendingPathComponent("stickers/\(id)-v\(revision).png"))
+  try content.write(to: root.appendingPathComponent("previews/\(id)-v\(revision).png"))
+}
+for (folder, ext) in [("stickers", "png"), ("previews", "png")] {
+  try content.write(to: root.appendingPathComponent("\(folder)/\(id).\(ext)"))
+  try content.write(to: root.appendingPathComponent("\(folder)/\(id)-v2.\(ext)"))
+}
 try content.write(to: root.appendingPathComponent("previews/\(second).png"))
 let unknown = root.appendingPathComponent("originals/notes.txt")
 let database = root.appendingPathComponent("database/yidie.sqlite")
@@ -21,9 +29,21 @@ for file in [unknown, database, outside] { try content.write(to: file) }
 try fm.createSymbolicLink(at: root.appendingPathComponent("photo-previews/\(linked).jpg"), withDestinationURL: outside)
 let catalog = ImageFileCatalog(root: root)
 check(try catalog.importIDs() == [id, second])
+try catalog.pruneStickerStyles(id, keeping: 2)
+for (folder, ext) in [("stickers", "png"), ("previews", "png")] {
+  check(!fm.fileExists(atPath: root.appendingPathComponent("\(folder)/\(id).\(ext)").path))
+  for revision in [0, 1] {
+    check(!fm.fileExists(atPath: root.appendingPathComponent("\(folder)/\(id)-v\(revision).\(ext)").path))
+  }
+  check(try Data(contentsOf: root.appendingPathComponent("\(folder)/\(id)-v2.\(ext)")) == content)
+}
 try catalog.remove(id)
 try catalog.remove(id) // Repeated deletion is safe after an interruption.
 check(try catalog.importIDs() == [second])
+for revision in [0, 1] {
+  check(!fm.fileExists(atPath: root.appendingPathComponent("stickers/\(id)-v\(revision).png").path))
+  check(!fm.fileExists(atPath: root.appendingPathComponent("previews/\(id)-v\(revision).png").path))
+}
 for file in [unknown, database, outside] { check(try Data(contentsOf: file) == content) }
 func mustReject(_ action: () throws -> Void) {
   do { try action(); fatalError("Expected rejection") } catch { }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Entry } from '../../domain/records';
+import type { Entry, Sticker, StickerBorderColor } from '../../domain/records';
 import { isRecordDate } from '../../domain/datePolicy';
 import { errorCode } from '../../domain/importPhoto';
 import type { AppServices } from '../../services';
@@ -17,6 +17,13 @@ export function useEntryEditor(
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
   const [deleted, setDeleted] = useState(false);
+  const [borderWidth, setBorderWidth] = useState(initial.borderWidth ?? 4);
+  const [borderColor, setBorderColor] = useState<StickerBorderColor>(
+    initial.borderColor ?? '#FFFFFF',
+  );
+  const [stylePreview, setStylePreview] = useState<Sticker | null>(null);
+  const stagedVersion = useRef<number | null>(null),
+    styleCommitted = useRef(false);
   const active = useRef(true),
     lock = useRef(false),
     readVersion = useRef({ value: 0 });
@@ -28,6 +35,15 @@ export function useEntryEditor(
       reads.value++;
     };
   }, []);
+  useEffect(
+    () => () => {
+      const revision = stagedVersion.current;
+      if (revision !== null && !styleCommitted.current) {
+        void services.photos.discardStickerStyleVersion(initial.id, revision).catch(() => {});
+      }
+    },
+    [services.photos, initial.id],
+  );
   const reload = useCallback(
     async (resetDate: boolean) => {
       const request = ++readVersion.current.value;
@@ -92,6 +108,57 @@ export function useEntryEditor(
         await services.repository.changeDate(entry.id, entry.revision, next || null);
         if (active.current) setNotice(copy.dateSaved);
       }, true),
+    borderWidth,
+    setBorderWidth: (value: number) => {
+      setBorderWidth(value);
+      setStylePreview(null);
+      styleCommitted.current = false;
+    },
+    borderColor,
+    setBorderColor: (value: StickerBorderColor) => {
+      setBorderColor(value);
+      setStylePreview(null);
+      styleCommitted.current = false;
+    },
+    stylePreview,
+    previewStyle: () =>
+      run(async () => {
+        const revision = entry.styleRevision + 1;
+        const sticker = await services.photos.renderStickerStyle(
+          entry.id,
+          revision,
+          borderWidth,
+          borderColor,
+        );
+        if (!active.current) {
+          await services.photos.discardStickerStyleVersion(entry.id, revision).catch(() => {});
+          return;
+        }
+        stagedVersion.current = revision;
+        setStylePreview(sticker);
+        setNotice(copy.stylePreview);
+      }),
+    saveStickerStyle: () => {
+      if (!stylePreview) return;
+      return run(async () => {
+        try {
+          styleCommitted.current = true;
+          await services.repository.updateStickerStyle(entry.id, entry.revision, stylePreview);
+          stagedVersion.current = null;
+          await services.photos
+            .pruneStickerStyles(entry.id, stylePreview.styleRevision)
+            .catch(() => {});
+          if (active.current) setNotice(copy.styleSaved);
+        } catch (cause) {
+          styleCommitted.current = false;
+          await services.photos
+            .discardStickerStyleVersion(entry.id, stylePreview.styleRevision)
+            .catch(() => {});
+          stagedVersion.current = null;
+          throw cause;
+        }
+      }, true);
+    },
     setCover: () =>
       run(async () => {
         await services.repository.setCover(entry.id, entry.revision);

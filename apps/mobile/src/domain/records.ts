@@ -18,11 +18,16 @@ export interface ImportedPhoto {
 }
 export interface Sticker {
   stickerPath: string;
+  cutoutPath: string;
   thumbnailPath: string;
   width: number;
   height: number;
   instanceCount: number;
+  borderWidth: number;
+  borderColor: StickerBorderColor;
+  styleRevision: number;
 }
+export type StickerBorderColor = '#FFFFFF' | '#242424' | '#0786A8';
 export interface Entry {
   id: string;
   date: string | null;
@@ -32,7 +37,11 @@ export interface Entry {
   photoWidth: number | null;
   photoHeight: number | null;
   stickerPath: string | null;
+  cutoutPath: string | null;
   thumbnailPath: string | null;
+  borderWidth: number;
+  borderColor: StickerBorderColor;
+  styleRevision: number;
   width: number | null;
   height: number | null;
   status: 'queued' | 'running' | 'ready' | 'failed' | 'paused';
@@ -61,6 +70,7 @@ export interface EntryRepository extends ProcessingRepository {
   get(id: string): Promise<Entry | null>;
   getMany(ids: string[]): Promise<Entry[]>;
   changeDate(id: string, expectedRevision: number, date: string | null): Promise<void>;
+  updateStickerStyle(id: string, expectedRevision: number, sticker: Sticker): Promise<void>;
   setCover(id: string, expectedRevision: number): Promise<void>;
   remove(id: string, expectedRevision: number): Promise<void>;
   pendingDeletions(): Promise<string[]>;

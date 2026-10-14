@@ -46,10 +46,14 @@ export function photo(id: string): ImportedPhoto {
 export function sticker(id: string): Sticker {
   return {
     stickerPath: `stickers/${id}.png`,
+    cutoutPath: `cutouts/${id}.png`,
     thumbnailPath: `previews/${id}.png`,
     width: 100,
     height: 200,
     instanceCount: 1,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    styleRevision: 0,
   };
 }
 export async function ready(

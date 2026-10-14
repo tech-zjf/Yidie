@@ -65,6 +65,26 @@ public class YidieNativeModule: Module {
         }
       }
     }
+    AsyncFunction("renderStickerStyle") { (id: String, revision: Int, borderWidth: Double, borderColor: String, promise: Promise) in
+      NativeFileStore.queue.async {
+        autoreleasepool {
+          do { promise.resolve(try StickerProcessor.renderStyle(id: id, revision: revision, borderWidth: borderWidth, borderColor: borderColor)) }
+          catch { self.reject(error, promise) }
+        }
+      }
+    }
+    AsyncFunction("discardStickerStyleVersion") { (id: String, revision: Int, promise: Promise) in
+      NativeFileStore.queue.async {
+        do { try NativeFileStore.discardStyleVersion(id, revision: revision); promise.resolve(nil) }
+        catch { self.reject(error, promise) }
+      }
+    }
+    AsyncFunction("pruneStickerStyles") { (id: String, keepingRevision: Int, promise: Promise) in
+      NativeFileStore.queue.async {
+        do { try NativeFileStore.pruneStickerStyles(id, keeping: keepingRevision); promise.resolve(nil) }
+        catch { self.reject(error, promise) }
+      }
+    }
     AsyncFunction("createPhotoPreview") { (id: String, promise: Promise) in
       NativeFileStore.queue.async {
         autoreleasepool {

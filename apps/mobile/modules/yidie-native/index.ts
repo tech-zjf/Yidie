@@ -1,5 +1,11 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
-import type { Asset, ImportedPhoto, Sticker, ImageFileStore } from '../../src/domain/records';
+import type {
+  Asset,
+  ImportedPhoto,
+  Sticker,
+  StickerBorderColor,
+  ImageFileStore,
+} from '../../src/domain/records';
 export interface LocalModule extends ImageFileStore {
   capabilities(): { simulator: boolean; minimumIOS: number };
   prepareStorage(): Promise<{ rootUri: string; databaseUri: string }>;
@@ -10,6 +16,14 @@ export interface LocalModule extends ImageFileStore {
   thumbnail(assetId: string): Promise<string | null>;
   importPhoto(assetId: string): Promise<ImportedPhoto>;
   createSticker(id: string): Promise<Sticker>;
+  renderStickerStyle(
+    id: string,
+    styleRevision: number,
+    borderWidth: number,
+    borderColor: StickerBorderColor,
+  ): Promise<Sticker>;
+  discardStickerStyleVersion(id: string, styleRevision: number): Promise<void>;
+  pruneStickerStyles(id: string, keepingRevision: number): Promise<void>;
   discardImport(id: string): Promise<void>;
 }
 export const native = requireOptionalNativeModule<LocalModule>('YidieNative');

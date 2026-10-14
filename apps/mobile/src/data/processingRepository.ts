@@ -30,13 +30,18 @@ export function createProcessingRepository(write: WriteTransaction): ProcessingR
       write(async (tx) => {
         const now = new Date().toISOString();
         const change = await tx.runAsync(
-          `UPDATE entries SET sticker_path=?,thumbnail_path=?,sticker_width=?,sticker_height=?,
+          `UPDATE entries SET sticker_path=?,cutout_path=?,thumbnail_path=?,sticker_width=?,sticker_height=?,
+        border_width=?,border_color=?,style_revision=?,
         processing_state='ready',error_code=NULL,updated_at=?
         WHERE id=? AND revision=? AND processing_state='running'`,
           sticker.stickerPath,
+          sticker.cutoutPath,
           sticker.thumbnailPath,
           sticker.width,
           sticker.height,
+          sticker.borderWidth,
+          sticker.borderColor,
+          sticker.styleRevision,
           now,
           ticket.id,
           ticket.revision,

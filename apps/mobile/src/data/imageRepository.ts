@@ -17,8 +17,11 @@ export function createImageRepository(
           original_path: string;
           sticker_path: string | null;
           thumbnail_path: string | null;
+          cutout_path: string | null;
           photo_preview_path: string | null;
-        }>('SELECT id,original_path,sticker_path,thumbnail_path,photo_preview_path FROM entries');
+        }>(
+          'SELECT id,original_path,sticker_path,thumbnail_path,cutout_path,photo_preview_path FROM entries',
+        );
         const owners = new Set(rows.map((row) => row.id));
         const paths = new Set<string>();
         for (const row of rows) {
@@ -26,6 +29,7 @@ export function createImageRepository(
             row.original_path,
             row.sticker_path,
             row.thumbnail_path,
+            row.cutout_path,
             row.photo_preview_path,
           ]) {
             if (path) paths.add(path);
@@ -40,6 +44,7 @@ export function createImageRepository(
               `originals/${id}.source`,
               `stickers/${id}.png`,
               `previews/${id}.png`,
+              `cutouts/${id}.png`,
               `photo-previews/${id}.jpg`,
             ].some((path) => paths.has(path))
           )

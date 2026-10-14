@@ -172,7 +172,7 @@ test('v3 records migrate without guessed paths and lazily persist a bounded prev
   assert.equal(updated.revision, 7);
   assert.equal(updated.status, 'failed');
   assert.equal(entryImage(updated, 'thumbnail')?.height, 512);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 4);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
 });
 
 test('failed preview creation preserves the record and original reference', async (t) => {

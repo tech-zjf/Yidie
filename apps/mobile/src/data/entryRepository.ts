@@ -6,7 +6,9 @@ import { createProcessingRepository } from './processingRepository';
 import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
 
 const select = `SELECT e.id, e.record_date AS date, e.date_source AS dateSource,
-  e.original_path AS originalPath, e.sticker_path AS stickerPath, e.thumbnail_path AS thumbnailPath,
+  e.original_path AS originalPath, e.sticker_path AS stickerPath, e.cutout_path AS cutoutPath,
+  e.thumbnail_path AS thumbnailPath,e.border_width AS borderWidth,e.border_color AS borderColor,
+  e.style_revision AS styleRevision,
   e.photo_preview_path AS photoPreviewPath,e.photo_width AS photoWidth,e.photo_height AS photoHeight,
   e.sticker_width AS width, e.sticker_height AS height, e.processing_state AS status,
   e.revision, e.sort_key AS sortKey, e.error_code AS errorCode,
