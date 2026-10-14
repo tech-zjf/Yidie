@@ -10,6 +10,7 @@ Updated 2026-10-15. This file records durable implementation and verification fa
 - **2026-10-14 — sticker styles and count badges:** day stacks show a count badge; users can preview and save local outline color/width variants. Transparent cutouts are stored separately so a style edit does not rerun Vision. SQLite migration v5 stores style attributes and revision.
 - **2026-10-14 — local backup and native date picker:** added a user-exported, unencrypted `.yidie` package, SQLite online snapshot, manifest/SHA-256 validation, staged restore with launch recovery, Settings controls and a cancel-safe iOS date picker. Source/static checks exist; failure injection and Simulator acceptance are pending.
 - **2026-10-14 — native sharing and acceptance tooling:** added transparent single-sticker sharing and high-resolution month-image sharing through the iOS share sheet, with month layout geometry shared by the calendar and renderer. Deterministic native backup tests now cover corrupt/future packages, storage limits, cancellation and interrupted swaps. Interactive native sheets still need Simulator acceptance.
+- **2026-10-15 — optional calendar signature:** added an opt-in, default-off Yidie signature setting for exported month images and a native renderer path that adds the small mark only when requested. Payload tests verify the off-by-default contract; visual export acceptance remains pending with the Simulator walkthrough.
 
 ## Latest local checks
 
