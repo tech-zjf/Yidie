@@ -38,6 +38,8 @@ YIDIE_UI_PREVIEW=1 npm run export:ios -- --no-bytecode
 
 检查导出的可读 JS：`dist-preview` 含 `preview-only` 场景标记，不含 `YidieNative`/真实数据库装配；`dist` 不含场景标记与占位素材，包含真实原生模块引用。第二条特意保留预览变量，用来验证 production 构建仍走正式入口。两个输出目录均已忽略，不提交。
 
-## 尚未完成
+## 原生运行验收边界
 
-目前只完成场景代码、类型和打包隔离检查，**没有原生运行截图或 UI 还原验收结论**。工具链升级后，在窄屏与常用 iPhone 尺寸、大字体下逐一截图，并补入有使用授权的真实照片样本。先校准弹层高度、双列记录、白边/阴影与字体度量，再测手势和性能；几何图的表现不能代表真实抠图效果。
+2026-10-14 已在 iPhone 18 Pro / iOS 27 Simulator 上构建、安装并启动 Release app，空首页截图为 [`design/screenshots/app-empty-calendar.png`](../design/screenshots/app-empty-calendar.png)。该截图仅证明空日历启动和首屏布局；随后 CoreSimulator 服务断开，无法继续用 UI 操作逐一走场景。预览场景代码可用于后续复验，但不等于实际 PhotoKit/Vision 内容。
+
+后续逐项验证窄屏、常用尺寸、大字体、日历叠图/数量角标、弹层滑动与收起、贴纸样式预览保存、全部记录、备份/恢复、分享和日期选择。真实抠图质量、离线行为、内存与性能必须用用户主动选择的测试照片在真机检查；不得将几何占位素材当成真实效果。

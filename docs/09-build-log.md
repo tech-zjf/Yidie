@@ -1,109 +1,32 @@
-# 实施与验证记录
+# Build and verification record
 
-更新至 2026-10-14。公开仓库：[tech-zjf/Yidie](https://github.com/tech-zjf/Yidie)。Xcode 27.0 已在 macOS 26.7.1 上完成 iOS Simulator 全量构建与运行；真机验收未完成。
+Updated 2026-10-14. This file records durable implementation and verification facts. The live feature gates are in [TODO.md](../TODO.md) and the [readiness review](16-readiness-review.md); this is not a release approval.
 
-## 已完成
+## Milestones
 
-- PRD、技术方案、UI、命名与实施顺序全量审查，增加工程约定与模块依赖检查。
-- 字体：日历数字/月名沿用 Yidie Display；英文短标题使用随包内置并附 OFL 的 Bagel Fat One，操作正文使用系统 Avenir Next。当前界面已改为英文，因此没有中文字体方案；运行时不下载字体。
-- 初始化 Expo SDK 57、RN 0.86.3、React 19.2.3，提交 npm lockfile。生成的 iOS 工程不提交。
-- RN 月历、当天弹层、批量选照与日期确认、记录列表；按月查询、列表每页 60 条。
-- Swift PhotoKit、Vision 与文件管理模块；SQLite 初始化、事务与失败状态；相册与 App 自有文件职责分开。
-- 真正的本地代码已加入仓库，网页里的假导入流程未移植到 App。
-- 阶段 3：待归档记录可补日期、改日期、设当天封面、删除、失败/暂停后手动重试；入口在当天弹层或全部记录内。
-- v1/v2→v3 原子迁移、处理版本校验、按游标翻页、单并发图片工作队列、删除任务持久化及启动清理。重复导入失败不会删除已有记录拥有的原图。
+- **2026-10-13 — foundation:** Expo SDK 57 / React Native 0.86 / TypeScript app, modular domain/data/features layers, local SQLite, native PhotoKit/Vision module, date rules, and UI prototype were established.
+- **2026-10-13 — records and import:** editing dates and covers, all-record pagination, batch date review, duplicate checks, durable one-at-a-time processing, pause/retry/recovery, and file ownership rules were added.
+- **2026-10-14 — native image lifecycle and UI:** bounded local previews, cache identity, orphan cleanup, animated day sheets, centered Add action, month swiping, English interface, brand artwork, reduced-motion handling, and limited-library management were added.
+- **2026-10-14 — sticker styles and count badges:** day stacks show a count badge; users can preview and save local outline color/width variants. Transparent cutouts are stored separately so a style edit does not rerun Vision. SQLite migration v5 stores style attributes and revision.
+- **2026-10-14 — local backup and native date picker:** added a user-exported, unencrypted `.yidie` package, SQLite online snapshot, manifest/SHA-256 validation, staged restore with launch recovery, Settings controls and a cancel-safe iOS date picker. Source/static checks exist; failure injection and Simulator acceptance are pending.
+- **2026-10-14 — native sharing and acceptance tooling:** added transparent single-sticker sharing and high-resolution month-image sharing through the iOS share sheet, with month layout geometry shared by the calendar and renderer. Deterministic native backup tests now cover corrupt/future packages, storage limits, cancellation and interrupted swaps. Interactive native sheets still need Simulator acceptance.
 
-- 阶段 4：单批最多 10 张、逐张读取、日期分组、重复默认跳过、组/单张改日期；提交后持久队列单并发处理，支持停止读取、暂停/继续与重启恢复。界面订阅处理进度，列表只刷新已载入记录。
+## Latest local checks
 
-## 实际通过的检查
+In the current uncommitted development build:
 
-| 检查                     | 结果与范围                                                                                                                                   |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| TypeScript 严格类型检查  | 通过，包含未使用项检查                                                                                                                       |
-| ESLint                   | 通过，含模块依赖边界与循环依赖                                                                                                               |
-| Prettier                 | 通过                                                                                                                                         |
-| 领域与 SQLite 集成测试   | 47 项通过；覆盖资源缓存切换、v3→v4 迁移、预览补建、所有权保护、文件删除恢复、并发顺序和日期排序游标                                          |
-| 文档与 SQL 契约          | 通过；本地链接、封面归属、待归档、ready约束、移动/删除、运行时 SQL 同源                                                                      |
-| Expo 本地模块自动链接    | 已发现 YidieNative 与 YidieNativeModule                                                                                                      |
-| iOS prebuild             | 成功，生成 iOS17 最低版本、照片权限、字体与关闭更新配置；不代表编译通过                                                                      |
-| iOS Simulator Debug 构建 | Xcode 27.0，iOS 26.1，iPhone 17 Pro；CocoaPods workspace、Expo/RN、Swift 模块及应用链接通过；仍有上游 React Native/Expo 头文件和构建脚本警告 |
-| 模拟器运行               | 首页、PhotoKit 授权、两张照片本地复制与预览、EXIF 日期、SQLite 重启恢复、改日期、双列全部记录、同日两张横滑弹层、失败后重试入口通过          |
-| 模拟器 Vision            | 当前 Apple Vision 无法创建 foreground-mask 推理上下文；改为明确的模拟器错误提示。真实 iPhone 上 Vision 抠图仍待验                            |
-| UI 复核                  | 在 iPhone 17 Pro 模拟器看过月历、双列记录和 72% 当天弹层；未覆盖小屏、大字体、VoiceOver、白边/阴影真实抠图观感                               |
-| iOS JS/资源导出          | 正式及开发预览导出成功；本轮先用 --no-bytecode 检查入口隔离，再完成正式 Hermes 导出，保留两份字体，均不代表原生程序可运行                    |
-| Swift 核心类型检查       | NativeFileStore、ImageFileCatalog、PhotoPreview、LocalPhotos、StickerProcessor 通过 iOS17 模拟器目标类型检查；不包含 Expo 桥接最终链接       |
-| Swift 文件恢复测试       | 在 Mac 的临时目录验证白名单、规范 UUID、去重、幂等删除、符号链接拒绝及数据库/未知文件保留；不是 iPhone 文件保护测试                          |
-| UI 预览入口隔离          | 开发预览包包含固定场景且不含真实原生/数据库装配；误设置预览变量的 production 包仍走真实入口，不含预览素材；未运行原生界面                    |
-| 网页 UI                  | 月历、当天弹层、导出、六周与 320px 窄屏检查；不代表 RN 真机 UI 已验收                                                                        |
+- TypeScript strict checks, ESLint, Prettier, 51 domain/SQLite tests, native backup/file-catalog tests and iOS core typecheck pass.
+- `python3 scripts/check_packet.py` passes document/SQL/preview contracts.
+- Full iOS Simulator Release build passed for the current source. Installation and app launch were verified on the existing iPhone 18 Pro / iOS 27 Simulator in the prior run; the subsequent CoreSimulator service failure prevented reinstalling this build. The checked-in screenshot records the empty calendar home; populated count-badge, outline-edit, backup and share-sheet flows have not received an interactive walkthrough.
+- A prior iPhone 17 Pro simulator walkthrough covered local photo import, EXIF date, persistence, day browsing and failure handling. Vision foreground masking failed to create a simulator inference context. Simulator results do not establish physical-device cutout quality.
 
-## 工具链与设备关口
+## Boundaries that remain
 
-本机现为 macOS 26.7.1、Xcode 27.0，满足 SDK 57 的构建要求；iOS 26.1 / iPhone 17 Pro 模拟器全量 Debug 构建通过。
+- No physical iPhone was changed or accessed in the latest implementation. Real photos were not read for this feature.
+- Backup/restore exists in source and deterministic native tests pass, but its Files picker flow has not passed Simulator acceptance. Sticker/month sharing exists in source; the native share sheet has not passed interactive acceptance. Uninstalling without a verified backup can remove Yidie's local records and imported copies.
+- Xcode regenerated the ignored local `apps/mobile/ios` project for the current Expo configuration; it remains untracked/ignored and is not part of the repository changes. The Simulator Release build used code signing disabled and touched no physical device, certificate, or keychain state.
+- Real-device Vision quality, physical-device offline behavior, accessibility, low-storage recovery and performance are not accepted.
+- The detailed, dated developer-signing, device-safety and rollback record is in [the device test runbook](15-device-test-safety-runbook.md). It records prior user-authorized actions and must be updated if any security state changes.
+- The early dependency audit recorded upstream advisories in Metro / Expo CLI dependencies. Recheck the lockfile before any distribution build; do not describe the dependency tree as vulnerability-free.
 
-没有可用的已连接物理 iPhone。因此没有真机 Vision、20 张实拍效果、离线 Release 冷启动、设备网络检查或内存基准结论。模拟器全量构建和基本流程已完成，但不能据此写成“真机通过”。
-
-下一步使用真机完成 Vision 抠图、贴纸边缘、性能与离线 Release 门槛，再验收完整批量流程，之后继续备份与导出。
-
-## 依赖安全记录
-
-初始化审计发现 uuid <11.1.1 的告警，已将 xcode 构建依赖中的 uuid 覆盖为兼容 CommonJS 的 11.1.1，并通过 prebuild 验证。没有运行会将 Expo 降级到 44 的 `npm audit fix --force`。
-
-仍有两个上游底层问题通过依赖树传播为 15 项 high 告警：
-
-- [braces 深层模式栈耗尽](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)：当前 npm 最新 3.0.3 仍在受影响范围。位于 Metro/文件匹配工具链。
-- [node-forge 签名校验问题](https://github.com/advisories/GHSA-86w9-cpqp-85rv)：当前 npm 最新 1.4.0 仍在受影响范围。位于 Expo CLI/代码签名证书工具链。
-
-当前应用代码未调用这些 Node 工具处理用户图片，未配置 OTA 或业务网络，但这不等于审计清零。开发服务绑定 localhost；不处理不可信工程或远程更新制品。发布前必须复查并采用修复版本，或完成明确的可达性与替代方案评审。不能把依赖检查结果写成“无漏洞”。
-
-## 自动检查
-
-检查配置保存在 `.github/checks.yml.example`，尚未启用。初次上传时 GitHub 认证不具备修改 workflow 的权限，因此保留模板并完成本地检查。后续具备权限时再将模板放到 `.github/workflows/checks.yml`。
-
-## 尚未实现的范围
-
-贴纸样式编辑、单张/月历导出、完整本地备份恢复和原生日期选择器。App 图标与品牌图形已加入。持久批量队列已实现代码，但未通过设备验收；10 张上限需实测后再评估。删除记录及导入前中断产生的规范无主文件已有持久清理路径；设备上的中断恢复仍待验证。
-
-日期确认暂用明确的 YYYY-MM-DD 输入，正式首版再接入原生日期选择体验；当前多人物结果保留全部前景，未声称自动识别“主要人物”。
-
-## UI / 权限改进与当前发布状态（2026-10-14）
-
-将当天弹层改为自有 spring 过渡，统一加入把手、遮罩淡入与反向关闭；按钮页码及状态文案按照片卡片居中，左右手势继续由横向列表处理。首页保留左侧品牌图标/字标，右侧 About；隐藏首页滚动条，月份支持手势切换，添加按钮固定在底栏中心。更新图标、英文字体和应用文案；月历的数字与月份字体保持原样。减少动态效果时弹层跳过运动动画。
-
-补上 iOS 限量照片权限的“管理已选照片”入口。应用设置关闭系统自动提醒时，用户仍能自行打开系统限量照片选择器，结束后重载已授权列表。本轮用 Xcode 27.0 / iOS 27 SDK 完整编译 Release，并在既有 iPhone 18 Pro / iOS 27 模拟器启动，确认 JS bundle 内嵌和空日历首页布局。模拟器的照片权限选择器没有打开，也没有读取模拟器照片。
-
-TypeScript、ESLint、Prettier、47 项领域与 SQLite 测试、文档/SQL 契约检查、Swift 文件检查和核心类型检查通过。`scripts/check_native.sh` 不编译 Expo 桥接；Expo PhotosUI 桥接由本轮完整 Xcode Release 编译覆盖。第一次 Debug 运行因 Debug 配置等待 Metro 显示“No script URL”；随后用内嵌 JS 的 Release 包完成界面检查，此为测试配置预期，不是发布包错误。
-
-这仍是开发里程碑，不可称为完整 v0.1 或稳定安装版。完整备份恢复尚未实现，卸载可能导致 App 沙盒内记录与导入副本丢失；当前 About 已明示该限制。贴纸样式、分享导出、原生日期选择器和真实照片/VoiceOver/性能验收仍未完成。逐项状态见[当前全量复审与发布关口](16-readiness-review.md)。
-
-## 阶段 3 的验证边界
-
-在等待系统升级期间，先推进不依赖 Vision 效果的数据库、用例和编辑入口。测试在 Node 22 的真实 SQLite 引擎上调用 App 的同一套仓库实现，原生图片能力用可控制成功/失败的替身；并非真机文件、断电或磁盘不足测试。Node 的 SQLite 实验性提示只涉及本地测试工具，App 运行时仍使用 expo-sqlite。
-
-本轮未改 Swift、系统相册权限、贴纸几何规则和日期推断优先级。新增编辑界面复用现有字体/颜色和日期输入组件，在原弹层内切换内容；没有叠加第二个原生 Modal。键盘、小屏大字体、VoiceOver 和真机滑动仍未验收。详细复审见 [阶段 3 审查](11-stage3-review.md)。
-
-## 阶段 4 的验证边界
-
-已实现批量确认、重复复查和持久处理队列，新增测试将总数增至 37。顺序读取、单并发、状态迁移、后台/主动暂停的区分，以及数据库无法保存结果时的停止恢复路径都通过了领域或 SQLite 检查。本轮没有修改 Swift 和依赖，仍使用已有本地 PhotoKit/Vision 能力。没有把测试替身的结果当成真实图片、后台时限或内存结论。详细复审见 [阶段 4 审查](12-stage4-review.md)。
-
-## 图片与文件恢复修正（2026-10-14）
-
-修复等待照片与完成贴纸共用缓存身份的问题。原图复制后生成最长边 512px 的朝向正确 JPEG 预览，四个记录界面通过共享 RecordImage 选择资源；缺预览的旧记录从自有副本按需补建，不回读系统相册。数据库升级到 v4，保留历史记录与 revision。
-
-启动完成迁移后、开放导入前，扫描四个已知图片目录；一次事务读取归属并登记无主 UUID 的删除任务，随后幂等清理。预览补建、抠图与删除共用一个串行执行器；无法确认归属则保留文件。规范文件名以外的文件不自动删除。
-
-此前验证独立 RN UI 预览入口时，只检查了构建和入口隔离，没有原生截图、手势、Vision 质量或内存结论。该阶段的后续工作已在下方“模拟器与全量复审”记录。详见 [图片与文件恢复复审](13-image-recovery-review.md) 与 [预览说明](14-ui-preview.md)。
-
-## 模拟器与全量复审（2026-10-14）
-
-Xcode 27.0 在 iPhone 17 Pro / iOS 26.1 模拟器完成全量 Debug 构建。运行验证了 PhotoKit 授权、两张测试素材的本地复制/缩略图/EXIF 日期、数据库冷启动恢复、编辑日期、按日期展示在月历、同日双图浏览、记录页与抠图失败重试。素材由系统模拟器照片库提供；没有抠图成功的证明。
-
-Vision 的 `VNGenerateForegroundInstanceMaskRequest` 在本机模拟器报 `VNErrorInternalError`（不能创建推理上下文）；按请求支持设备指定 CPU 仍复现。模拟器现在返回“当前模拟器无法运行抠图”的专用提示，原图和重试操作保持可用。必须在真机验证设备端 Apple Vision 能否成功、耗时与边缘质量。
-
-复审中发现“全部记录”过去按导入时间排序，与 PRD 要求的日期倒序不符；已调整 SQL 排序与复合游标分页，待归档在有日期记录之后，并增加跨页边界测试。根据模拟器截图将记录改为双列照片墙、当天浏览改为 72% 高度底部弹层，并显示当前横滑位置；大字体改为高弹层，横向照片列表只由把手接受下拉关闭手势。完整检查为 47 项测试、TypeScript、ESLint、格式、Swift 文件测试、iOS 核心 typecheck 通过；`check_packet.py` 通过；完整原生编译通过。
-
-模拟器 UI 只覆盖 iPhone 17 Pro 默认字体。多尺寸、大字体、VoiceOver、贴纸实图边缘、后台与断电恢复、真实设备网络和内存仍待验。
-# 2026-10-14：同日张数角标与贴纸描边编辑
-
-同日多张日期在日历贴纸叠层右上显示总数小圆标，单张不显示。单条编辑新增描边颜色与粗细选择、原生预览和保存；本地 Vision 透明底稿与带版本的贴纸/缩略图分开存储，Core Image 重绘不重复跑 Vision。旧版记录首次预览时才从衣叠保存的原图副本生成透明底稿；源照片和系统照片图库保持不变。SQLite schema 升至 v5，改样式采用 revision 条件事务，失败时清理暂存贴纸版本。
-
-验证：49 项 TypeScript/SQLite 测试、严格类型检查、ESLint、Prettier、文档/SQL 契约、Swift 核心检查通过；最新 iOS Release 完整编译、模拟器覆盖安装与首页启动通过。模拟器截图只验证了空日历首页，尚未用示例场景逐项点查角标、同日横滑和描边编辑界面；真机 Vision 边缘质量仍须用户拿测试照片验收。
+Use the [delivery board](../TODO.md) for the next implementation order. Record new results here only when they add durable evidence that is not already represented in the current readiness table.

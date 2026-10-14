@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { AppServices } from '../../services';
 import { Text } from '../../ui/Text';
@@ -13,18 +13,33 @@ import { useCalendar } from './useCalendar';
 import { PhotoImportSheet } from '../import/PhotoImportSheet';
 import { QueuePanel } from '../processing/QueuePanel';
 import { BrandMark } from '../../ui/BrandMark';
+import { SettingsSheet } from '../settings/SettingsSheet';
+import { localDate } from '../../domain/datePolicy';
+import { monthExportPayload } from '../../domain/monthLayout';
 
 export function CalendarScreen({
   services,
   initialMonth,
   today,
+  onReloadServices,
 }: {
   services: AppServices;
   initialMonth?: { year: number; month: number };
   today?: string;
+  onReloadServices: () => void;
 }) {
   const model = useCalendar(services, initialMonth),
-    { width } = useWindowDimensions();
+    { width, fontScale } = useWindowDimensions();
+  const currentDate = today ?? localDate();
+  const exportPayload = monthExportPayload({
+    year: model.month.year,
+    month: model.month.month,
+    screenWidth: width,
+    fontScale,
+    entries: model.entries,
+    today: currentDate,
+  });
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const nextImportDate = useRef<string | undefined>(undefined);
   const padding = width <= 360 ? 6 : 16;
   return (
@@ -34,16 +49,7 @@ export function CalendarScreen({
           <BrandMark />
           <Text style={styles.brand}>{copy.name}</Text>
         </View>
-        <Button
-          label={copy.settings}
-          onPress={() =>
-            Alert.alert(
-              copy.aboutTitle,
-              copy.about +
-                (services.photos.capabilities().simulator ? '\n\n' + copy.simulator : ''),
-            )
-          }
-        />
+        <Button label={copy.settings} onPress={() => setSettingsOpen(true)} />
       </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -81,7 +87,7 @@ export function CalendarScreen({
           {...model.month}
           entries={model.entries}
           services={services}
-          today={today}
+          today={currentDate}
           onDay={model.setDay}
           onSwipeMonth={model.changeMonth}
         />
@@ -155,6 +161,14 @@ export function CalendarScreen({
           onChanged={() => {
             void model.refresh();
           }}
+        />
+      )}
+      {settingsOpen && (
+        <SettingsSheet
+          services={services}
+          monthExport={exportPayload}
+          onClose={() => setSettingsOpen(false)}
+          onReloadServices={onReloadServices}
         />
       )}
     </SafeAreaView>

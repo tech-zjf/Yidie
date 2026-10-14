@@ -3,8 +3,8 @@ import { PanResponder, Pressable, StyleSheet, View, useWindowDimensions } from '
 import { RecordImage } from '../records/RecordImage';
 import { entryImage } from '../../domain/entryImage';
 import type { AppServices } from '../../services';
-import { monthCells, localDate } from '../../domain/datePolicy';
-import { stickerLayout } from '../../domain/stickerLayout';
+import { localDate } from '../../domain/datePolicy';
+import { monthLayout } from '../../domain/monthLayout';
 import type { Entry } from '../../domain/records';
 import { Text } from '../../ui/Text';
 import { colors, fonts } from '../../ui/tokens';
@@ -41,20 +41,8 @@ export const MonthGrid = memo(function MonthGrid({
       }),
     [],
   );
-  const cells = monthCells(year, month),
-    cellWidth = (width - (width <= 360 ? 12 : 32)) / 7;
-  const compact = width <= 390;
-  const cellHeight = Math.max(
-    cells.length === 42 ? (compact ? 54 : 58) : compact ? 62 : 68,
-    44 * fontScale,
-  );
-  const days = new Map<string, Entry[]>();
-  for (const entry of entries) {
-    if (!entry.date) continue;
-    const day = days.get(entry.date);
-    if (day) day.push(entry);
-    else days.set(entry.date, [entry]);
-  }
+  const layout = monthLayout({ year, month, screenWidth: width, fontScale, entries });
+  const { cells, cellWidth, cellHeight } = layout;
   return (
     <View {...monthSwipe.panHandlers}>
       <View style={styles.week}>
@@ -65,42 +53,10 @@ export const MonthGrid = memo(function MonthGrid({
         ))}
       </View>
       <View style={styles.grid}>
-        {cells.map((date, index) => {
-          if (!date)
+        {cells.map((cell, index) => {
+          if (!cell)
             return <View key={`empty-${index}`} style={{ width: cellWidth, height: cellHeight }} />;
-          const day = days.get(date) ?? [];
-          const visible = day.slice(0, 3);
-          const layout = stickerLayout(
-            visible.map((e) => {
-              const resource = entryImage(e, 'thumbnail');
-              return resource
-                ? { width: resource.width, height: resource.height }
-                : { width: 1, height: 1.6 };
-            }),
-            { width: cellWidth, height: cellHeight },
-          );
-          const rotatedBounds = layout.map((item) => {
-            const radians = (item.rotation * Math.PI) / 180;
-            const boundWidth =
-              Math.abs(item.width * Math.cos(radians)) + Math.abs(item.height * Math.sin(radians));
-            const boundHeight =
-              Math.abs(item.width * Math.sin(radians)) + Math.abs(item.height * Math.cos(radians));
-            return {
-              top: item.y + item.height / 2 - boundHeight / 2,
-              right: item.x + item.width / 2 + boundWidth / 2,
-            };
-          });
-          const badgeTop = Math.max(
-            0,
-            Math.min(cellHeight - 18, Math.min(...rotatedBounds.map((bounds) => bounds.top)) - 8),
-          );
-          const badgeRight = Math.max(
-            0,
-            Math.min(
-              cellWidth - 18,
-              cellWidth - Math.max(...rotatedBounds.map((bounds) => bounds.right)) - 8,
-            ),
-          );
+          const { date, entries: day, stickers, badge } = cell;
           return (
             <Pressable
               key={date}
@@ -123,27 +79,29 @@ export const MonthGrid = memo(function MonthGrid({
                 </Text>
               ) : (
                 <>
-                  {visible.map((entry, i) => (
-                    <RecordImage
-                      key={entry.id}
-                      entry={entry}
-                      services={services}
-                      style={{
-                        position: 'absolute',
-                        left: layout[i].x,
-                        top: layout[i].y,
-                        width: layout[i].width,
-                        height: layout[i].height,
-                        zIndex: 3 - i,
-                        transform: [{ rotate: `${layout[i].rotation}deg` }],
-                      }}
-                    />
-                  ))}
-                  {day.length > 1 && (
-                    <View
-                      style={[styles.countBadge, { top: badgeTop, right: badgeRight }]}
-                      pointerEvents="none"
-                    >
+                  {stickers.map((sticker, i) => {
+                    const entry = day[i];
+                    const resource = entryImage(entry, 'thumbnail');
+                    if (!resource) return null;
+                    return (
+                      <RecordImage
+                        key={entry.id}
+                        entry={entry}
+                        services={services}
+                        style={{
+                          position: 'absolute',
+                          left: sticker.x,
+                          top: sticker.y,
+                          width: sticker.width,
+                          height: sticker.height,
+                          zIndex: 3 - i,
+                          transform: [{ rotate: `${sticker.rotation}deg` }],
+                        }}
+                      />
+                    );
+                  })}
+                  {badge && (
+                    <View style={[styles.countBadge, badge]} pointerEvents="none">
                       <Text style={styles.countText}>{day.length > 99 ? '99+' : day.length}</Text>
                     </View>
                   )}

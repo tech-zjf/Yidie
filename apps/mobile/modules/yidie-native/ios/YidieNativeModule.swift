@@ -1,8 +1,12 @@
 import ExpoModulesCore
 import Photos
 import PhotosUI
+import UIKit
 
 public class YidieNativeModule: Module {
+  private var backupPicker: BackupDocumentPickerDelegate?
+  private var shareController: UIActivityViewController?
+
   private func reject(_ error: Error, _ promise: Promise) {
     let code = (error as? YidieError)?.code ?? ((error as NSError).code == NSFileWriteOutOfSpaceError ? "INSUFFICIENT_STORAGE" : "PROCESSING_FAILED")
     promise.reject(code, code)
@@ -21,6 +25,7 @@ public class YidieNativeModule: Module {
     AsyncFunction("prepareStorage") { (promise: Promise) in
       NativeFileStore.queue.async {
         do {
+          try LocalBackup.recoverIfNeeded()
           let root = try NativeFileStore.root()
           promise.resolve(["rootUri": root.absoluteString + (root.absoluteString.hasSuffix("/") ? "" : "/"), "databaseUri": root.appendingPathComponent("database", isDirectory: true).absoluteString])
         } catch { self.reject(error, promise) }
@@ -33,6 +38,104 @@ public class YidieNativeModule: Module {
     }
     Function("permissionStatus") { () -> String in
       Self.permissionName(PHPhotoLibrary.authorizationStatus(for: .readWrite))
+    }
+    AsyncFunction("chooseDate") { (currentDate: String?, promise: Promise) in
+      DispatchQueue.main.async {
+        guard let presenter = self.appContext?.utilities?.currentViewController() else {
+          promise.reject("DATE_PICKER_UNAVAILABLE", "DATE_PICKER_UNAVAILABLE")
+          return
+        }
+        let picker = YidieDatePickerController(currentDate: currentDate) { date in
+          promise.resolve(date)
+        }
+        picker.modalPresentationStyle = .pageSheet
+        picker.isModalInPresentation = true
+        if let sheet = picker.sheetPresentationController {
+          sheet.detents = [.large()]
+          sheet.prefersGrabberVisible = true
+        }
+        presenter.present(picker, animated: true)
+      }
+    }
+    AsyncFunction("exportBackup") { (promise: Promise) in
+      NativeFileStore.queue.async {
+        do {
+          let package = try LocalBackup.createPackage()
+          DispatchQueue.main.async {
+            guard let presenter = self.appContext?.utilities?.currentViewController() else {
+              try? FileManager.default.removeItem(at: package)
+              promise.reject("BACKUP_PICKER_UNAVAILABLE", "BACKUP_PICKER_UNAVAILABLE")
+              return
+            }
+            let delegate = BackupDocumentPickerDelegate { result in
+              self.backupPicker = nil
+              NativeFileStore.queue.async {
+                try? FileManager.default.removeItem(at: package)
+                switch result {
+                case .exported: promise.resolve(true)
+                case .cancelled: promise.resolve(false)
+                case .selected: promise.reject("BACKUP_PICKER_FAILED", "BACKUP_PICKER_FAILED")
+                }
+              }
+            }
+            self.backupPicker = delegate
+            delegate.presentExport(package, from: presenter)
+          }
+        } catch { self.reject(error, promise) }
+      }
+    }
+    AsyncFunction("prepareRestore") { (promise: Promise) in
+      DispatchQueue.main.async {
+        guard let presenter = self.appContext?.utilities?.currentViewController() else {
+          promise.reject("BACKUP_PICKER_UNAVAILABLE", "BACKUP_PICKER_UNAVAILABLE")
+          return
+        }
+        let delegate = BackupDocumentPickerDelegate { result in
+          self.backupPicker = nil
+          switch result {
+          case .cancelled: promise.resolve(nil)
+          case .exported: promise.reject("BACKUP_PICKER_FAILED", "BACKUP_PICKER_FAILED")
+          case .selected(let url):
+            NativeFileStore.queue.async {
+              let accessed = url.startAccessingSecurityScopedResource()
+              defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+              do { promise.resolve(try LocalBackup.stageRestore(from: url).dictionary) }
+              catch { self.reject(error, promise) }
+            }
+          }
+        }
+        self.backupPicker = delegate
+        delegate.presentImport(from: presenter)
+      }
+    }
+    AsyncFunction("discardRestore") { (promise: Promise) in
+      NativeFileStore.queue.async {
+        do { try LocalBackup.discardRestore(); promise.resolve(nil) }
+        catch { self.reject(error, promise) }
+      }
+    }
+    AsyncFunction("activateRestore") { (promise: Promise) in
+      NativeFileStore.queue.async {
+        do { try LocalBackup.activateRestore(); promise.resolve(nil) }
+        catch { self.reject(error, promise) }
+      }
+    }
+    AsyncFunction("shareSticker") { (id: String, revision: Int, promise: Promise) in
+      NativeFileStore.queue.async {
+        do {
+          let url = try NativeFileStore.file(id, kind: "sticker", styleRevision: revision)
+          guard FileManager.default.fileExists(atPath: url.path) else { throw YidieError(code: "EXPORT_IMAGE_MISSING") }
+          DispatchQueue.main.async { self.presentShare(url, temporary: false, promise: promise) }
+        } catch { self.reject(error, promise) }
+      }
+    }
+    AsyncFunction("shareMonth") { (payload: [String: Any], promise: Promise) in
+      NativeFileStore.queue.async {
+        do {
+          let url = try CalendarExporter.render(payload)
+          DispatchQueue.main.async { self.presentShare(url, temporary: true, promise: promise) }
+        } catch { self.reject(error, promise) }
+      }
     }
     AsyncFunction("presentLimitedLibraryPicker") { (promise: Promise) in
       DispatchQueue.main.async {
@@ -113,5 +216,27 @@ public class YidieNativeModule: Module {
     case .limited: return "limited"
     default: return "denied"
     }
+  }
+
+  private func presentShare(_ url: URL, temporary: Bool, promise: Promise) {
+    guard shareController == nil,
+          let presenter = appContext?.utilities?.currentViewController() else {
+      if temporary { try? FileManager.default.removeItem(at: url) }
+      promise.reject(shareController == nil ? "SHARE_UNAVAILABLE" : "SHARE_IN_PROGRESS", "SHARE_UNAVAILABLE")
+      return
+    }
+    let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    controller.completionWithItemsHandler = { [weak self] _, completed, _, error in
+      self?.shareController = nil
+      if temporary { try? FileManager.default.removeItem(at: url) }
+      if let error { promise.reject("SHARE_FAILED", error.localizedDescription) }
+      else { promise.resolve(completed) }
+    }
+    if let popover = controller.popoverPresentationController {
+      popover.sourceView = presenter.view
+      popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+    }
+    shareController = controller
+    presenter.present(controller, animated: true)
   }
 }

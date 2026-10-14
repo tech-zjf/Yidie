@@ -3,6 +3,7 @@ import { Text } from './Text';
 import { colors, fonts } from './tokens';
 import { copy } from './copy';
 
+/** Editable date field used by batch review, where dates must remain fast to change in groups. */
 export function DateField({
   value,
   onChange,
@@ -17,7 +18,7 @@ export function DateField({
       <Text>{copy.dateLabel}</Text>
       <TextInput
         accessibilityLabel={copy.dateLabel}
-        placeholder={copy.datePlaceholder}
+        placeholder="YYYY-MM-DD"
         value={value}
         onChangeText={onChange}
         editable={!disabled}

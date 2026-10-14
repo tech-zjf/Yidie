@@ -8,6 +8,7 @@ async function readOnly(): Promise<never> {
 /** No imports of the real composition root or native adapter: no database, files, or permissions. */
 export async function previewServices(entries: Entry[]): Promise<AppServices> {
   const repository: EntryRepository = {
+    close: async () => {},
     list: async (options = {}) =>
       entries.filter((entry) => !options.month || entry.date?.startsWith(options.month)),
     get: async (id) => entries.find((entry) => entry.id === id) ?? null,
@@ -40,6 +41,7 @@ export async function previewServices(entries: Entry[]): Promise<AppServices> {
     prepareStorage: readOnly,
     requestPermission: readOnly,
     permissionStatus: () => 'denied',
+    chooseDate: readOnly,
     presentLimitedLibraryPicker: readOnly,
     listPhotos: readOnly,
     thumbnail: readOnly,
@@ -49,6 +51,12 @@ export async function previewServices(entries: Entry[]): Promise<AppServices> {
     discardStickerStyleVersion: readOnly,
     pruneStickerStyles: readOnly,
     discardImport: readOnly,
+    exportBackup: readOnly,
+    prepareRestore: readOnly,
+    discardRestore: readOnly,
+    activateRestore: readOnly,
+    shareSticker: readOnly,
+    shareMonth: readOnly,
     listImportIDs: readOnly,
     createPhotoPreview: readOnly,
   };

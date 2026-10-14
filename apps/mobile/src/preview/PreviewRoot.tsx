@@ -107,6 +107,7 @@ export default function PreviewRoot() {
               services={services}
               initialMonth={calendarFixture(scene).month}
               today="2026-06-23"
+              onReloadServices={() => {}}
             />
           ))}
         <View style={{ position: 'absolute', top: 90, right: 8 }}>

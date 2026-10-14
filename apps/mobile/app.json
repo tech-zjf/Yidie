@@ -17,6 +17,17 @@
         "CFBundleLocalizations": ["en"],
         "NSPhotoLibraryUsageDescription": "Choose outfit photos to make stickers on this iPhone. Photos are never uploaded.",
         "PHPhotoLibraryPreventAutomaticLimitedAccessAlert": true,
+        "UTExportedTypeDeclarations": [
+          {
+            "UTTypeIdentifier": "com.techzjf.yidie-backup",
+            "UTTypeDescription": "Yidie Backup",
+            "UTTypeConformsTo": ["com.apple.package"],
+            "UTTypeTagSpecification": {
+              "public.filename-extension": ["yidie"],
+              "public.mime-type": "application/vnd.techzjf.yidie-backup"
+            }
+          }
+        ],
         "ITSAppUsesNonExemptEncryption": false
       }
     },

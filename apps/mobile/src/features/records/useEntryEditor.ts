@@ -26,6 +26,7 @@ export function useEntryEditor(
     styleCommitted = useRef(false);
   const active = useRef(true),
     lock = useRef(false),
+    datePickerOpen = useRef(false),
     readVersion = useRef({ value: 0 });
   useEffect(() => {
     const reads = readVersion.current;
@@ -93,10 +94,24 @@ export function useEntryEditor(
       if (active.current) setBusy(false);
     }
   }
+  async function chooseDate() {
+    if (datePickerOpen.current || busy || !active.current) return;
+    datePickerOpen.current = true;
+    setError('');
+    try {
+      const selected = await services.photos.chooseDate(date || null);
+      if (active.current && selected) setDate(selected);
+    } catch (cause) {
+      if (active.current) setError(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
+    } finally {
+      datePickerOpen.current = false;
+    }
+  }
   return {
     entry,
     date,
     setDate,
+    chooseDate,
     busy,
     error,
     notice,

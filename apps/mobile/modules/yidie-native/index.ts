@@ -6,11 +6,13 @@ import type {
   StickerBorderColor,
   ImageFileStore,
 } from '../../src/domain/records';
+import type { MonthExportPayload } from '../../src/domain/monthLayout';
 export interface LocalModule extends ImageFileStore {
   capabilities(): { simulator: boolean; minimumIOS: number };
   prepareStorage(): Promise<{ rootUri: string; databaseUri: string }>;
   requestPermission(): Promise<'authorized' | 'limited' | 'denied'>;
   permissionStatus(): 'authorized' | 'limited' | 'denied';
+  chooseDate(currentDate: string | null): Promise<string | null>;
   presentLimitedLibraryPicker(): Promise<void>;
   listPhotos(offset: number, limit: number): Promise<Asset[]>;
   thumbnail(assetId: string): Promise<string | null>;
@@ -25,5 +27,11 @@ export interface LocalModule extends ImageFileStore {
   discardStickerStyleVersion(id: string, styleRevision: number): Promise<void>;
   pruneStickerStyles(id: string, keepingRevision: number): Promise<void>;
   discardImport(id: string): Promise<void>;
+  exportBackup(): Promise<boolean>;
+  prepareRestore(): Promise<{ entryCount: number; assetCount: number; totalBytes: number } | null>;
+  discardRestore(): Promise<void>;
+  activateRestore(): Promise<void>;
+  shareSticker(id: string, styleRevision: number): Promise<boolean>;
+  shareMonth(payload: MonthExportPayload): Promise<boolean>;
 }
 export const native = requireOptionalNativeModule<LocalModule>('YidieNative');

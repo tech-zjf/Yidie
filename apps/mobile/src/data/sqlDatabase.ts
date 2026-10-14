@@ -5,5 +5,6 @@ export interface SqlDatabase {
   runAsync(sql: string, ...params: SqlValue[]): Promise<{ changes: number }>;
   getFirstAsync<T>(sql: string, ...params: SqlValue[]): Promise<T | null>;
   getAllAsync<T>(sql: string, ...params: SqlValue[]): Promise<T[]>;
+  closeAsync?(): Promise<void>;
 }
 export type WriteTransaction = <T>(action: (tx: SqlDatabase) => Promise<T>) => Promise<T>;

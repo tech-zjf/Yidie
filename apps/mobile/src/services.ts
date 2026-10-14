@@ -13,6 +13,9 @@ export interface AppServices {
   maintenancePending: boolean;
 }
 let pending: Promise<AppServices> | undefined;
+export function resetServices() {
+  pending = undefined;
+}
 export function getServices(): Promise<AppServices> {
   if (!pending)
     pending = create().catch((error) => {

@@ -154,6 +154,42 @@ test('foreground return resumes only background work, preserving manually paused
   assert.equal((await r.repository.get('b'))?.status, 'ready');
   assert.equal((await r.repository.get('old'))?.status, 'paused');
 });
+test('backup suspension waits for the active photo and resumes only work it suspended', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+  await r.repository.queueBatch([item('old')]);
+  await r.repository.pauseQueued('user');
+  await r.repository.queueBatch([item('a'), item('b')]);
+  const entered = latch(),
+    release = latch();
+  const actions = createEntryActions(r.repository, {
+    ...processor,
+    createSticker: async (id) => {
+      if (id === 'a') {
+        entered.resolve();
+        await release.promise;
+      }
+      return sticker(id);
+    },
+  });
+  const run = actions.queue.start();
+  await entered.promise;
+  const suspension = actions.queue.suspend();
+  release.resolve();
+  const resume = await suspension;
+  await run;
+  assert.equal((await r.repository.get('a'))?.status, 'ready');
+  assert.equal((await r.repository.get('b'))?.status, 'paused');
+  assert.equal(
+    r.sqlite.prepare("SELECT pause_reason FROM processing_jobs WHERE entry_id='b'").get()
+      ?.pause_reason,
+    'background',
+  );
+  await resume();
+  assert.equal((await r.repository.get('b'))?.status, 'ready');
+  assert.equal((await r.repository.get('old'))?.status, 'paused');
+});
 test('restart pauses persisted jobs and requires explicit resume; old results are rejected', async (t) => {
   const r = fixture();
   t.after(() => r.sqlite.close());

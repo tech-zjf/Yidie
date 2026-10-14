@@ -66,6 +66,7 @@ export interface ProcessingRepository {
   fail(ticket: ProcessingTicket, code: string): Promise<void>;
 }
 export interface EntryRepository extends ProcessingRepository {
+  close(): Promise<void>;
   list(options?: { month?: string; before?: EntryCursor }): Promise<Entry[]>;
   get(id: string): Promise<Entry | null>;
   getMany(ids: string[]): Promise<Entry[]>;

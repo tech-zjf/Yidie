@@ -3,7 +3,7 @@ import { ActivityIndicator, AppState, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { getServices, type AppServices } from './services';
+import { getServices, resetServices, type AppServices } from './services';
 import { CalendarScreen } from './features/calendar/CalendarScreen';
 import { Text } from './ui/Text';
 import { copy } from './ui/copy';
@@ -11,6 +11,7 @@ import { colors } from './ui/tokens';
 
 export function AppRoot() {
   const [services, setServices] = useState<AppServices | null>(null),
+    [serviceGeneration, setServiceGeneration] = useState(0),
     [error, setError] = useState('');
   const [fontsReady, fontError] = useFonts({
     YidieDisplay: require('../assets/fonts/YidieDisplay.ttf'),
@@ -34,7 +35,7 @@ export function AppRoot() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [serviceGeneration]);
   useEffect(() => {
     if (!services) return;
     void services.actions.queue.setForeground(AppState.currentState === 'active');
@@ -50,7 +51,15 @@ export function AppRoot() {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       {services && fontsReady ? (
-        <CalendarScreen services={services} />
+        <CalendarScreen
+          services={services}
+          onReloadServices={() => {
+            resetServices();
+            setServices(null);
+            setError('');
+            setServiceGeneration((value) => value + 1);
+          }}
+        />
       ) : (
         <View
           style={{

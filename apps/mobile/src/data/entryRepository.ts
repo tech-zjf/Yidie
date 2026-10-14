@@ -28,6 +28,9 @@ export function createEntryRepository(
     return pending;
   };
   return {
+    async close() {
+      await db.closeAsync?.();
+    },
     ...createProcessingRepository(write),
     ...createQueueRepository(db, write),
     ...createEntryMutations(write),

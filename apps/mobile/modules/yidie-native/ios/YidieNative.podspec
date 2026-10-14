@@ -11,6 +11,7 @@ Pod::Spec.new do |s|
   s.swift_version = '5.9'
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
-  s.frameworks = 'Photos', 'Vision', 'CoreImage', 'ImageIO', 'CryptoKit'
+  s.frameworks = 'Photos', 'Vision', 'CoreImage', 'ImageIO', 'CryptoKit', 'UniformTypeIdentifiers'
+  s.libraries = 'sqlite3'
   s.source_files = '**/*.swift'
 end

@@ -143,6 +143,30 @@ export function createProcessingQueue(
       }
       await refresh();
     },
+    async suspend() {
+      const shouldResume = requested;
+      requested = false;
+      publish({});
+      await serial(() => repository.pauseQueued('background'));
+      await refresh();
+      let resumed = false;
+      return async () => {
+        if (resumed) return;
+        resumed = true;
+        if (!shouldResume || !foreground || snapshot.requiresRestart) return;
+        try {
+          await serial(() => repository.resumePaused('background'));
+          requested = true;
+          publish({});
+          await refresh();
+          await kick();
+        } catch (error) {
+          requested = false;
+          publish({ error: errorCode(error) });
+          await refresh();
+        }
+      };
+    },
     async setForeground(active: boolean) {
       foreground = active;
       try {

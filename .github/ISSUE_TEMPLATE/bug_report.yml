@@ -1,0 +1,42 @@
+name: Bug report
+description: Report a reproducible problem in Yidie.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not attach personal photos, app databases, device identifiers, certificates, or provisioning profiles. Use a generated or explicitly consented sample.
+  - type: input
+    id: app-version
+    attributes:
+      label: App version or commit
+      placeholder: 0.1.0 / commit hash
+    validations:
+      required: true
+  - type: input
+    id: ios-version
+    attributes:
+      label: iOS version and device/simulator
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest sequence that reproduces the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant error text
+      description: Remove names, paths, tokens, and other personal information first.
+    validations:
+      required: false

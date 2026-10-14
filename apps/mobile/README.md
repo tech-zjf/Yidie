@@ -1,42 +1,51 @@
-# 衣叠 iOS 工程
+# iOS app development
 
-Expo SDK 57 / React Native 0.86 / React 19.2 / TypeScript。阶段 1–4 的基线已在 Xcode 27.0 的 iPhone 17 Pro / iOS 26.1 模拟器全量构建和运行；真机验收仍待完成。
+Yidie is an iOS-only Expo / React Native app with a local Swift module for PhotoKit, Vision, and Core Image. Expo Go does not contain this module.
 
-## 本地运行
+## Requirements
 
-本机验证使用 Node 22.21、macOS 26.7.1、Xcode 27.0 与 CocoaPods。其他开发环境至少需要满足 Expo SDK 57 支持的 macOS/Xcode 版本，并查 [Apple 兼容表](https://developer.apple.com/xcode/system-requirements)。
+- macOS and Xcode compatible with the Expo SDK pinned in `package-lock.json`
+- Node.js 22 or newer
+- CocoaPods for the generated iOS project
+
+The last recorded local build used macOS 26.7.1, Xcode 27.0, Expo SDK 57, React Native 0.86, and iOS 27 Simulator. Check current Expo and Apple compatibility requirements before upgrading the toolchain.
+
+## Install and check
 
 ```sh
-cd apps/mobile
 npm ci
 npm run check
 npm run ios
 ```
 
-真机构建需在本机使用自己的 Apple 账号配置签名。使用 `npm run ios -- --device` 选择设备；最终离线验证使用 `npm run ios:release -- --device`。不要提交证书、Team ID 或描述文件。
+`npm run ios:release` builds a local Release configuration with its embedded JavaScript bundle. Installing on a physical iPhone requires signing with your own Apple development identity and accepting the device-side development trust prompt. The project does not store or distribute signing credentials.
 
-Expo Go 不包含 `yidie-native`。本地模块源代码位于 `modules/yidie-native`，`ios/` 由配置再生并被忽略。`npm run prebuild:ios` 只生成工程，不代表编译成功；`npm run export:ios` 只证明 JS 与资源可打包，不代表 App 能在真机运行。
+## UI preview
 
-## 当前代码范围
+```sh
+npm run preview:ios
+```
 
-- 月历当前月、跨年切月、占位数字、最多三层贴纸、当天横向浏览。
-- 数字/月份使用离线 Fraunces 子集，中文使用苹方；源许可证随包保留。
-- PhotoKit 本地资产分页和缩略图，所有请求禁止网络；每批最多选择 10 张，逐张读取、按日期分组、单张/整组改日期、重复提示，确认后生成 Vision 贴纸。
-- SQLite v1/v2/v3→v4 迁移、串行事务、按月查询与游标分页；持久任务单并发处理，支持暂停/继续、单张失败重试。回前台仅自动继续因后台而暂停的任务，主动暂停和重启恢复需要手动操作。
-- 读取中可停止后续照片，预览时可移除；关闭确认页会清理未归档副本。确认后原图归属数据库记录，暂停处理不会删除原图。
-- 从当天弹层或全部记录进入编辑：改日期、留空待归档、设当天封面、重试或删除。删除失败的文件清理会在下次启动继续，系统相册原图保留。
-- 导入时生成最长边 512px 的本地照片预览；月历、列表、当天弹层和编辑页统一选择资源及缓存身份，等待/失败状态不直接加载原图。旧记录按需补建预览。
-- 冷启动在开放导入前对账四个自有图片目录：只回收规范 UUID 文件名且无记录或路径引用的文件；无法确认归属时保留，失败的删除任务可重试。
-- 日期、布局、失败路径与真实 SQLite 集成测试；ESLint 模块边界和循环依赖检查；统一代码格式。
+The preview uses deterministic sample data and read-only service substitutes. It does not read Photos, access the app database, or run Vision. It is useful for repeatable layout checks but is not evidence of native image-processing behavior. See [preview boundaries](../../docs/14-ui-preview.md).
 
-确认后显示已加入处理队列的数量；月历、记录列表和编辑页随处理结果更新。无拍摄日期的照片可留空，记录进入“全部记录”中的待归档；点击记录即可补日期。多人照片当前保留全部前景主体，主体选择未实现。
+## Code map
 
-10 张是开发保护上限，尚无真机性能数据。贴纸样式编辑、导出、完整备份恢复仍属于后续阶段。无主文件回收已通过逻辑及 Mac 文件系统测试，iPhone 强退/断电恢复待验收。当前只用于测试照片，不能把未完成版本当作长期照片库。
+```text
+src/domain/       Date, import, queue and sticker-layout rules
+src/data/         SQLite repositories, migrations and durable image ownership
+src/features/     Calendar, import, processing and record screens
+src/ui/           Shared type, button, sheet, copy and design tokens
+modules/yidie-native/  Swift PhotoKit, Vision, Core Image and owned-file boundary
+```
 
-工程约定见 [架构说明](../../docs/10-engineering.md)，验证与限制见 [实施记录](../../docs/09-build-log.md)。
+Keep the dependency direction and failure-handling rules in [engineering conventions](../../docs/10-engineering.md). Generated `ios/` files are local build output; make native source changes in `modules/yidie-native` or app config plugins.
 
-## 开发验证
+## Verification
 
-运行 `npm run preview:ios` 打开独立 UI 预览入口，含四/五/六周、同日多张、空白和异常场景；仅用于开发。具体操作与隔离方式见 [UI 预览](../../docs/14-ui-preview.md)。
+```sh
+npm run check
+sh ../../scripts/check_native.sh
+python3 ../../scripts/check_packet.py
+```
 
-从仓库根目录执行 `sh scripts/check_native.sh`，运行临时目录内的 Swift 文件测试和 iOS 核心类型检查。它不编译 Expo 桥接或完整 App；完整模拟器构建已通过，物理设备上的 Vision 与离线验证仍待完成。
+The Swift file-catalog check and iOS core typecheck do not replace a full Xcode app build. Simulator Vision cannot provide valid cutout-quality evidence on the current local setup. See the live [delivery board](../../TODO.md) and [readiness review](../../docs/16-readiness-review.md) for remaining acceptance work.

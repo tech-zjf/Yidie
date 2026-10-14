@@ -19,18 +19,18 @@ Data                 Native Expo Module
   backup archive       Core Image 合成白边与贴纸
 ```
 
-建议目录为 `apps/mobile/src/{features,domain,data,ui}` 和 `apps/mobile/modules/yidie-native`。页面不得直接调用 SQL 或在组件内做日期猜测。抠图、照片读取、导出分别暴露接口，避免形成一个包含整个 App 的原生大模块。
+实际代码按 `apps/mobile/src/{features,domain,data,ui}` 分层，原生能力位于 `apps/mobile/modules/yidie-native`。页面不得直接调用 SQL 或在组件内做日期猜测。抠图、照片读取、文件管理分别暴露接口，避免形成一个包含整个 App 的原生大模块。
 
-| 能力 | 选择 | 边界 |
-| --- | --- | --- |
-| 路由与页面 | AppRoot + TypeScript + 原生 Modal | 当前只有月历与弹层，更多独立页面出现时再引入 Expo Router，不先搭复杂 Tab |
-| 图片显示 | expo-image，使用本地缩略图 | 月历不解码原始 48MP 图片 |
-| 文件与数据库 | Swift 文件模块、expo-sqlite | 存相对路径，不能持久化安装沙盒的绝对前缀 |
-| 动效和手势 | Reanimated、Gesture Handler；底部弹层候选 @gorhom/bottom-sheet | 创建工程时核对当前 SDK/新架构兼容；必要时自建轻量 Modal + pager |
-| 照片选择 | PhotoKit 原生权限与本地资产列表 | 所有缩略图/原图请求禁止网络；不使用会自动下载原图的通用 picker |
-| 抠图 | Apple Vision，Swift Expo Module | iOS 17+ 起评估；系统和设备支持检查；不是 JS 抠图库 |
-| 分享 | 系统分享面板、MediaLibrary 保存权限按需请求 | App 不负责上传用户照片 |
-| 备份 | 本地 ZIP + manifest.json，流式文件处理 | ZIP 库在技术验证中选择，避免整包 base64 进入 JS |
+| 能力         | 选择                                                           | 边界                                                                     |
+| ------------ | -------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| 路由与页面   | AppRoot + TypeScript + 原生 Modal                              | 当前只有月历与弹层，更多独立页面出现时再引入 Expo Router，不先搭复杂 Tab |
+| 图片显示     | expo-image，使用本地缩略图                                     | 月历不解码原始 48MP 图片                                                 |
+| 文件与数据库 | Swift 文件模块、expo-sqlite                                    | 存相对路径，不能持久化安装沙盒的绝对前缀                                 |
+| 动效和手势   | Reanimated、Gesture Handler；底部弹层候选 @gorhom/bottom-sheet | 创建工程时核对当前 SDK/新架构兼容；必要时自建轻量 Modal + pager          |
+| 照片选择     | PhotoKit 原生权限与本地资产列表                                | 所有缩略图/原图请求禁止网络；不使用会自动下载原图的通用 picker           |
+| 抠图         | Apple Vision，Swift Expo Module                                | iOS 17+ 起评估；系统和设备支持检查；不是 JS 抠图库                       |
+| 分享         | 系统分享面板、MediaLibrary 保存权限按需请求                    | App 不负责上传用户照片                                                   |
+| 备份         | 原生 `.yidie` 文稿包 + manifest.json                           | 不引入 ZIP 依赖、不经 JS 传输图片字节；用户通过 iOS 文件选择器自行保存   |
 
 自定义原生模块不包含在 Expo Go 中，必须用 development build 或本地原生构建。[Expo Modules](https://docs.expo.dev/modules/get-started/)、[Development builds](https://docs.expo.dev/develop/development-builds/introduction/)
 
@@ -57,13 +57,13 @@ Apple 框架没有按次调用账单，无需自托管推理服务器。具体�
 
 ## 日期与数据
 
-数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [文件清理迁移](../specs/migrations/002-file-deletions.sql)、[队列迁移](../specs/migrations/003-processing-queue.sql)、[照片预览迁移](../specs/migrations/004-photo-previews.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
+数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [文件清理迁移](../specs/migrations/002-file-deletions.sql)、[队列迁移](../specs/migrations/003-processing-queue.sql)、[照片预览迁移](../specs/migrations/004-photo-previews.sql)、[可编辑贴纸迁移](../specs/migrations/005-editable-stickers.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
 
 EXIF 日期含偏移时使用原本日历日期；不含偏移时保留原字面日期。相册 creationDate 只有绝对时间时，用导入时确定的时区生成建议并由用户确认。不要用 `toISOString().slice(0,10)` 处理本地日期，跨午夜会归错天。
 
 `record_date=null` 表示待归档。一张 entry 对应一次用户记录；相同源图允许用户确认后出现在多天，因此 content_hash 不是全库唯一约束。默认防重复在导入用例中完成。同一天的 cover 使用外键及触发器保证归属一致；移动或删除封面后自动回到默认排序首张。
 
-数据库启用 foreign_keys、WAL，迁移有版本。涉及照片移动、封面和日期变更使用串行写入及事务。文件与数据库无法组成单一系统事务，所以采用临时写入、原子改名、事务提交和启动时对账；当前启动对账只处理自有 originals、stickers、previews、photo-previews 四个目录中规范 UUID 命名的普通图片文件；数据库记录 ID 与精确路径引用均无归属时才登记持久删除任务。目录或归属读取失败时保留文件；未知文件、符号链接、数据库和用户相册不参与回收。备份恢复的 manifest 与阶段标记属于后续独立流程。
+数据库启用 foreign_keys、WAL，迁移有版本。涉及照片移动、封面和日期变更使用串行写入及事务。文件与数据库无法组成单一系统事务，所以采用临时写入、原子改名、事务提交和启动时对账；当前启动对账只处理自有 originals、stickers、previews、cutouts、photo-previews 五个资源目录中规范 UUID 命名的普通图片文件；数据库记录 ID 与精确路径引用均无归属时才登记持久删除任务。目录或归属读取失败时保留文件；未知文件、符号链接、数据库和用户相册不参与回收。备份恢复的 manifest 与阶段标记已在原生模块实现，故障注入和模拟器端到端验收仍待完成。
 
 ## 布局、动画和导出
 
@@ -87,11 +87,11 @@ EXIF 日期含偏移时使用原本日历日期；不含偏移时保留原字面
 
 ## 备份与恢复
 
-归档扩展名 `.yidie`，内部为 ZIP：`manifest.json`、结构化 `entries.json` / `days.json`、`originals/`、`stickers/`。manifest 包含 schemaVersion、appVersion、exportedAt、条目数、每个文件的相对路径、大小和 SHA-256。派生缩略图可重建，不备份 SQLite 正在写入的裸文件。
+备份扩展名 `.yidie`，是 iOS 可导入/导出的文稿包，包含 `manifest.json`、SQLite 一致性快照和应用拥有的 `originals/`、`stickers/`、`previews/`、`cutouts/`、`photo-previews/`。manifest 包含 formatVersion、schemaVersion、appVersion、exportedAt、条目数、每个文件的相对路径、大小和 SHA-256。文件不压缩，备份空间大致等于该应用库；不备份 SQLite 正在写入的裸文件，也不读取 Apple Photos 中未被用户导入的照片。
 
-导出期间暂停写操作并生成一致快照，复制对应文件后恢复写入。归档默认不加密，用户主动保存；如未来增加密码功能须作为独立版本设计，当前不能宣称备份已加密。
+创建快照时通过 SQLite backup API 读取一致数据库，并等待当前图片任务完成后再复制文件。文稿包默认不加密；导出到 Files 后由用户选择保存位置。UI 明示包内含原图副本，用户应保存在可信位置。
 
-恢复先解压到隔离临时目录，拒绝绝对路径、`..`、符号链接、过多条目、异常解压比和超出可用空间的归档。验证 manifest、摘要、图片解码、日期和引用关系、兼容版本，展示摘要后确认。首版只做“替换当前库”，不做复杂自动合并。恢复成功前保留旧目录，写入恢复阶段标记；重启按标记完成切换或回滚，避免图片目录与数据库切到不同版本。
+恢复先复制到排除系统备份的隔离目录。拒绝包结构外文件、路径不合规、符号链接、过多文件、超出容量的资源、摘要不符、数据库完整性或外键错误、缺失图片和不兼容 schema。展示记录数、资源数量与大小后，再让用户确认“替换当前库”。首版不做复杂自动合并。数据库关闭后才切换沙盒目录；原目录保留到新目录通过校验，原子阶段标记使冷启动可以回滚未提交切换或清理已提交旧数据。
 
 ## 安装和分发
 

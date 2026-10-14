@@ -4,10 +4,11 @@ import { RecordImage } from './RecordImage';
 import type { Entry, StickerBorderColor } from '../../domain/records';
 import type { AppServices } from '../../services';
 import { Button } from '../../ui/Button';
-import { DateField } from '../../ui/DateField';
+import { NativeDateField } from '../../ui/NativeDateField';
 import { Text } from '../../ui/Text';
 import { colors, fonts } from '../../ui/tokens';
 import { copy } from '../../ui/copy';
+import { errorCode } from '../../domain/importPhoto';
 import { useEntryEditor } from './useEntryEditor';
 
 /** Content inside an existing sheet; never presents a second iOS Modal. */
@@ -69,6 +70,20 @@ export function EntryEditor({
             {!!model.notice && <Text accessibilityRole="alert">{model.notice}</Text>}
             {current.status === 'ready' && (
               <View style={styles.styleSection}>
+                <Button
+                  label={copy.shareSticker}
+                  disabled={model.busy || !!model.stylePreview}
+                  onPress={() =>
+                    void services.photos
+                      .shareSticker(current.id, current.styleRevision)
+                      .catch((cause) =>
+                        Alert.alert(
+                          copy.errorTitle,
+                          copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED,
+                        ),
+                      )
+                  }
+                />
                 <Text accessibilityRole="header" style={styles.sectionTitle}>
                   {copy.stickerStyle}
                 </Text>
@@ -136,7 +151,12 @@ export function EntryEditor({
               </View>
             )}
             <View style={styles.field}>
-              <DateField value={model.date} onChange={model.setDate} disabled={disabled} />
+              <NativeDateField
+                value={model.date}
+                onChoose={model.chooseDate}
+                onClear={() => model.setDate('')}
+                disabled={disabled}
+              />
               <Button
                 primary
                 label={copy.saveDate}

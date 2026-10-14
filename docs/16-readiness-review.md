@@ -1,44 +1,36 @@
-# 当前全量复审与发布关口
+# Current review and release gate
 
-复审日期：2026-10-14。范围是当前 `main` 工作树、iOS Expo/RN App、Swift PhotoKit/Vision 模块、PRD 与 UI 规范。此记录描述开发进度，不构成真机或发布验收。
+Review date: 2026-10-14. This describes the current development build, not a release approval. Implementation, automated checks, Simulator interaction, and physical-device acceptance are tracked separately.
 
-## 已实现并验证
+## Implemented in source
 
-| 用户流程 / 体验          | 当前状态             | 证据与边界                                                                                                                                                     |
-| ------------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 月历首页与品牌           | 已实现               | 品牌图标、英文界面、展示字体、隐藏首页滚动条、月份箭头加大并扩大点击区、左右滑动切月、居中添加按钮；iPhone 18 Pro / iOS 27 模拟器 Release 首页已启动并截图检查 |
-| 空格与有记录日期         | 已实现               | 有记录格显示贴纸、空格显示数字；同日最多三层，纯函数布局与几何边界测试通过                                                                                     |
-| 同日多张角标             | 已实现，待模拟器视觉复核 | 多张记录显示总数小圆标；自动化覆盖数据库日期/数量与多层几何，最新布局尚未完成截图验收                                                               |
-| 贴纸描边编辑             | 已实现，待真机照片验收   | 透明抠图单独保存，Core Image 本地生成预览与版本化贴纸；支持 0–8px、白/深色/蓝色；事务 revision、路径校验、v5 迁移与失败暂存清理已加测试       |
-| 当天照片浏览             | 已实现               | 底部弹层从底部进入/退出，显示把手，照片横向分页，页码、状态与操作在当前照片下居中；横滑和下拉关闭分开处理                                                      |
-| 全部记录                 | 已实现               | 双列图片列表、日期倒序游标分页、进入单条编辑；SQL 集成测试覆盖跨页和插入/删除                                                                                  |
-| 批量导入                 | 已实现               | 本机 PhotoKit 分页、日期建议与分组、重复复核、修改日期、持久串行任务队列；不启用网络下载照片                                                                   |
-| 记录日期与数据事务       | 已实现               | 日期由用户确认后固定；SQL 事务、迁移、并发 revision、防止误删已有记录文件等测试通过                                                                            |
-| 限量照片权限管理         | 本轮补齐，代码已构建 | 关闭自动提示后提供“管理已选照片”入口；完整 iOS Simulator Release 编译通过。实际系统选择器尚未打开验证                                                          |
-| 减少动态效果             | 本轮补齐，代码已构建 | 弹层读系统减少动态效果并跳过运动动画；尚未在系统设置中切换后验收                                                                                               |
-| App About 与数据边界说明 | 本轮修正             | 说明没有账号、服务器或云同步；明示应用级备份尚未提供，删除 App 可能移除本地记录                                                                                |
+| Area | Implementation | Evidence and remaining boundary |
+| --- | --- | --- |
+| Calendar and brand | English iOS calendar, display typography, sticker-first occupied days, horizontal month/day browsing, animated sheets, centered Add action, app icon | Release app launched on iPhone 18 Pro / iOS 27 Simulator; only the empty-calendar home has a current native screenshot |
+| Same-day stacks | Up to three offset, rotated stickers; count badge uses the total number of entries | Shared pure layout feeds UI and export; geometry tests cover narrow cells, six-week months, rotations and badge bounds; populated visual acceptance remains open |
+| Sticker editing | Local outline preview/save, 0–8 px, white/dark/blue, preserved transparent cutout | SQLite revision and native paths covered by automated tests; real Vision input quality requires an opt-in physical-device photo |
+| Day and record browsing | Animated bottom sheet with handle, horizontal photo paging; all-record grid and revision-safe editor | Domain/SQLite scenarios pass; interactive native gestures still need Simulator acceptance |
+| Import and processing | User-selected PhotoKit assets, date review, duplicate handling, local persistent serial queue, retry and recovery | Domain/SQLite tests pass; Vision quality and system photo-picker behavior are not accepted on this Simulator |
+| Date editing | Native date picker, cancel-safe selection and date relocation | Source builds and static tests pass; native picker interaction remains to be accepted |
+| Local backup | User-controlled `.yidie` package, SQLite snapshot, checksums, strict path/schema validation, staged restore and startup rollback | Deterministic native tests cover corruption, future schema, storage limits, cancellation, current-library preservation and interrupted swaps; Files picker end-to-end flow remains open |
+| Image sharing | Transparent sticker PNG and 3× month PNG rendered from shared calendar geometry; native share sheet | Source and build checks; interactive share/cancel behavior remains open |
+| Privacy and product boundaries | No backend, account, analytics or cloud inference; app-owned local records and explicit backup warning | Source review; never uninstall without a user-verified backup |
 
-## 仍未实现，不能作为已完成的 v0.1 功能
+## Acceptance still required
 
-| 优先级 | 缺项                              | 影响                                                                              | 完成标准                                                                                                                                      |
-| ------ | --------------------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| P0     | App 内完整备份与恢复              | 数据库和照片副本保存在 App 沙盒且排除系统备份；卸载可能导致本地记录不可恢复       | 用户可导出单个本地备份包；恢复先校验版本、清单与摘要，失败不改当前库；确认后原子替换；导出/恢复覆盖大文件、中断与空间不足；不触碰系统相册原图 |
-| P1     | 单张贴纸与月历图片导出            | 当前无法将透明贴纸或月历作为图片保存/分享                                         | 单张透明 PNG、整月高清 PNG；预览和导出共用布局，取消分享不改变数据，清理导出元数据                                                            |
-| P1     | 真机照片链路                      | 模拟器 Vision 无有效抠图质量证据                                                  | 用户自选测试照片，由用户在手机确认日期、边缘与离线效果；测单张与多张耗时、内存、失败恢复，不读取其他照片                                      |
-| P2     | 原生日期选择器                    | 日期编辑当前是 `YYYY-MM-DD` 文本框                                                | 使用 iOS 日期选择器；取消不改日期，确认后重新定位到对应日历格；覆盖闰年与大字体                                                               |
-| P2     | VoiceOver / Dynamic Type 完整验收 | 有基础 accessibility label 与大字体布局，但焦点进出、读屏顺序和极大字体未系统验收 | 按月历、照片选择、当天弹层、编辑、全部记录跑一遍读屏及大字体，补必要的无障碍焦点管理                                                          |
-| P2     | 小屏与低动态效果视觉验收          | 默认 iPhone 18 Pro 首页已检查；其他尺寸、低动态效果切换后状态尚无截图证据         | 至少覆盖小尺寸、最大可访问字体和“减少动态效果”启停状态                                                                                        |
+| Priority | Gate | Completion evidence |
+| --- | --- | --- |
+| P0 | Simulator UI walkthrough | Verify day stack/count badge, horizontal photo paging, month swipe/arrows, editor preview/save, empty/loading/failure states, sheet motion, Add and All Records |
+| P0 | Backup and share system flows | In Simulator, export and restore a synthetic `.yidie` library; cancel and reject a corrupt package without changing current data; share/cancel sticker and month images |
+| P1 | Supported-size and accessibility pass | Smallest supported iPhone, 4/5/6-week months, large text, VoiceOver focus/labels, reduced motion, no unintended scroll indicator or clipped controls |
+| P1 | Physical-device photo acceptance | Only a photo deliberately selected by the user; validate orientation, Vision cutout and outline, offline behavior, failure recovery, responsiveness and memory |
+| P1 | Open-source CI and reproducibility | GitHub CI green, clean lockfile install, JS export and documented Simulator Release build reproduced from source |
+| P2 | Public demo and launch material | Capture only verified flows with synthetic or explicitly consented material; publish no message on X without a separate user instruction |
 
-## 结论
+## Verified in this worktree
 
-这次变更可以作为 GitHub 上的**开发里程碑**提交，不能标记为完整 v0.1、稳定版或面向体验者的安装版本。最重要的阻塞项是没有 App 内备份恢复：目前衣叠数据只在本机 App 沙盒中，删除 App 可能删除记录和导入副本。完成 P0 后，仍需完成图片导出与真机照片验收，才适合宣称 PRD v0.1 已交付。
+- TypeScript, ESLint, Prettier, 51 domain/SQLite tests, native backup/file inventory tests, Swift core typecheck, repository/SQL contracts, and packet checks pass once run with the configured Node runtime.
+- iOS Simulator Release build, install, and launch passed on the existing iPhone 18 Pro / iOS 27 Simulator. The saved screenshot shows the empty home state only.
+- No physical iPhone, Photos library, Developer Mode, signing identity, certificate, or keychain was accessed or changed. Xcode regenerated the ignored local iOS project; the Simulator build had code signing disabled.
 
-本轮已在一台既有 iOS 27 模拟器内覆盖安装并运行衣叠，检查的是空日历首页。没有访问相册、向真机安装、修改 Developer Mode、证书或其他 App。模拟器中的 Vision 和有限照片权限流程仍未测试。
-
-## 回归检查
-
-- TypeScript 严格类型检查、ESLint、Prettier、49 项领域与 SQLite 测试。
-- `python3 scripts/check_packet.py`。
-- `scripts/check_native.sh` 的文件目录与 iOS 核心 Swift 类型检查。
-- 完整 Xcode iOS Simulator Release 编译，确认 `main.jsbundle` 已内嵌；在 iPhone 18 Pro / iOS 27 模拟器启动。
-- 视觉只检查默认字体的空日历首页。没有执行 PhotoKit 授权、真实照片读取、Vision 抠图、无障碍或性能验收。
+This is suitable as a **development milestone** for GitHub, not a complete or generally installable v0.1 release. The principal blockers are Simulator interaction coverage and a user-authorized real-device Vision photo test. The detailed security-state history is in [the device test safety runbook](15-device-test-safety-runbook.md); the active checklist is [TODO.md](../TODO.md).
