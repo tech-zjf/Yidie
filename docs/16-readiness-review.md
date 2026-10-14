@@ -29,7 +29,7 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 
 ## Verified in this worktree
 
-- TypeScript, ESLint, Prettier, 51 domain/SQLite tests, native backup/file inventory tests, Swift core typecheck, repository/SQL contracts, and packet checks pass once run with the configured Node runtime.
+- TypeScript, ESLint, Prettier, 51 domain/SQLite tests, native backup/file inventory tests, Swift core typecheck, repository/SQL contracts, and packet checks pass once run with the configured Node runtime. The updated `CalendarExporter.swift` also passes an isolated iOS SDK Swift typecheck using temporary stubs for app-owned dependencies; this checks API/type correctness, not app linking or rendering behavior.
 - iOS JavaScript Release export passes for the current source. An earlier iPhone 18 Pro / iOS 27 Simulator Release build, install, and launch passed, but its screenshot predates the latest editor-state and Reduce Motion corrections and shows only the empty home. Current `xcodebuild` cannot open the generated workspace; compiling the project directly lacks Expo Pods modules. The Mac is locked and CoreSimulatorService is unavailable, so inspect the workspace/Pods after unlock and rebuild before claiming native compilation or interactive acceptance.
 - No physical iPhone, Photos library, Developer Mode, signing identity, certificate, or keychain was accessed or changed. Xcode regenerated the ignored local iOS project; the Simulator build had code signing disabled.
 
