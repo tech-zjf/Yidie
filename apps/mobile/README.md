@@ -1,10 +1,10 @@
 # 衣叠 iOS 工程
 
-Expo SDK 57 / React Native 0.86 / React 19.2 / TypeScript。当前已实现阶段 1–4 的开发基线代码，完整 iOS 编译和真机验收尚未完成。
+Expo SDK 57 / React Native 0.86 / React 19.2 / TypeScript。阶段 1–4 的基线已在 Xcode 27.0 的 iPhone 17 Pro / iOS 26.1 模拟器全量构建和运行；真机验收仍待完成。
 
 ## 本地运行
 
-需要 Node 22.13+、macOS 26.2+、Xcode 26.4+ 与兼容 CocoaPods。若安装更新的 Xcode，先查 [Apple 兼容表](https://developer.apple.com/xcode/system-requirements)；不同版本对 macOS 的要求不同。
+本机验证使用 Node 22.21、macOS 26.7.1、Xcode 27.0 与 CocoaPods。其他开发环境至少需要满足 Expo SDK 57 支持的 macOS/Xcode 版本，并查 [Apple 兼容表](https://developer.apple.com/xcode/system-requirements)。
 
 ```sh
 cd apps/mobile
@@ -39,4 +39,4 @@ Expo Go 不包含 `yidie-native`。本地模块源代码位于 `modules/yidie-na
 
 运行 `npm run preview:ios` 打开独立 UI 预览入口，含四/五/六周、同日多张、空白和异常场景；仅用于开发。具体操作与隔离方式见 [UI 预览](../../docs/14-ui-preview.md)。
 
-从仓库根目录执行 `sh scripts/check_native.sh`，运行临时目录内的 Swift 文件测试和 iOS 核心类型检查。它不编译 Expo 桥接或完整 App，仍需兼容工具链完成 `npm run ios` 与真机验证。
+从仓库根目录执行 `sh scripts/check_native.sh`，运行临时目录内的 Swift 文件测试和 iOS 核心类型检查。它不编译 Expo 桥接或完整 App；完整模拟器构建已通过，物理设备上的 Vision 与离线验证仍待完成。

@@ -13,12 +13,14 @@ export function RecordImage({
   variant = 'thumbnail',
   style,
   accessibilityLabel,
+  photoFit = 'contain',
 }: {
   entry: Entry;
   services: AppServices;
   variant?: 'thumbnail' | 'detail';
   style: StyleProp<ViewStyle>;
   accessibilityLabel?: string;
+  photoFit?: 'contain' | 'cover';
 }) {
   const [repaired, setRepaired] = useState<{ id: string; preview: PhotoPreview } | null>(null);
   const resource = entryImage(
@@ -51,7 +53,7 @@ export function RecordImage({
           source={{ uri: services.rootUri + resource.path, cacheKey: resource.cacheKey }}
           recyclingKey={resource.cacheKey}
           accessible={false}
-          contentFit="contain"
+          contentFit={resource.kind === 'photo' ? photoFit : 'contain'}
           style={[StyleSheet.absoluteFill, resource.kind === 'photo' && styles.photo]}
         />
       ) : (
@@ -66,7 +68,7 @@ export function RecordImage({
   );
 }
 const styles = StyleSheet.create({
-  photo: { borderRadius: 8, backgroundColor: colors.wash, opacity: 0.7 },
+  photo: { borderRadius: 8, backgroundColor: colors.wash },
   progress: {
     position: 'absolute',
     top: 0,

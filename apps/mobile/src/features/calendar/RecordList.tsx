@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { RecordImage } from '../records/RecordImage';
 import type { AppServices } from '../../services';
 import { useRecordList } from './useRecordList';
@@ -19,6 +19,9 @@ export function RecordList({
   onChanged: () => void;
 }) {
   const model = useRecordList(services);
+  const { width, fontScale } = useWindowDimensions();
+  const columns = fontScale >= 1.8 ? 1 : 2;
+  const cardWidth = (width - 48 - (columns - 1) * 14) / columns;
   const [editing, setEditing] = useState<Entry | null>(null);
   return (
     <Modal visible presentationStyle="pageSheet" animationType="slide" onRequestClose={onClose}>
@@ -34,12 +37,22 @@ export function RecordList({
           }}
         />
       ) : (
-        <View style={styles.page}>
+        <View style={styles.page} accessibilityViewIsModal>
           <View style={styles.heading}>
-            <Text style={{ fontFamily: fonts.heading, fontSize: 24 }}>{copy.all}</Text>
+            <Text accessibilityRole="header" style={styles.title}>
+              {copy.all}
+            </Text>
             <Button label={copy.close} onPress={onClose} />
           </View>
+          <View style={styles.intro}>
+            <Text style={styles.introTitle}>{copy.recordsIntro}</Text>
+            <Text style={styles.muted}>{copy.recordsOrder}</Text>
+          </View>
           <FlatList
+            key={columns}
+            numColumns={columns}
+            columnWrapperStyle={columns === 2 ? styles.columns : undefined}
+            contentContainerStyle={styles.content}
             data={model.entries}
             keyExtractor={(entry) => entry.id}
             initialNumToRender={8}
@@ -59,25 +72,28 @@ export function RecordList({
             }
             renderItem={({ item }) => (
               <Pressable
-                style={styles.row}
+                style={{ width: cardWidth, marginBottom: 18 }}
                 onPress={() => setEditing(item)}
                 accessibilityRole="button"
                 accessibilityLabel={`${item.date ?? copy.pending}，${copy.editRecord}`}
               >
-                <RecordImage
-                  entry={item}
-                  services={services}
-                  variant="thumbnail"
-                  style={{ width: 96, height: 130 }}
-                />
-                <View style={{ flex: 1, gap: 8 }}>
-                  <Text>{item.date ?? copy.pending}</Text>
-                  {item.status !== 'ready' && (
-                    <Text style={{ color: colors.muted, fontSize: 13 }}>
-                      {copy.recordState[item.status]}
+                <View style={styles.photo}>
+                  <RecordImage
+                    entry={item}
+                    services={services}
+                    variant="thumbnail"
+                    photoFit="cover"
+                    style={{ width: cardWidth, height: cardWidth * 1.35 }}
+                  />
+                  <View style={styles.caption} pointerEvents="none">
+                    <Text style={styles.date}>
+                      {item.date ? copy.dateChip(item.date) : copy.pending}
                     </Text>
-                  )}
+                  </View>
                 </View>
+                {item.status !== 'ready' && (
+                  <Text style={styles.status}>{copy.recordState[item.status]}</Text>
+                )}
               </Pressable>
             )}
           />
@@ -87,12 +103,31 @@ export function RecordList({
   );
 }
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: colors.paper, padding: 24 },
+  page: { flex: 1, backgroundColor: colors.paper, paddingTop: 24 },
   heading: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    paddingHorizontal: 24,
+    gap: 12,
   },
-  row: { flexDirection: 'row', gap: 24, alignItems: 'center', marginBottom: 16 },
+  title: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 34, flexShrink: 1 },
+  intro: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 28, gap: 6 },
+  introTitle: { fontSize: 17, lineHeight: 28 },
+  muted: { fontSize: 12, color: colors.muted },
+  columns: { gap: 14 },
+  content: { paddingHorizontal: 24, paddingBottom: 40 },
+  photo: { borderRadius: 20, overflow: 'hidden', backgroundColor: colors.wash },
+  caption: { position: 'absolute', bottom: 12, left: 8, right: 8, alignItems: 'center' },
+  date: {
+    fontSize: 12,
+    lineHeight: 20,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 10,
+    overflow: 'hidden',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    textAlign: 'center',
+  },
+  status: { fontSize: 12, lineHeight: 19, color: colors.muted, marginTop: 8, paddingHorizontal: 4 },
 });

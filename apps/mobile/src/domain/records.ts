@@ -42,6 +42,7 @@ export interface Entry {
   errorCode: string | null;
 }
 export interface EntryCursor {
+  date: string | null;
   sortKey: number;
   id: string;
 }

@@ -41,13 +41,29 @@ export function createEntryRepository(
         return rows.map(decode);
       }
       const cursor = options.before;
-      const rows = cursor
-        ? await db.getAllAsync<Entry>(
-            `${select} WHERE (e.sort_key,e.id) < (?,?) ORDER BY e.sort_key DESC,e.id DESC LIMIT 60`,
-            cursor.sortKey,
-            cursor.id,
-          )
-        : await db.getAllAsync<Entry>(`${select} ORDER BY e.sort_key DESC,e.id DESC LIMIT 60`);
+      let rows: Entry[];
+      if (cursor?.date) {
+        rows = await db.getAllAsync<Entry>(
+          `${select} WHERE e.record_date IS NULL OR e.record_date < ? OR
+            (e.record_date = ? AND (e.sort_key,e.id) < (?,?))
+            ORDER BY e.record_date DESC,e.sort_key DESC,e.id DESC LIMIT 60`,
+          cursor.date,
+          cursor.date,
+          cursor.sortKey,
+          cursor.id,
+        );
+      } else if (cursor) {
+        rows = await db.getAllAsync<Entry>(
+          `${select} WHERE e.record_date IS NULL AND (e.sort_key,e.id) < (?,?)
+            ORDER BY e.record_date DESC,e.sort_key DESC,e.id DESC LIMIT 60`,
+          cursor.sortKey,
+          cursor.id,
+        );
+      } else {
+        rows = await db.getAllAsync<Entry>(
+          `${select} ORDER BY e.record_date DESC,e.sort_key DESC,e.id DESC LIMIT 60`,
+        );
+      }
       return rows.map(decode);
     },
     async get(id) {

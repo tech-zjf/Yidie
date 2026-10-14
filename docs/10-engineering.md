@@ -6,11 +6,11 @@
 
 2026-10-13 查看以下官方仓库的目录与具体文件，参考组织方式，未复制它们的业务代码。
 
-| 参考 | 看到的实践 | 衣叠的采用方式 |
-| --- | --- | --- |
-| [Bluesky 的 features](https://github.com/bluesky-social/social-app/tree/main/src/features)、[原生 modules](https://github.com/bluesky-social/social-app/tree/main/modules)、[ALF token](https://github.com/bluesky-social/social-app/blob/main/src/alf/tokens.ts) | 功能代码聚合、原生扩展独立、统一样式 token | 月历与导入各有组件和控制 hook；Swift 独立模块；统一颜色与字体 |
-| [Ignite 的 Text](https://github.com/infinitered/ignite/blob/master/boilerplate/app/components/Text.tsx)、[typography](https://github.com/infinitered/ignite/blob/master/boilerplate/app/theme/typography.ts) | 文字组件统一样式、语义化字体配置、可复用组件 | 使用轻量 Text/Button 与 body/heading/number/month 四种字体用途 |
-| [Expo Modules](https://docs.expo.dev/modules/get-started/)、[SQLite](https://docs.expo.dev/versions/v57.0.0/sdk/sqlite/) | 本地模块自动链接、异步数据库、独立事务连接避免异步写交叉 | 原生源代码位于 modules，写入排队，在配置完成的同一连接中更新条目与任务 |
+| 参考                                                                                                                                                                                                                                                              | 看到的实践                                               | 衣叠的采用方式                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [Bluesky 的 features](https://github.com/bluesky-social/social-app/tree/main/src/features)、[原生 modules](https://github.com/bluesky-social/social-app/tree/main/modules)、[ALF token](https://github.com/bluesky-social/social-app/blob/main/src/alf/tokens.ts) | 功能代码聚合、原生扩展独立、统一样式 token               | 月历与导入各有组件和控制 hook；Swift 独立模块；统一颜色与字体          |
+| [Ignite 的 Text](https://github.com/infinitered/ignite/blob/master/boilerplate/app/components/Text.tsx)、[typography](https://github.com/infinitered/ignite/blob/master/boilerplate/app/theme/typography.ts)                                                      | 文字组件统一样式、语义化字体配置、可复用组件             | 使用轻量 Text/Button 与 body/heading/number/month 四种字体用途         |
+| [Expo Modules](https://docs.expo.dev/modules/get-started/)、[SQLite](https://docs.expo.dev/versions/v57.0.0/sdk/sqlite/)                                                                                                                                          | 本地模块自动链接、异步数据库、独立事务连接避免异步写交叉 | 原生源代码位于 modules，写入排队，在配置完成的同一连接中更新条目与任务 |
 
 社交 App 的服务器缓存、登录状态、多平台导航不是衣叠当前的需求，因此不整体搬入。当前用 React 的局部状态和一个服务装配点；出现实际跨功能共享需求后，再决定是否需要额外状态库。
 
@@ -91,16 +91,16 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 
 ## 性能约束与测量
 
-| 路径 | 当前实现 / 后续门槛 |
-| --- | --- |
-| 原图 | Swift 降采样至长边 2048 后进行 Vision；图片工作在串行队列和 autoreleasepool 中 |
-| 月历 | 最多 42 格，每格最多 3 层，使用长边 256 的贴纸缩略图；未完成记录使用最长边 512 的照片预览，缺失时显示占位并补建 |
-| 资源缓存 | 共享 RecordImage 与 entryImage；照片预览用不可变路径作为身份，贴纸用路径 + revision，缩略图/详情图路径分离，状态变化不复用照片缓存 |
-| 相册 | 分页 60 条；FlatList 只渲染窗口内图片，180×240 的本地预览；单批暂限 10 张，逐张准备，不并发解码原图 |
-| 记录 | 月历按日期索引只读取当前月；全部记录使用 (sort_key,id) 游标和对应索引，每页 60 条；队列更新只重读已载入 ID，保留翻页位置；插入/删除并发变更已有测试，大库真机验证待做 |
-| 堆叠 | 纯函数计算旋转后的完整包围盒并一次缩放；不逐帧随机位置 |
-| 主线程 | 不同步跑抠图，不同步执行数据库批量事务，不解码全量原图给月历 |
-| 基准 | 真机测 20 张不同照片的耗时/内存，50 张批量、1000 条月切换与滚动；记录设备与 Release 配置 |
+| 路径     | 当前实现 / 后续门槛                                                                                                                                                                                               |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 原图     | Swift 降采样至长边 2048 后进行 Vision；图片工作在串行队列和 autoreleasepool 中                                                                                                                                    |
+| 月历     | 最多 42 格，每格最多 3 层，使用长边 256 的贴纸缩略图；未完成记录使用最长边 512 的照片预览，缺失时显示占位并补建                                                                                                   |
+| 资源缓存 | 共享 RecordImage 与 entryImage；照片预览用不可变路径作为身份，贴纸用路径 + revision，缩略图/详情图路径分离，状态变化不复用照片缓存                                                                                |
+| 相册     | 分页 60 条；FlatList 只渲染窗口内图片，180×240 的本地预览；单批暂限 10 张，逐张准备，不并发解码原图                                                                                                               |
+| 记录     | 月历按日期索引只读取当前月；全部记录按日期倒序，使用 (date,sort_key,id) 游标每页 60 条，待归档排在有日期的记录之后；队列更新只重读已载入 ID，保留翻页位置；日期排序、同日稳定顺序和跨页已有测试，大库真机验证待做 |
+| 堆叠     | 纯函数计算旋转后的完整包围盒并一次缩放；不逐帧随机位置                                                                                                                                                            |
+| 主线程   | 不同步跑抠图，不同步执行数据库批量事务，不解码全量原图给月历                                                                                                                                                      |
+| 基准     | 真机测 20 张不同照片的耗时/内存，50 张批量、1000 条月切换与滚动；记录设备与 Release 配置                                                                                                                          |
 
 目前没有真实的帧率、耗时或内存峰值结论。`memo` 只用于月格等稳定输入组件；不把遍地 `useMemo` 当作性能保证。确认热点后才做缓存或更换列表库。
 

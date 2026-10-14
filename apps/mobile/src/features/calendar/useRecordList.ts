@@ -91,7 +91,7 @@ export function useRecordList(services: AppServices) {
     setError('');
     try {
       const rows = await services.repository.list({
-        before: { sortKey: last.sortKey, id: last.id },
+        before: { date: last.date, sortKey: last.sortKey, id: last.id },
       });
       if (version === state.version) {
         visible.current = [...visible.current, ...rows];

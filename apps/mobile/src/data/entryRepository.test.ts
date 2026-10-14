@@ -134,12 +134,72 @@ test('cursor pagination survives insertions and deletions between pages', async 
   const last = first[first.length - 1];
   await r.repository.remove(first[0].id, 0);
   await ready(r, 'newer');
-  const second = await r.repository.list({ before: { sortKey: last.sortKey, id: last.id } });
+  const second = await r.repository.list({
+    before: { date: last.date, sortKey: last.sortKey, id: last.id },
+  });
   assert.deepEqual(
     second.map((e) => e.id),
     ['entry-004', 'entry-003', 'entry-002', 'entry-001', 'entry-000'],
   );
   assert.equal(new Set([...first, ...second].map((e) => e.id)).size, 65);
+});
+
+test('all records sort by date descending and keep pending dates after dated pages', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+  await ready(r, 'older', '2026-06-01');
+  await ready(r, 'newer', '2026-06-03');
+  await ready(r, 'same-first', '2026-06-02');
+  await ready(r, 'same-last', '2026-06-02');
+  await ready(r, 'pending', null);
+
+  const firstPage = await r.repository.list();
+  assert.deepEqual(
+    firstPage.map((entry) => entry.id),
+    ['newer', 'same-last', 'same-first', 'older', 'pending'],
+  );
+  const secondPage = await r.repository.list({
+    before: {
+      date: firstPage[1].date,
+      sortKey: firstPage[1].sortKey,
+      id: firstPage[1].id,
+    },
+  });
+  assert.deepEqual(
+    secondPage.map((entry) => entry.id),
+    ['same-first', 'older', 'pending'],
+  );
+});
+
+test('date cursor crosses the page boundary into pending records without duplicates', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+  for (let i = 0; i < 61; i++) {
+    const date = `2026-06-${String(30 - Math.floor(i / 3)).padStart(2, '0')}`;
+    await ready(r, `dated-${String(i).padStart(2, '0')}`, date);
+  }
+  await ready(r, 'pending-a', null);
+  await ready(r, 'pending-b', null);
+  await ready(r, 'pending-c', null);
+
+  const first = await r.repository.list();
+  assert.equal(first.length, 60);
+  const second = await r.repository.list({
+    before: { date: first[59].date, sortKey: first[59].sortKey, id: first[59].id },
+  });
+  assert.equal(second.length, 4);
+  assert.deepEqual(
+    second.slice(1).map((entry) => entry.id),
+    ['pending-c', 'pending-b', 'pending-a'],
+  );
+  const last = second[second.length - 1];
+  assert.deepEqual(
+    await r.repository.list({ before: { date: last.date, sortKey: last.sortKey, id: last.id } }),
+    [],
+  );
+  assert.equal(new Set([...first, ...second].map((entry) => entry.id)).size, 64);
 });
 
 test('a duplicate import never deletes the original already owned by an existing record', async (t) => {

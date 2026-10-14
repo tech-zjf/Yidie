@@ -68,7 +68,7 @@ export function CalendarScreen({
         {model.entries.length === 0 && (
           <View style={styles.empty}>
             <Text>{copy.empty}</Text>
-            <Text style={styles.hint}>{copy.emptyHelp}</Text>
+            <Text style={styles.hint}>{copy.monthEmptyHelp}</Text>
           </View>
         )}
         {!!model.error && (

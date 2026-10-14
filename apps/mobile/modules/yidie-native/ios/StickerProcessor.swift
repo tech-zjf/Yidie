@@ -16,7 +16,16 @@ enum StickerProcessor {
           ] as CFDictionary) else { throw YidieError(code: "INVALID_IMAGE") }
     let handler = VNImageRequestHandler(cgImage: image, orientation: .up)
     let request = VNGenerateForegroundInstanceMaskRequest()
-    try handler.perform([request])
+    do { try handler.perform([request]) }
+    catch {
+      #if targetEnvironment(simulator)
+      let failure = error as NSError
+      if failure.domain == VNErrorDomain && failure.code == VNErrorCode.internalError.rawValue {
+        throw YidieError(code: "SIMULATOR_VISION_UNAVAILABLE")
+      }
+      #endif
+      throw error
+    }
     guard let observation = request.results?.first, !observation.allInstances.isEmpty else {
       throw YidieError(code: "NO_FOREGROUND")
     }
