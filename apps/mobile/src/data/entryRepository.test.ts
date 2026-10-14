@@ -17,7 +17,7 @@ test('fresh schema and v1 migration preserve records and recover interrupted job
     VALUES ('interrupted','unknown','originals/interrupted.source','running',0,1,'now','now');
     INSERT INTO processing_jobs VALUES ('interrupted','interrupted','running',0,1,NULL,'now','now')`);
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 3);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 4);
   assert.equal((await r.repository.get('interrupted'))?.status, 'paused');
   assert.equal(r.sqlite.prepare('SELECT state FROM processing_jobs').get()?.state, 'paused');
   assert.deepEqual(await r.repository.pendingDeletions(), []);

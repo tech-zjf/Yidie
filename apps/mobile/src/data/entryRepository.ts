@@ -1,11 +1,13 @@
 import type { Entry, EntryRepository } from '../domain/records';
 import { createEntryMutations } from './entryMutations';
+import { createImageRepository } from './imageRepository';
 import { createQueueRepository } from './queueRepository';
 import { createProcessingRepository } from './processingRepository';
 import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
 
 const select = `SELECT e.id, e.record_date AS date, e.date_source AS dateSource,
   e.original_path AS originalPath, e.sticker_path AS stickerPath, e.thumbnail_path AS thumbnailPath,
+  e.photo_preview_path AS photoPreviewPath,e.photo_width AS photoWidth,e.photo_height AS photoHeight,
   e.sticker_width AS width, e.sticker_height AS height, e.processing_state AS status,
   e.revision, e.sort_key AS sortKey, e.error_code AS errorCode,
   COALESCE(d.cover_entry_id=e.id,0) AS isCover
@@ -27,6 +29,7 @@ export function createEntryRepository(
     ...createProcessingRepository(write),
     ...createQueueRepository(db, write),
     ...createEntryMutations(write),
+    ...createImageRepository(write),
     async list(options = {}) {
       if (options.month) {
         if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(options.month)) throw new Error('INVALID_DATE');

@@ -8,6 +8,9 @@ export interface Asset {
 export interface ImportedPhoto {
   id: string;
   originalPath: string;
+  photoPreviewPath: string;
+  photoWidth: number;
+  photoHeight: number;
   contentHash: string;
   exifDateTime: string | null;
   createdAt: string | null;
@@ -25,6 +28,9 @@ export interface Entry {
   date: string | null;
   dateSource: DateSource;
   originalPath: string;
+  photoPreviewPath: string | null;
+  photoWidth: number | null;
+  photoHeight: number | null;
   stickerPath: string | null;
   thumbnailPath: string | null;
   width: number | null;
@@ -58,6 +64,8 @@ export interface EntryRepository extends ProcessingRepository {
   remove(id: string, expectedRevision: number): Promise<void>;
   pendingDeletions(): Promise<string[]>;
   acknowledgeDeletion(id: string): Promise<void>;
+  stageOrphanDeletions(ids: string[]): Promise<number>;
+  savePhotoPreview(id: string, preview: PhotoPreview): Promise<void>;
   findDuplicate(photo: ImportedPhoto): Promise<DuplicateEntry | null>;
   queueBatch(items: BatchItem[]): Promise<void>;
   claimNext(): Promise<ProcessingTicket | null>;
@@ -84,4 +92,13 @@ export interface QueueCounts {
 export interface PhotoProcessor {
   createSticker(id: string): Promise<Sticker>;
   discardImport(id: string): Promise<void>;
+}
+export interface PhotoPreview {
+  path: string;
+  width: number;
+  height: number;
+}
+export interface ImageFileStore {
+  listImportIDs(): Promise<string[]>;
+  createPhotoPreview(id: string): Promise<PhotoPreview>;
 }

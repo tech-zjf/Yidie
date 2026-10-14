@@ -255,10 +255,12 @@ test('v2 migration preserves archived entries and pending deletions while recove
       VALUES ('paused','unknown','originals/paused.source','paused',0,1,'now','now');
     INSERT INTO processing_jobs VALUES ('paused','paused','paused',0,1,NULL,'now','now');
     INSERT INTO file_deletions VALUES ('deleted','now');`);
-  await ready(r, 'ready');
-  await r.repository.setCover('ready', 0);
+  r.sqlite.exec(`INSERT INTO days(record_date) VALUES ('2026-06-12');
+    INSERT INTO entries(id,record_date,date_source,original_path,sticker_path,thumbnail_path,sticker_width,sticker_height,processing_state,layout_seed,sort_key,imported_at,updated_at)
+      VALUES ('ready','2026-06-12','user','originals/ready.source','stickers/ready.png','previews/ready.png',100,200,'ready',0,2,'now','now');
+    UPDATE days SET cover_entry_id='ready' WHERE record_date='2026-06-12';`);
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 3);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 4);
   assert.equal((await r.repository.get('ready'))?.isCover, true);
   assert.equal((await r.repository.get('ready'))?.status, 'ready');
   assert.equal(

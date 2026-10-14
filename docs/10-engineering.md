@@ -26,7 +26,7 @@ apps/mobile/
       calendar/                   # 页面、月格、当天弹层、控制 hook
       import/                     # 相册选择、批量确认、日期编辑、控制 hook
       processing/                 # 队列状态与暂停/继续入口
-      records/                    # 单条记录编辑、封面、重试、删除
+      records/                    # 单条记录编辑、封面、重试、删除、共享 RecordImage
     domain/
       datePolicy.ts               # 公历日期、EXIF/相册来源优先级
       stickerLayout.ts            # 稳定旋转、整组适配单格
@@ -35,12 +35,16 @@ apps/mobile/
       prepareBatch.ts             # 顺序读取、查重、取消与副本所有权
       processingQueue.ts          # 前台调度与状态订阅，不持有持久数据
       entryActions.ts             # 共用串行执行器、提交、重试与文件清理
+      entryImage.ts               # 图片资源选择与缓存身份
+      imageMaintenance.ts         # 启动对账、旧预览补建用例
+      serialWork.ts               # 图片工作串行协调
       records.ts                  # 数据类型与存储/处理接口
     data/
       entryRepository.ts          # 查询与仓库组合，按游标翻页
       entryMutations.ts           # 改日期、封面与删除事务
       processingRepository.ts     # 单张导入/重试/完成，按 revision 校验
       queueRepository.ts          # 批量事务、领取、暂停/恢复与计数
+      imageRepository.ts          # 图片归属判定、持久回收与预览元数据
       insertPhoto.ts              # 单张和批量共用的记录/任务写入
       initializeDatabase.ts       # 版本迁移与中断恢复
       openEntryRepository.ts      # Expo 连接适配与初始化
@@ -48,6 +52,7 @@ apps/mobile/
       writeTransaction.ts         # 专用连接、外键核验、事务与释放
       schema.generated.ts         # 由唯一 SQL 源生成，不手改
     ui/                           # 文字、按钮、文案、设计 token
+    preview/                      # 独立开发入口、固定场景、只读替身服务
   modules/yidie-native/
     index.ts                      # 类型化的桥接边界
     ios/
@@ -55,6 +60,8 @@ apps/mobile/
       LocalPhotos.swift           # PhotoKit，所有读取禁止网络
       StickerProcessor.swift      # Vision、白边和缩略图
       NativeFileStore.swift       # 自有目录、备份排除、资源 id 校验
+      ImageFileCatalog.swift      # 规范图片文件清单与受限删除
+      PhotoPreview.swift          # 从自有原图生成最长边 512px 预览
 ```
 
 - `domain` 不依赖 React、Expo、界面、数据库或 Swift；测试不需要模拟器。
@@ -72,11 +79,11 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 
 检查 SDK57 的 `SQLiteDatabase.ts` 后确认，`withExclusiveTransactionAsync` 会创建新连接；不能认为原连接的 `foreign_keys=ON` 会继承。衣叠统一使用 `writeTransaction.ts`：新连接 → 开启并核验外键、设置 busy_timeout → BEGIN IMMEDIATE → 执行用例 → COMMIT/ROLLBACK → 关闭连接。SQL 始终传参数，不插值用户输入。这个细节有独立 SQLite 回归检查。
 
-批量准备先顺序复制原图到自有目录，再显示日期分组和查重结果。确认后一个事务复查重复、写入全部记录和任务，提交后才执行 Vision。事务失败时副本仍归确认页管理，可调整后再提交；关闭确认页只清理没有持久归属的副本，未知归属时保留。处理失败保留已归档原图与失败状态；导入前崩溃的孤儿文件对账尚未实现。
+批量准备先顺序复制原图到自有目录，再显示日期分组和查重结果。确认后一个事务复查重复、写入全部记录和任务，提交后才执行 Vision。事务失败时副本仍归确认页管理，可调整后再提交；关闭确认页只清理没有持久归属的副本，未知归属时保留。处理失败保留已归档原图与失败状态。冷启动在开放导入前对账：原生层只列出四个图片目录中的规范 UUID 普通文件；一次数据库事务读取已有 ID/路径引用，只将确认无主的 ID 写入 file_deletions。读取或归属核验失败时不授权新删除，下次启动重试。一次读取归属避免每张文件重复全表扫描；大库启动耗时仍须设备测量。
 
 队列是服务装配出的单例，用 useSyncExternalStore 提供瞬时界面快照；SQL 是持久任务的事实来源。批处理、手动重试与文件删除共用串行执行器，UI 不调用 SQL。重启将未完成项标记 paused/interrupted；回前台只恢复 background 暂停项，主动暂停与重启恢复需确认。恢复/重试递增 revision，完成/失败只接受相同 revision；queued/running 不允许编辑或删除。数据库无法保存结果时停止调度并提示重启，保留可恢复的记录。
 
-删除先在同一事务中移除记录、清除封面与关联任务，并写入 file_deletions；提交后才清理 App 自有文件。文件删除失败保留任务，启动时幂等继续。图片处理和文件删除共用串行 worker，避免删除后又生成旧贴纸；系统相册原图不参与删除。
+删除先在同一事务中移除记录、清除封面与关联任务，并写入 file_deletions；提交后才清理 App 自有文件。文件删除失败保留任务，启动时幂等继续。图片处理、旧预览补建和文件删除共用串行 worker，避免删除后又生成旧贴纸；系统相册原图不参与删除。
 
 `specs/schema.sql` 是 v1 基线，后续变更存放 `specs/migrations/*.sql`。由 build_schema.py 生成运行时模块，已发布的迁移不可改写。升级和版本号更新在同一事务中执行；拒绝打开版本过新的库。
 
@@ -87,7 +94,8 @@ ESLint 强制检查领域层和界面层的依赖边界、循环依赖；TypeScr
 | 路径 | 当前实现 / 后续门槛 |
 | --- | --- |
 | 原图 | Swift 降采样至长边 2048 后进行 Vision；图片工作在串行队列和 autoreleasepool 中 |
-| 月历 | 最多 42 格，每格最多 3 层，使用长边 256 的贴纸缩略图 |
+| 月历 | 最多 42 格，每格最多 3 层，使用长边 256 的贴纸缩略图；未完成记录使用最长边 512 的照片预览，缺失时显示占位并补建 |
+| 资源缓存 | 共享 RecordImage 与 entryImage；照片预览用不可变路径作为身份，贴纸用路径 + revision，缩略图/详情图路径分离，状态变化不复用照片缓存 |
 | 相册 | 分页 60 条；FlatList 只渲染窗口内图片，180×240 的本地预览；单批暂限 10 张，逐张准备，不并发解码原图 |
 | 记录 | 月历按日期索引只读取当前月；全部记录使用 (sort_key,id) 游标和对应索引，每页 60 条；队列更新只重读已载入 ID，保留翻页位置；插入/删除并发变更已有测试，大库真机验证待做 |
 | 堆叠 | 纯函数计算旋转后的完整包围盒并一次缩放；不逐帧随机位置 |

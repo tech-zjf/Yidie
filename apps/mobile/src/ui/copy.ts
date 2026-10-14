@@ -60,6 +60,7 @@ export const copy = {
   deleteTitle: '删除这张穿搭记录？',
   deleteHelp: '会删除衣叠里的照片副本与贴纸。系统相册中的原照片会保留。',
   cleanupPending: '记录已删除，文件清理暂未完成；下次打开衣叠时会继续清理。',
+  maintenancePending: '部分临时文件暂未整理，下次打开时会重试。已有记录可以继续查看。',
   recordState: {
     ready: '贴纸已保存',
     failed: '处理失败，原照片已保留',
@@ -100,6 +101,7 @@ export const copy = {
     restartHelp: '队列暂时停止。请关闭并重新打开衣叠后继续，原照片仍保留在本机。',
   },
   errors: {
+    PREVIEW_READ_ONLY: '这是界面预览，不会修改或读取真实照片。',
     PHOTO_PERMISSION_DENIED: '未获得照片访问权限，可在系统设置中调整。',
     SOURCE_NOT_LOCAL: '照片还没下载到手机。请先在系统相册下载原图，再回来导入。',
     SOURCE_UNAVAILABLE: '这张照片暂时不可读取，可能已移除或权限发生变化。',

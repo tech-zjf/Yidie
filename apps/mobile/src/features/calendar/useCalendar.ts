@@ -4,11 +4,14 @@ import type { AppServices } from '../../services';
 import type { Entry } from '../../domain/records';
 import { shiftMonth } from '../../domain/datePolicy';
 import { copy } from '../../ui/copy';
-export function useCalendar(services: AppServices) {
-  const [month, setMonth] = useState(() => ({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-  }));
+export function useCalendar(services: AppServices, initialMonth?: { year: number; month: number }) {
+  const [month, setMonth] = useState(
+    () =>
+      initialMonth ?? {
+        year: new Date().getFullYear(),
+        month: new Date().getMonth() + 1,
+      },
+  );
   const [entries, setEntries] = useState<Entry[]>([]),
     [error, setError] = useState('');
   const [day, setDay] = useState<string | null>(null),

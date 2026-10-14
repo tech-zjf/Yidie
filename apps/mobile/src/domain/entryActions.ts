@@ -1,16 +1,15 @@
 import { importPhoto, processEntry } from './importPhoto';
 import type { DateProposal } from './datePolicy';
 import { createProcessingQueue } from './processingQueue';
+import { createSerialWork } from './serialWork';
 import type { BatchItem, EntryRepository, ImportedPhoto, PhotoProcessor } from './records';
 
 /** One worker for image creation and deletion, so cleanup cannot race a late output. */
-export function createEntryActions(repository: EntryRepository, processor: PhotoProcessor) {
-  let tail: Promise<unknown> = Promise.resolve();
-  function enqueue<T>(action: () => Promise<T>): Promise<T> {
-    const pending = tail.then(action);
-    tail = pending.catch(() => {});
-    return pending;
-  }
+export function createEntryActions(
+  repository: EntryRepository,
+  processor: PhotoProcessor,
+  enqueue = createSerialWork(),
+) {
   const queue = createProcessingQueue(repository, processor, enqueue);
   async function clean(id: string): Promise<boolean> {
     try {
@@ -35,7 +34,7 @@ export function createEntryActions(repository: EntryRepository, processor: Photo
           try {
             if (!(await repository.get(photo.id))) await processor.discardImport(photo.id);
           } catch {
-            /* Preserve uncertain ownership. Startup orphan reconciliation is a later stage. */
+            /* Preserve uncertain ownership; cold-start reconciliation retries safely. */
           }
         }
       }),

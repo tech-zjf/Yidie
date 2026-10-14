@@ -79,9 +79,18 @@ enum LocalPhotos {
               let exif = properties?[kCGImagePropertyExifDictionary] as? [CFString: Any]
               let id = UUID().uuidString
               let url = try NativeFileStore.file(id, kind: "original")
-              try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+              let preview: PhotoPreview.Result
+              do {
+                try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                preview = try PhotoPreview.create(id: id)
+              } catch {
+                // Import has not crossed the bridge; no database record can own this UUID yet.
+                try? NativeFileStore.discard(id)
+                throw error
+              }
               completion(.success([
                 "id": id, "originalPath": "originals/\(id).source",
+                "photoPreviewPath": preview.path, "photoWidth": preview.width, "photoHeight": preview.height,
                 "contentHash": SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined(),
                 "exifDateTime": exif?[kCGImagePropertyExifDateTimeOriginal] as? String as Any? ?? NSNull(),
                 "createdAt": asset.creationDate.map { ISO8601DateFormatter().string(from: $0) } as Any? ?? NSNull()

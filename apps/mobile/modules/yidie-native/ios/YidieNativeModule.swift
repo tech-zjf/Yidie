@@ -49,6 +49,20 @@ public class YidieNativeModule: Module {
         }
       }
     }
+    AsyncFunction("createPhotoPreview") { (id: String, promise: Promise) in
+      NativeFileStore.queue.async {
+        autoreleasepool {
+          do { promise.resolve(try PhotoPreview.create(id: id).dictionary) }
+          catch { self.reject(error, promise) }
+        }
+      }
+    }
+    AsyncFunction("listImportIDs") { (promise: Promise) in
+      NativeFileStore.queue.async {
+        do { promise.resolve(try ImageFileCatalog(root: NativeFileStore.root()).importIDs()) }
+        catch { self.reject(error, promise) }
+      }
+    }
     AsyncFunction("discardImport") { (id: String, promise: Promise) in
       NativeFileStore.queue.async {
         do { try NativeFileStore.discard(id); promise.resolve(nil) }

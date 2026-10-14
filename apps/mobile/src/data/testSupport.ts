@@ -35,6 +35,9 @@ export function photo(id: string): ImportedPhoto {
   return {
     id,
     originalPath: `originals/${id}.source`,
+    photoPreviewPath: `photo-previews/${id}.jpg`,
+    photoWidth: 300,
+    photoHeight: 512,
     contentHash: createHash('sha256').update(id).digest('hex'),
     exifDateTime: null,
     createdAt: null,

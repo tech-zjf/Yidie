@@ -4,6 +4,7 @@
 export type { DateProposal, DateSource } from '../apps/mobile/src/domain/datePolicy';
 export type { Asset, ImportedPhoto, Sticker, Entry, EntryRepository, PhotoProcessor } from '../apps/mobile/src/domain/records';
 export type { BatchItem, DuplicateEntry, PauseReason, QueueCounts } from '../apps/mobile/src/domain/records';
+export type { PhotoPreview, ImageFileStore } from '../apps/mobile/src/domain/records';
 export type { LocalModule as YidieNative } from '../apps/mobile/modules/yidie-native';
 export type RecordDate = string; // Validated Gregorian YYYY-MM-DD.
 

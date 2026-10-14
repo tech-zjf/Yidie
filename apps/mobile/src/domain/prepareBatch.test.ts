@@ -12,6 +12,9 @@ const photo = (id: string): ImportedPhoto => ({
   id,
   contentHash: id,
   originalPath: `${id}.source`,
+  photoPreviewPath: `photo-previews/${id}.jpg`,
+  photoWidth: 300,
+  photoHeight: 512,
   createdAt: null,
   exifDateTime: '2026:06:12 23:30:00',
 });

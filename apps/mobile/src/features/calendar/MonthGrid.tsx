@@ -1,6 +1,8 @@
 import { memo } from 'react';
 import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { RecordImage } from '../records/RecordImage';
+import { entryImage } from '../../domain/entryImage';
+import type { AppServices } from '../../services';
 import { monthCells, localDate } from '../../domain/datePolicy';
 import { stickerLayout } from '../../domain/stickerLayout';
 import type { Entry } from '../../domain/records';
@@ -12,20 +14,21 @@ export const MonthGrid = memo(function MonthGrid({
   year,
   month,
   entries,
-  rootUri,
+  services,
   onDay,
+  today = localDate(),
 }: {
   year: number;
   month: number;
   entries: Entry[];
-  rootUri: string;
+  services: AppServices;
   onDay: (date: string) => void;
+  today?: string;
 }) {
   const { width, fontScale } = useWindowDimensions();
   const cells = monthCells(year, month),
     cellWidth = (width - (width <= 360 ? 12 : 32)) / 7;
   const cellHeight = Math.max(cells.length === 42 ? 66 : 82, 44 * fontScale);
-  const today = localDate();
   const days = new Map<string, Entry[]>();
   for (const entry of entries) {
     if (!entry.date) continue;
@@ -49,7 +52,12 @@ export const MonthGrid = memo(function MonthGrid({
           const day = days.get(date) ?? [];
           const visible = day.slice(0, 3);
           const layout = stickerLayout(
-            visible.map((e) => ({ width: e.width ?? 1, height: e.height ?? 1.6 })),
+            visible.map((e) => {
+              const resource = entryImage(e, 'thumbnail');
+              return resource
+                ? { width: resource.width, height: resource.height }
+                : { width: 1, height: 1.6 };
+            }),
             { width: cellWidth, height: cellHeight },
           );
           return (
@@ -74,14 +82,10 @@ export const MonthGrid = memo(function MonthGrid({
                 </Text>
               ) : (
                 visible.map((entry, i) => (
-                  <Image
+                  <RecordImage
                     key={entry.id}
-                    source={{
-                      uri: rootUri + (entry.thumbnailPath ?? entry.originalPath),
-                      cacheKey: `${entry.id}:${entry.revision}:thumbnail`,
-                    }}
-                    contentFit="contain"
-                    accessible={false}
+                    entry={entry}
+                    services={services}
                     style={{
                       position: 'absolute',
                       left: layout[i].x,

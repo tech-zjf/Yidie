@@ -13,8 +13,16 @@ import { useCalendar } from './useCalendar';
 import { PhotoImportSheet } from '../import/PhotoImportSheet';
 import { QueuePanel } from '../processing/QueuePanel';
 
-export function CalendarScreen({ services }: { services: AppServices }) {
-  const model = useCalendar(services),
+export function CalendarScreen({
+  services,
+  initialMonth,
+  today,
+}: {
+  services: AppServices;
+  initialMonth?: { year: number; month: number };
+  today?: string;
+}) {
+  const model = useCalendar(services, initialMonth),
     { width } = useWindowDimensions();
   const nextImportDate = useRef<string | undefined>(undefined);
   const padding = width <= 360 ? 6 : 16;
@@ -53,7 +61,8 @@ export function CalendarScreen({ services }: { services: AppServices }) {
         <MonthGrid
           {...model.month}
           entries={model.entries}
-          rootUri={services.rootUri}
+          services={services}
+          today={today}
           onDay={model.setDay}
         />
         {model.entries.length === 0 && (
@@ -67,6 +76,7 @@ export function CalendarScreen({ services }: { services: AppServices }) {
             {model.error}
           </Text>
         )}
+        {services.maintenancePending && <Text style={styles.hint}>{copy.maintenancePending}</Text>}
       </ScrollView>
       <QueuePanel services={services} />
       <View style={styles.footer}>

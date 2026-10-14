@@ -12,19 +12,26 @@ enum NativeFileStore {
     let support = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
     var root = support.appendingPathComponent("Yidie", isDirectory: true)
     try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    try validateDirectory(root)
     var values = URLResourceValues()
     values.isExcludedFromBackup = true
     try root.setResourceValues(values)
-    for name in ["originals", "stickers", "previews", "database"] {
+    for name in ["originals", "stickers", "previews", "photo-previews", "database"] {
       var child = root.appendingPathComponent(name, isDirectory: true)
       try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+      try validateDirectory(child)
       try child.setResourceValues(values)
     }
     return root
   }
 
+  private static func validateDirectory(_ url: URL) throws {
+    let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
+    guard values.isDirectory == true, values.isSymbolicLink != true else { throw YidieError(code: "INVALID_RESOURCE") }
+  }
+
   static func validateID(_ id: String) throws {
-    guard UUID(uuidString: id) != nil else { throw YidieError(code: "INVALID_RESOURCE") }
+    guard UUID(uuidString: id)?.uuidString == id else { throw YidieError(code: "INVALID_RESOURCE") }
   }
 
   static func file(_ id: String, kind: String) throws -> URL {
@@ -34,6 +41,7 @@ enum NativeFileStore {
     case "original": relative = "originals/\(id).source"
     case "sticker": relative = "stickers/\(id).png"
     case "thumbnail": relative = "previews/\(id).png"
+    case "photoPreview": relative = "photo-previews/\(id).jpg"
     default: throw YidieError(code: "INVALID_RESOURCE")
     }
     return try root().appendingPathComponent(relative)
@@ -41,9 +49,6 @@ enum NativeFileStore {
 
   static func discard(_ id: String) throws {
     try validateID(id)
-    for kind in ["original", "sticker", "thumbnail"] {
-      let url = try file(id, kind: kind)
-      if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
-    }
+    try ImageFileCatalog(root: root()).remove(id)
   }
 }

@@ -18,9 +18,9 @@ export async function insertPhoto(
   const now = new Date().toISOString();
   await tx.runAsync(
     `INSERT INTO entries
-    (id,record_date,date_source,source_datetime,suggested_timezone,source_asset_id,content_hash,original_path,
+    (id,record_date,date_source,source_datetime,suggested_timezone,source_asset_id,content_hash,original_path,photo_preview_path,photo_width,photo_height,
     processing_state,layout_seed,sort_key,imported_at,updated_at)
-    VALUES (?,?,?,?,?,?,?,?,?,0,?,?,?)`,
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?)`,
     photo.id,
     date.date,
     date.source,
@@ -29,6 +29,9 @@ export async function insertPhoto(
     photo.sourceAssetId ?? null,
     photo.contentHash,
     photo.originalPath,
+    photo.photoPreviewPath,
+    photo.photoWidth,
+    photo.photoHeight,
     state,
     Date.now(),
     now,

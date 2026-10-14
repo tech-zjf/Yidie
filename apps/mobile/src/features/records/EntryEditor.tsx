@@ -1,5 +1,5 @@
 import { Alert, KeyboardAvoidingView, ScrollView, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
+import { RecordImage } from './RecordImage';
 import type { Entry } from '../../domain/records';
 import type { AppServices } from '../../services';
 import { Button } from '../../ui/Button';
@@ -38,12 +38,10 @@ export function EntryEditor({
           <Text accessibilityRole="alert">{model.notice}</Text>
         ) : (
           <>
-            <Image
-              source={{
-                uri: services.rootUri + (current.stickerPath ?? current.originalPath),
-                cacheKey: `${current.id}:${current.revision}:detail`,
-              }}
-              contentFit="contain"
+            <RecordImage
+              entry={current}
+              services={services}
+              variant="detail"
               style={styles.image}
               accessibilityLabel={copy.outfitPhoto}
             />

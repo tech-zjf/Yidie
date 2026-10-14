@@ -6,6 +6,9 @@ const draft = (id: string, date: string | null): PreparedDraft => ({
   photo: {
     id,
     originalPath: `originals/${id}.source`,
+    photoPreviewPath: `photo-previews/${id}.jpg`,
+    photoWidth: 300,
+    photoHeight: 512,
     contentHash: id,
     createdAt: null,
     exifDateTime: null,

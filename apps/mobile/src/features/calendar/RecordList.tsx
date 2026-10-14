@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
+import { RecordImage } from '../records/RecordImage';
 import type { AppServices } from '../../services';
 import { useRecordList } from './useRecordList';
 import { Text } from '../../ui/Text';
@@ -64,12 +64,10 @@ export function RecordList({
                 accessibilityRole="button"
                 accessibilityLabel={`${item.date ?? copy.pending}，${copy.editRecord}`}
               >
-                <Image
-                  source={{
-                    uri: services.rootUri + (item.thumbnailPath ?? item.originalPath),
-                    cacheKey: `${item.id}:${item.revision}:thumbnail`,
-                  }}
-                  contentFit="contain"
+                <RecordImage
+                  entry={item}
+                  services={services}
+                  variant="thumbnail"
                   style={{ width: 96, height: 130 }}
                 />
                 <View style={{ flex: 1, gap: 8 }}>

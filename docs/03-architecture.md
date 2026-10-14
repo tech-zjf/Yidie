@@ -25,7 +25,7 @@ Data                 Native Expo Module
 | --- | --- | --- |
 | 路由与页面 | AppRoot + TypeScript + 原生 Modal | 当前只有月历与弹层，更多独立页面出现时再引入 Expo Router，不先搭复杂 Tab |
 | 图片显示 | expo-image，使用本地缩略图 | 月历不解码原始 48MP 图片 |
-| 文件与数据库 | expo-file-system、expo-sqlite | 存相对路径，不能持久化安装沙盒的绝对前缀 |
+| 文件与数据库 | Swift 文件模块、expo-sqlite | 存相对路径，不能持久化安装沙盒的绝对前缀 |
 | 动效和手势 | Reanimated、Gesture Handler；底部弹层候选 @gorhom/bottom-sheet | 创建工程时核对当前 SDK/新架构兼容；必要时自建轻量 Modal + pager |
 | 照片选择 | PhotoKit 原生权限与本地资产列表 | 所有缩略图/原图请求禁止网络；不使用会自动下载原图的通用 picker |
 | 抠图 | Apple Vision，Swift Expo Module | iOS 17+ 起评估；系统和设备支持检查；不是 JS 抠图库 |
@@ -37,7 +37,7 @@ Data                 Native Expo Module
 ## 一张照片的处理链路
 
 1. 获取用户明确选择的资源，提取元数据。先判断原照片是否可在本机读取。对 PhotoKit 请求设置 `isNetworkAccessAllowed=false`，仅在本地存在时继续。
-2. 在临时目录复制原图并计算内容摘要，校验文件可读。原子移动到持久目录，再在事务中写 entry 与 job；若事务失败，先确认没有持久记录拥有该资源，再移除本次新增文件；归属无法确认时保留文件。
+2. 在自有目录原子写入原图并计算内容摘要，校验文件可读；生成最长边 512px 的照片预览及尺寸，供等待/失败界面使用。日期确认后再在事务中写 entry 与 job；若事务失败，先确认没有持久记录拥有该资源，再移除本次新增文件；归属无法确认时保留文件。
 3. 纠正 EXIF orientation；按目标分辨率解码，用 Vision 的 `VNGenerateForegroundInstanceMaskRequest` 得到前景实例。验证阶段保留所有前景实例；后续根据真机效果实现主体选择，当前未提供自动主要人物识别。
 4. 获取主体 alpha mask，合成人像透明图。主体应包含外套、裙摆、包等，不能仅使用脸部或人像半身裁剪替代全身抠图。
 5. 对 alpha 膨胀得到外轮廓，在其下绘制白色底层，再覆盖原主体，生成白边；阴影作为布局效果处理。裁剪到主体边界，并补足白边和阴影空间。
@@ -57,13 +57,13 @@ Apple 框架没有按次调用账单，无需自托管推理服务器。具体�
 
 ## 日期与数据
 
-数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [文件清理迁移](../specs/migrations/002-file-deletions.sql)、[队列迁移](../specs/migrations/003-processing-queue.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
+数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [文件清理迁移](../specs/migrations/002-file-deletions.sql)、[队列迁移](../specs/migrations/003-processing-queue.sql)、[照片预览迁移](../specs/migrations/004-photo-previews.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
 
 EXIF 日期含偏移时使用原本日历日期；不含偏移时保留原字面日期。相册 creationDate 只有绝对时间时，用导入时确定的时区生成建议并由用户确认。不要用 `toISOString().slice(0,10)` 处理本地日期，跨午夜会归错天。
 
 `record_date=null` 表示待归档。一张 entry 对应一次用户记录；相同源图允许用户确认后出现在多天，因此 content_hash 不是全库唯一约束。默认防重复在导入用例中完成。同一天的 cover 使用外键及触发器保证归属一致；移动或删除封面后自动回到默认排序首张。
 
-数据库启用 foreign_keys、WAL，迁移有版本。涉及照片移动、封面和日期变更使用串行写入及事务。文件与数据库无法组成单一系统事务，所以采用临时写入、原子改名、事务提交和启动时对账；只清理由 manifest 标识的孤儿文件，不扫描删除用户相册。
+数据库启用 foreign_keys、WAL，迁移有版本。涉及照片移动、封面和日期变更使用串行写入及事务。文件与数据库无法组成单一系统事务，所以采用临时写入、原子改名、事务提交和启动时对账；当前启动对账只处理自有 originals、stickers、previews、photo-previews 四个目录中规范 UUID 命名的普通图片文件；数据库记录 ID 与精确路径引用均无归属时才登记持久删除任务。目录或归属读取失败时保留文件；未知文件、符号链接、数据库和用户相册不参与回收。备份恢复的 manifest 与阶段标记属于后续独立流程。
 
 ## 布局、动画和导出
 

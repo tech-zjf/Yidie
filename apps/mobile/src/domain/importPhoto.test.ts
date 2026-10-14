@@ -11,6 +11,9 @@ import type {
 const photo: ImportedPhoto = {
   id: 'sample',
   originalPath: 'originals/sample.source',
+  photoPreviewPath: 'photo-previews/sample.jpg',
+  photoWidth: 300,
+  photoHeight: 512,
   contentHash: 'hash',
   exifDateTime: null,
   createdAt: null,

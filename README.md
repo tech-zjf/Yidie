@@ -6,7 +6,7 @@
 
 月历有照片时直接显示贴纸，不叠加日期数字和张数角标；空白格才显示数字，准确日期与总张数在点击后的弹层中展示。
 
-**当前进度：Expo iOS 工程、日期/封面/删除/重试、批量导入确认与持久处理队列已实现代码。37 项领域与 SQLite 测试、代码检查和 JS 打包通过；已有 Swift 核心类型检查记录；完整原生编译与真机验证待系统升级后完成。** 设计原型中的照片是生成的示例素材，导入、抠图、保存和备份操作为演示。研究日期为 2026-10-13。
+**当前进度：Expo iOS 工程、日期/封面/删除/重试、批量导入确认与持久处理队列已实现代码。45 项领域与 SQLite 测试、代码检查和 JS 打包通过；图片预览、缓存切换和冷启动文件回收已补齐，Swift 文件测试与核心类型检查通过；完整原生编译与真机验证待系统升级后完成。** 设计原型中的照片是生成的示例素材，导入、抠图、保存和备份操作为演示。研究日期为 2026-10-13。
 
 公开仓库：[tech-zjf/Yidie](https://github.com/tech-zjf/Yidie) · [本地构建](apps/mobile/README.md) · [已验证/未验证](docs/09-build-log.md)
 
@@ -14,6 +14,7 @@
 
 - [交互原型](design/index.html)：11 个设计入口，点击日期可展开，顶部按钮切换各模块。
 - [界面总览](design/overview.html)：并排查看主要页面，适合设计评审。
+- [RN 开发预览](docs/14-ui-preview.md)：复用 App 组件的固定场景，不读写真实照片；尚未取得原生运行截图。
 - [月历截图](design/screenshots/calendar.png)、[当天展开截图](design/screenshots/day.png)。
 
 上述 HTML 可以直接在浏览器中打开，不需要安装依赖或联网。修改 `design/prototype.source.html` 后运行 `python3 scripts/build_preview.py` 重建。预览页面不是 App 的代码基础，正式 UI 使用 React Native 实现。
@@ -46,6 +47,8 @@
 11. [模块架构与工程约定](docs/10-engineering.md)
 12. [阶段 3 代码复审](docs/11-stage3-review.md)
 13. [阶段 4 批量导入复审](docs/12-stage4-review.md)
+14. [图片与文件恢复复审](docs/13-image-recovery-review.md)
+15. [App UI 预览场景](docs/14-ui-preview.md)
 
 ## 下一步从哪里开始
 

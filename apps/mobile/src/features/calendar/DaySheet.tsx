@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FlatList, Modal, StyleSheet, View, useWindowDimensions } from 'react-native';
-import { Image } from 'expo-image';
+import { RecordImage } from '../records/RecordImage';
 import type { Entry } from '../../domain/records';
 import { Text } from '../../ui/Text';
 import { Button } from '../../ui/Button';
@@ -67,12 +67,10 @@ export function DaySheet({
             style={{ flexGrow: 0 }}
             renderItem={({ item }) => (
               <View style={[styles.card, { width: itemWidth }]}>
-                <Image
-                  source={{
-                    uri: services.rootUri + (item.stickerPath ?? item.originalPath),
-                    cacheKey: `${item.id}:${item.revision}:detail`,
-                  }}
-                  contentFit="contain"
+                <RecordImage
+                  entry={item}
+                  services={services}
+                  variant="detail"
                   style={{ width: '100%', height: 340 }}
                 />
                 {item.status !== 'ready' && (
