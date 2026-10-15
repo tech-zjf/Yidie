@@ -30,6 +30,11 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 | P1 | Supported-size and accessibility pass | Smallest supported iPhone, 4/5/6-week months, large text, VoiceOver focus/labels, reduced motion, no unintended scroll indicator or clipped controls |
 | P1 | Physical-device photo acceptance | Only a photo deliberately selected by the user; validate orientation, Vision cutout and outline, offline behavior, failure recovery, responsiveness and memory |
 | P2 | Public demo and launch material | Capture only verified flows with synthetic or explicitly consented material; publish no message on X without a separate user instruction |
+| P2 | Dependency security recheck | Current lockfile includes two vulnerable transitive build-tool dependencies with no upstream patched release yet; npm audit could not reach the registry in this session. Recheck when connectivity and fixes are available; do not apply an unreviewed override |
+
+### Build-tool security advisories
+
+The current lockfile resolves `node-forge@1.4.0` through `expo > @expo/cli > @expo/code-signing-certificates`; GitHub's [CVE-2026-85393 advisory](https://github.com/advisories/GHSA-86w9-cpqp-85rv) lists versions through 1.4.0 as affected and no patched version. It resolves `braces@3.0.3` through `expo > @expo/metro > metro-file-map > micromatch@4.0.8`; GitHub's [CVE-2026-93687 advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) lists 3.0.3 as affected and no patched version. These are Expo/Metro development and build-tool dependencies; neither package name appears in the exported application JavaScript bundle. This limits exposure to local tooling that processes project or certificate inputs, but does not remove the advisories. An `npm audit --json` recheck on 2026-10-15 could not reach `registry.npmjs.org` because DNS resolution failed, so it did not provide a fresh complete audit report.
 
 ## Verified in this worktree
 
