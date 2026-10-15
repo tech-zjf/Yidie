@@ -80,7 +80,7 @@ output=$(xcrun simctl launch --console --terminate-running-process "$simulator_u
   exit 1
 }
 printf '%s\n' "$output"
-printf '%s\n' "$output" | rg -q 'PASS sticker geometry and Core Image pixel checks' || {
+printf '%s\n' "$output" | grep -Fq 'PASS sticker geometry and Core Image pixel checks' || {
   printf '%s\n' 'Simulator process exited without the expected renderer-test success marker.' >&2
   exit 1
 }
