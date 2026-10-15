@@ -1,4 +1,5 @@
 import type { Entry, EntryRepository } from '../domain/records';
+import { createSerialWork } from '../domain/serialWork';
 import { createEntryMutations } from './entryMutations';
 import { createImageRepository } from './imageRepository';
 import { createQueueRepository } from './queueRepository';
@@ -101,18 +102,13 @@ export function createEntryRepository(
  * This prevents native statement execution/finalization and connection close from overlapping.
  */
 function serializeRepositoryOperations(repository: EntryRepository): EntryRepository {
-  let tail: Promise<void> = Promise.resolve();
+  const enqueue = createSerialWork();
   let closing = false;
   let closePromise: Promise<void> | undefined;
 
   function run<T>(operation: () => Promise<T>): Promise<T> {
     if (closing) return Promise.reject(new Error('DATABASE_CLOSED'));
-    const pending = tail.then(operation);
-    tail = pending.then(
-      () => undefined,
-      () => undefined,
-    );
-    return pending;
+    return enqueue(operation);
   }
 
   return {
@@ -140,7 +136,7 @@ function serializeRepositoryOperations(repository: EntryRepository): EntryReposi
     close() {
       if (closePromise) return closePromise;
       closing = true;
-      closePromise = tail.then(() => repository.close());
+      closePromise = enqueue(() => repository.close());
       return closePromise;
     },
   };
