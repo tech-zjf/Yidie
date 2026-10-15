@@ -2,6 +2,8 @@
 
 Updated 2026-10-15. This file records durable implementation and verification facts. The live feature gates are in [TODO.md](../TODO.md) and the [readiness review](16-readiness-review.md); this is not a release approval.
 
+- **2026-10-15 — Files backup restore round-trip and URL fix:** on the dedicated iOS 26.1 Device Hub simulator, saved the generated 82 KB empty `.yidie` backup through the Files save picker, selected it from Recent Items, reviewed the confirmation showing 0 records and 0 image files, and completed restore. The app closed as part of the restore and relaunched successfully to the empty October 2026 calendar. The first attempt surfaced that document-provider package URLs may not carry `hasDirectoryPath`; restore now delegates the authoritative filesystem type check to package validation, and the native test covers this URL shape. No Photos picker, physical iPhone, user photos, Developer Mode, signing identity, certificate, or keychain was touched. Corrupt-package UI rejection and delivered share payloads remain unverified.
+
 ## Milestones
 
 - **2026-10-13 — foundation:** Expo SDK 57 / React Native 0.86 / TypeScript app, modular domain/data/features layers, local SQLite, native PhotoKit/Vision module, date rules, and UI prototype were established.
@@ -39,7 +41,7 @@ For the current development source:
 ## Boundaries that remain
 
 - No physical iPhone was changed or accessed in the latest implementation. Real photos were not read for this feature.
-- Backup/restore exists in source and deterministic native tests pass. The document picker opens and cancels cleanly, but no backup has been saved or restored through the UI. Sticker/month sharing opens and cancels cleanly, but no destination was selected and delivered image content was not checked. Uninstalling without a verified backup can remove Yidie's local records and imported copies.
+- Backup/restore exists in source, deterministic native tests pass, and an empty Simulator backup has passed the Files save/restore round-trip. A populated real-library backup has not been tested; malformed-package UI rejection remains unverified. Sticker/month sharing opens and cancels cleanly, but no destination was selected and delivered image content was not checked. Uninstalling without a verified backup can remove Yidie's local records and imported copies.
 - Xcode regenerated the ignored local `apps/mobile/ios` project for the current Expo configuration; it remains untracked/ignored and is not part of the repository changes. The latest generic Simulator Release build used code signing disabled and touched no physical device, certificate, or keychain state.
 - Real-device Vision quality, physical-device offline behavior, accessibility, low-storage recovery and performance are not accepted.
 - The detailed, dated developer-signing, device-safety and rollback record is in [the device test runbook](15-device-test-safety-runbook.md). It records prior user-authorized actions and must be updated if any security state changes.

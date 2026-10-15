@@ -7,7 +7,7 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** The populated calendar and local sticker-outline preview/save have been exercised in an isolated Simulator with synthetic data. Touch gestures, native backup/share sheets, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
+> **Development build.** The populated calendar and local sticker-outline preview/save have been exercised in an isolated Simulator with synthetic data. Empty-library backup save/restore now also passes through the iOS Files UI. Touch gestures, share delivery, corrupt-package UI handling, date-picker interaction, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
 
 <p align="center">
   <img src="design/screenshots/app-populated-calendar.png" width="300" alt="Yidie synthetic populated calendar with a ten-outfit day stack" />
@@ -28,8 +28,8 @@
 | Calendar, date browsing, same-day stacks and count badges        | Populated/empty simulator scenes and month arrows checked; touch swipes remain due |
 | Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted   |
 | Sticker outline preview and editing                              | Preview/save checked with synthetic simulator data; verify quality with an opt-in test photo |
-| Backup/restore and native date picker                            | Source and deterministic backup tests pass; picker interaction due |
-| Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; native share-sheet interaction due |
+| Backup/restore and native date picker                            | Empty backup save/restore passes in Simulator; invalid-package UI and date-picker acceptance due |
+| Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; payload delivery acceptance due |
 | Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                 |
 | Public App Store or general device distribution                  | Not available                                                    |
 

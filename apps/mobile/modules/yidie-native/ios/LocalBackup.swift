@@ -110,7 +110,9 @@ enum LocalBackup {
   static func stageRestore(from selected: URL, support: URL) throws -> LocalBackupSummary {
     let stage = support.appendingPathComponent("Yidie.restore-staging", isDirectory: true)
     try removeOwnedDirectory(stage)
-    guard selected.hasDirectoryPath else { throw YidieError(code: "INVALID_BACKUP") }
+    // Document providers may return a package URL without a trailing slash,
+    // making URL.hasDirectoryPath false even when the filesystem item is a
+    // directory. validatePackage performs the authoritative type check.
     let summary = try validatePackage(selected)
     let freeBytes = try FileManager.default.attributesOfFileSystem(forPath: support.path)[.systemFreeSize] as? NSNumber
     guard let freeBytes else { throw YidieError(code: "INSUFFICIENT_STORAGE") }
