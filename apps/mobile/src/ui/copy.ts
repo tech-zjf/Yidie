@@ -95,6 +95,7 @@ export const copy = {
   outlineWidth: 'Thickness',
   edit: 'Edit',
   outfitPhoto: 'Outfit photo',
+  captureDateUnavailable: 'capture date unavailable',
   saveDate: 'Save date',
   dateSaved: 'Date saved and calendar updated.',
   setCover: 'Set as day cover',
