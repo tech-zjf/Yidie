@@ -59,3 +59,9 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 - 模拟器和签名 Release 包均输出到 `/private/tmp` 下的临时构建目录，不在 Git 仓库提交证书、描述文件或构建产物。
 - 真机只安装/启动了衣叠。没有对 iPhone 执行系统更新、恢复、抹除、开发者模式切换或其他 app 操作。安装前后衣叠数据容器标识不同，数据保留情况待用户确认。
 - 本轮没有读取照片、通讯录、消息或其他 app 数据。尚未完成真实照片的贴纸处理验收。
+
+## 2026-10-15 后续本地构建记录
+
+- Xcode 27 对当前源码完成了一次完整的 iOS Simulator Release 编译与链接，使用 `CODE_SIGNING_ALLOWED=NO`，构建产物位于 `/private/tmp/YidieDerivedData`。这次只编译通用模拟器目标，没有启动或安装到实体 iPhone。
+- 当前 Mac 已解锁，Xcode Settings 显示 iOS 27.0 Simulator runtime 已安装；但本会话无法发现 Simulator.app，CoreSimulatorService 连接失败，因此没有进行模拟器交互、导入照片或访问设备数据。
+- 本轮没有改变 Developer Mode、Apple 账号、签名身份、证书、描述文件或钥匙串授权，也没有连接或操作 iPhone。验证完成后已清理本轮生成的 2 GB 临时 DerivedData、Swift module cache 与类型检查 stub。

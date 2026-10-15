@@ -12,7 +12,7 @@
 <p align="center">
   <img src="design/screenshots/app-empty-calendar.png" width="300" alt="Yidie empty calendar on iPhone 18 Pro Simulator" />
 </p>
-<p align="center"><sub>Current app build · empty local library · iPhone 18 Pro Simulator · 2026-10-14</sub></p>
+<p align="center"><sub>UI reference captured 2026-10-14 · empty local library · iPhone 18 Pro Simulator (not a screenshot of the latest source build)</sub></p>
 
 ## What makes it different
 

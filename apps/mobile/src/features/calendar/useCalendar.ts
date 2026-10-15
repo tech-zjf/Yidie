@@ -19,23 +19,23 @@ export function useCalendar(services: AppServices, initialMonth?: { year: number
   const [showAll, setShowAll] = useState(false);
   const request = useRef({ version: 0 });
   const monthKey = `${month.year}-${String(month.month).padStart(2, '0')}`;
-  const refresh = useCallback(() => {
+  const refresh = useCallback(async () => {
     const id = ++request.current.version;
-    return services.repository
-      .list({ month: monthKey })
-      .then((value) => {
-        if (id !== request.current.version) return;
-        setEntries(value);
-        setError('');
-      })
-      .catch(() => {
-        if (id !== request.current.version) return;
-        setError(copy.errors.PROCESSING_FAILED);
-      });
+    try {
+      const value = await services.repository.list({ month: monthKey });
+      if (id !== request.current.version) return;
+      setEntries(value);
+      setError('');
+    } catch {
+      if (id === request.current.version) setError(copy.errors.PROCESSING_FAILED);
+    }
   }, [services, monthKey]);
   useEffect(() => {
     const token = request.current;
-    void refresh();
+    async function loadCurrentMonth() {
+      await refresh();
+    }
+    void loadCurrentMonth();
     const unsubscribe = services.actions.queue.subscribe(() => {
       void refresh();
     });
