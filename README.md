@@ -12,7 +12,7 @@
 <p align="center">
   <img src="design/screenshots/app-populated-calendar.png" width="300" alt="Yidie synthetic populated calendar with a ten-outfit day stack" />
 </p>
-<p align="center"><sub>Latest source · iPhone 18 Pro / iOS 27 Simulator · synthetic preview artwork only; the Preview scenes control is development-only and the silhouette figures are layout stand-ins, not Vision results.</sub></p>
+<p align="center"><sub>UI preview · iPhone 18 Pro / iOS 27 Simulator · synthetic artwork only; Preview scenes is development-only and the silhouette figures are layout stand-ins, not Vision results.</sub></p>
 
 ## What makes it different
 

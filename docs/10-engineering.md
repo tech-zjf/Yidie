@@ -29,6 +29,7 @@ apps/mobile/
       records/                    # 单条记录编辑、封面、重试、删除、共享 RecordImage
     domain/
       datePolicy.ts               # 公历日期、EXIF/相册来源优先级
+      monthSwipe.ts               # 月历横向拖动/轻扫判定，避免垂直滚动误切月份
       stickerLayout.ts            # 稳定旋转、整组适配单格
       importPhoto.ts              # 导入用例与失败时所有权转移
       batchDraft.ts               # 分组、改日期与提交项规则

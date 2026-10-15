@@ -4,7 +4,7 @@ Updated 2026-10-15. This is a compact record of verified build and runtime evide
 
 ## Latest verified source
 
-- Expo iOS JavaScript export succeeds. `npm run check` passes strict TypeScript, ESLint, Prettier, and all 56 domain, SQLite, and preview tests.
+- After the month-swipe classifier change, `npm run export:ios` bundled 700 modules successfully. The Hermes bundle contains `monthSwipeDelta` and the expected `YidieNative` bridge reference, and contains no `Preview scenes`/`preview-only` markers. This verifies JavaScript production entry selection and bundling, not a native compile or on-device swipe. `npm run check` passes strict TypeScript, ESLint, Prettier, and all 59 domain, SQLite, and preview tests. Runtime touch acceptance remains open.
 - `sh scripts/check_native.sh` passes native file-catalog, backup/restore safety, and Swift core typecheck checks. `python3 scripts/check_packet.py` passes repository documentation, SQL, and prototype contracts.
 - A complete unsigned iOS Simulator Release build succeeded with Xcode 27 using the generated CocoaPods workspace and `CODE_SIGNING_ALLOWED=NO`. It compiled and linked the Expo native module and bundled JavaScript; it used no signing identity.
 - The Release build was installed on the dedicated iPhone 17 Pro / iOS 26.1 QA Simulator. Empty calendar, month arrows, day sheet, All Records, Add explainer, and Settings were inspected. A Files backup round-trip with an empty package (0 records, 0 images) closed, replaced, and reopened the database, then returned to the October calendar.

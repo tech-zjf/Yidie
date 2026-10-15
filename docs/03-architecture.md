@@ -26,7 +26,7 @@ Data                 Native Expo Module
 | 路由与页面   | AppRoot + TypeScript + 原生 Modal                              | 当前只有月历与弹层，更多独立页面出现时再引入 Expo Router，不先搭复杂 Tab |
 | 图片显示     | expo-image，使用本地缩略图                                     | 月历不解码原始 48MP 图片                                                 |
 | 文件与数据库 | Swift 文件模块、expo-sqlite                                    | 存相对路径，不能持久化安装沙盒的绝对前缀                                 |
-| 动效和手势   | Reanimated、Gesture Handler；底部弹层候选 @gorhom/bottom-sheet | 创建工程时核对当前 SDK/新架构兼容；必要时自建轻量 Modal + pager          |
+| 动效和手势   | RN Animated、PanResponder、横向 FlatList 与原生 Modal          | 目前不额外引入动画/手势依赖；月历轻扫与慢拖有独立阈值策略，仍需触摸设备验收 |
 | 照片选择     | PhotoKit 原生权限与本地资产列表                                | 所有缩略图/原图请求禁止网络；不使用会自动下载原图的通用 picker           |
 | 抠图         | Apple Vision，Swift Expo Module                                | iOS 17+ 起评估；系统和设备支持检查；不是 JS 抠图库                       |
 | 分享         | 系统分享面板、MediaLibrary 保存权限按需请求                    | App 不负责上传用户照片                                                   |

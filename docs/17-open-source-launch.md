@@ -10,6 +10,7 @@ Research checked on 2026-10-15 against the public repository pages. GitHub star 
 | [Ignite](https://github.com/infinitered/ignite)                                          | Long-running React Native / Expo starter with docs, setup videos, troubleshooting, tests and contributor paths                              | Keep setup steps reproducible and link contributors to meaningful tests. Its guides pair pure-function unit tests with E2E examples rather than prescribing a generic architecture for every app.                                 |
 | [Expo](https://github.com/expo/expo)                                                     | React Native platform with documentation, project layout, contribution guidance and a large tested codebase                               | Explain native assumptions and CI precisely. Expo's contributor guidance includes unit tests, E2E tests, and manual smoke tests for interactions that are hard to automate. Expo Go is not a runnable path for Yidie because it ships a custom Swift module. |
 | [wardrobe](https://github.com/wardrobe-hq/wardrobe)                                      | Self-hosted clothing-management web app with labels and outfit suggestions                                                                 | Adjacent open-source projects vary widely in traction. Avoid treating an open-source wardrobe catalog as direct competition; make Yidie's smaller daily-photo memory job obvious.                                             |
+| [Wardrowbe](https://github.com/Anyesh/wardrowbe)                                          | Self-hosted AI wardrobe-management app                                                                                                    | “AI wardrobe” is not Yidie's pitch. Keep the difference concrete: no account/server, use already-taken outfit photos, and organize by the day worn.                                                                            |
 
 These projects solve adjacent jobs. Public descriptions do not prove their exact behavior on every device. Yidie's defensible direction is narrower: an iPhone-first, no-account outfit diary with a calendar made from the photos themselves, local image processing, and source code people can run and inspect. This is a product thesis to test, not a claim that no one else does it. The engineering takeaway is to borrow visible contributor paths and layered verification from mature Expo/RN projects, while retaining this app's smaller feature-local architecture. [Ignite testing guide](https://github.com/infinitered/ignite/blob/master/docs/concept/Testing.md), [Expo contribution guide](https://github.com/expo/expo/blob/main/CONTRIBUTING.md).
 
@@ -25,8 +26,8 @@ These projects solve adjacent jobs. Public descriptions do not prove their exact
 
 Create two artifacts after the simulator acceptance pass:
 
-- A short, looping README GIF (roughly 15–25 seconds) showing the calendar stack, opening a day, swiping same-day photos, and previewing/saving an outline. Keep it small and readable at repository width; provide a reduced-motion still screenshot as a fallback.
-- A captioned 30–45 second portrait screen recording for X. Show one complete user job rather than a tour of menus. Use generated or explicitly consented sample imagery, hide simulator controls and status clutter where possible, and do not include personal data.
+- A short, silent README loop (roughly 15–20 seconds) showing the calendar stack, opening a day, paging through same-day photos, and previewing/saving an outline. Keep it small and readable at repository width; provide a reduced-motion still screenshot as a fallback.
+- A 12–15 second, captioned portrait cut for X. Show one complete user job rather than a tour of menus: a quick calendar view, open a day, swipe once, save an outline. Use generated sample imagery, hide simulator controls and status clutter where possible, and do not include personal data.
 
 Before recording, verify that every shown interaction works in the current simulator build. Do not depict backup, export, or device Vision success until those flows pass. Add the capture date and build identifier to the release notes, not to the visible UI.
 
@@ -50,18 +51,16 @@ Keep the first post short and demonstrate one complete action. Do not publish un
 
 Follow up only when each claim is verified: a short engineering post about re-rendering an outline from the saved transparent cutout, then a small tester invitation that names the tested iOS version and clearly says physical-device photo quality is still being evaluated. Avoid asking people to upload personal wardrobe photos.
 
-For the README, prefer a silent 15–20 second loop under roughly 8 MB, with a still screenshot and reduced-motion fallback. Record the calendar, open a multi-outfit date, page through the day's images only after swipe acceptance, and preview/save an outline. For X, use a captioned 30–45 second vertical cut with the same verified path; show “Simulator · synthetic images” in a small caption, not a fake product UI. Avoid a broad feature tour, simulated Vision success, system panels that are not yet accepted, and claims about reach. After posting, track profile/repository visits, README-to-build completions, useful issues, and tester follow-through for a few weeks; treat stars as one weak signal.
-
-A third-party analysis of 293 X launch videos found that the high-view subset often used a working demo and voiceover, while video format and timing were descriptive patterns rather than proven causes of reach. Treat it as a production reference, not an algorithm recipe. For this project, measure repository visits, README-to-build completion, useful issues, repeat use, and stars over 2–4 weeks. Star count alone does not establish product use.
+For the README, prefer a silent 15–20 second loop under roughly 8 MB, with a still screenshot and reduced-motion fallback. For X, the short cut is an editorial choice, not a reach guarantee: X's official creative guidance is written for ads and recommends mobile-first framing, movement early, captions for sound-off viewing, and a concise video. Apply those as production heuristics only; do not imply that ad guidance predicts organic distribution. Show “Simulator · synthetic images” as a discreet caption, not as fake product UI. Avoid a broad feature tour, simulated Vision success, system panels that are not yet accepted, and claims about reach. Before posting, verify the current video download control; synthetic demo imagery is safe to share, private test photos are not. After an explicitly requested post, track profile/repository visits, README-to-build completions, useful issues, and tester follow-through for a few weeks; treat stars as one weak signal.
 
 ## Sources
 
-- [wardrowbe repository and README](https://github.com/Anyesh/wardrowbe)
 - [Libre Closet repository and README](https://github.com/lazztech/Libre-Closet)
+- [wardrowbe repository and README](https://github.com/Anyesh/wardrowbe)
+- [X Business creative best practices](https://business.x.com/en/advertising/creative-best-practices) (advertising guidance; adapted cautiously for organic demos)
+- [X Help: video posting and download controls](https://help.x.com/en/using-x/x-videos)
 - [Ignite React Native / Expo README](https://github.com/infinitered/ignite/blob/master/README.md)
 - [Ignite testing guide](https://github.com/infinitered/ignite/blob/master/docs/concept/Testing.md)
 - [Expo repository and contributor guidance](https://github.com/expo/expo)
 - [Expo contribution guide and manual smoke-test guidance](https://github.com/expo/expo/blob/main/CONTRIBUTING.md)
 - [Wardrobe repository and README](https://github.com/wardrobe-hq/wardrobe)
-- [Product launch video analysis of 293 X launches](https://www.indiehackers.com/post/product-launch-video-7-steps-from-293-x-launches-8ad570fb47)
-- [Build in public on X: specific updates and examples](https://usepostship.app/blog/how-to-build-in-public-on-x)
