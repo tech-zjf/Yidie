@@ -4,6 +4,7 @@ Updated 2026-10-15. This is a compact record of verified build and runtime evide
 
 ## Latest verified source
 
+- After commit `00efa87`, `npm run check` passes strict TypeScript, ESLint, Prettier, and all 60 domain, SQLite, and preview tests; `npm run export:ios` bundles 700 modules successfully from the updated source. Runtime month-swipe behavior still needs a real touch-surface check. The latest standard `git push origin main` reached GitHub and was rejected for the active OAuth credential's missing `workflow` scope; no remote ref changed.
 - After the month-swipe classifier change, `npm run export:ios` bundled 700 modules successfully. The Hermes bundle contains `monthSwipeDelta` and the expected `YidieNative` bridge reference, and contains no `Preview scenes`/`preview-only` markers. This verifies JavaScript production entry selection and bundling, not a native compile or on-device swipe. `npm run check` passes strict TypeScript, ESLint, Prettier, and all 59 domain, SQLite, and preview tests. Runtime touch acceptance remains open.
 - The day-to-import modal handoff now waits for React Native's iOS `Modal.onDismiss` callback before presenting the import sheet. The subsequent iOS JS export and all source checks pass; the native presentation sequence still needs Simulator acceptance.
 - `sh scripts/check_native.sh` passes native file-catalog, backup/restore safety, and Swift core typecheck checks. `python3 scripts/check_packet.py` passes repository documentation, SQL, and prototype contracts.
