@@ -1,5 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { initializeDatabase } from './initializeDatabase';
 import { schema } from './schema.generated';
 import type { PhotoProcessor } from '../domain/records';
@@ -8,6 +12,7 @@ import { createEntryActions } from '../domain/entryActions';
 import { importPhoto } from '../domain/importPhoto';
 import { createEntryRepository } from './entryRepository';
 import type { SqlDatabase } from './sqlDatabase';
+import { createWriteTransaction } from './writeTransaction';
 
 test('fresh schema and v1 migration preserve records and recover interrupted jobs', async (t) => {
   const r = fixture();
@@ -87,6 +92,112 @@ test('repository serializes SQLite work and close fences queued and later calls'
   await close;
   assert.equal(closed, true);
   await repository.close();
+});
+
+test('WAL read, queued write, close checkpoint, and reopen preserve the committed library', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'yidie-sqlite-lifecycle-'));
+  const filename = join(directory, 'yidie.sqlite');
+  const r = fixture(filename);
+  let sqlite = r.sqlite;
+  let connectionOpen = true;
+  sqlite.exec('PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON');
+  const db: SqlDatabase = {
+    ...r.db,
+    closeAsync: async () => {
+      const checkpoint = sqlite.prepare('PRAGMA wal_checkpoint(TRUNCATE)').get() as {
+        busy: number;
+      };
+      assert.equal(checkpoint.busy, 0, 'the WAL checkpoint must finish before close');
+      sqlite.close();
+      connectionOpen = false;
+    },
+  };
+  const write = createWriteTransaction(db);
+  let releaseRead!: () => void;
+  let markReadStarted!: () => void;
+  let markWriteStarted!: () => void;
+  const readStarted = new Promise<void>((resolve) => {
+    markReadStarted = resolve;
+  });
+  const writeStarted = new Promise<void>((resolve) => {
+    markWriteStarted = resolve;
+  });
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  let holdRead = false;
+  let observeWrite = false;
+  let writeEnteredTransaction = false;
+  const ownedDb = db;
+  const gatedDb: SqlDatabase = {
+    ...ownedDb,
+    async getAllAsync<T>(sql: string, ...params: (string | number | null)[]) {
+      if (!holdRead || !sql.startsWith('SELECT e.id'))
+        return ownedDb.getAllAsync<T>(sql, ...params);
+      sqlite.exec('BEGIN');
+      const rows = await ownedDb.getAllAsync<T>(sql, ...params);
+      markReadStarted();
+      await readGate;
+      sqlite.exec('COMMIT');
+      holdRead = false;
+      return rows;
+    },
+  };
+  const gatedWrite = async <T>(action: (tx: SqlDatabase) => Promise<T>) => {
+    if (observeWrite) {
+      observeWrite = false;
+      writeEnteredTransaction = true;
+      markWriteStarted();
+    }
+    return write(action);
+  };
+  const serialRepository = createEntryRepository(gatedDb, gatedWrite);
+  t.after(() => {
+    if (connectionOpen) sqlite.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+
+  await initializeDatabase(gatedDb, gatedWrite);
+  const ticket = await serialRepository.begin(photo('persistent'), {
+    date: '2026-10-15',
+    source: 'user',
+  });
+  await serialRepository.finish(ticket, sticker('persistent'));
+
+  holdRead = true;
+  const read = serialRepository.list();
+  await Promise.race([
+    readStarted,
+    read.then(
+      () => {
+        throw new Error('The held SQLite read completed before entering its transaction');
+      },
+      (error: unknown) => {
+        throw error;
+      },
+    ),
+  ]);
+  observeWrite = true;
+  const update = serialRepository.changeDate('persistent', 0, '2026-10-16');
+  const close = serialRepository.close();
+  assert.equal(serialRepository.close(), close);
+  assert.equal(writeEnteredTransaction, false, 'the write must wait for the held SQLite read');
+
+  releaseRead();
+  assert.equal((await read)[0]?.date, '2026-10-15');
+  await writeStarted;
+  await update;
+  await close;
+
+  sqlite = new DatabaseSync(filename);
+  connectionOpen = true;
+  assert.equal(
+    sqlite.prepare("SELECT record_date FROM entries WHERE id='persistent'").get()?.record_date,
+    '2026-10-16',
+    'the committed change must survive the WAL checkpoint and connection reopen',
+  );
+  sqlite.close();
+  connectionOpen = false;
 });
 
 test('a rejected repository operation does not poison the SQLite lane', async (t) => {

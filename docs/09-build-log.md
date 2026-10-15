@@ -4,13 +4,13 @@ Updated 2026-10-15. This page records the latest reproducible checks. Feature ac
 
 ## Automated checks
 
-- `npm run check` passes TypeScript, ESLint, Prettier, and all 70 JavaScript tests.
+- `npm run check` passes TypeScript, ESLint, Prettier, and all 71 JavaScript tests in the current local worktree.
 - `npm run export:ios` produces the production iOS JavaScript bundle.
 - `sh scripts/check_native.sh` passes the Swift safety suites and iOS core typecheck.
 - `python3 scripts/check_packet.py` validates local document links, absence of retired HTML prototypes, SQLite schema and migrations, transaction behavior, and generated schema consistency.
 - GitHub Actions builds the unsigned Simulator Release app with the pinned Xcode 26.6 toolchain. This build does not sign or install an app on a physical iPhone.
 
-The full workflow passed for the published development snapshot [`82999b3`](https://github.com/tech-zjf/Yidie/commit/82999b324f16c9602fee30e74e5be89120899ad9) in [run 38724907099](https://github.com/tech-zjf/Yidie/actions/runs/38724907099). This includes the reduced-motion preference in every system sheet and the current documentation checks.
+The latest full workflow passed for PR head [`1381fd7`](https://github.com/tech-zjf/Yidie/commit/1381fd7e9a5960f43f4a56de72787c897dc4668d) in [run 38725891588](https://github.com/tech-zjf/Yidie/actions/runs/38725891588). It ran 70 JavaScript tests before the local file-backed WAL lifecycle test was added. The current 71-test worktree has not yet been pushed or run in CI.
 
 ## Runtime evidence
 
