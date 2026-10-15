@@ -21,6 +21,7 @@ This is the single working checklist for the first public, installable release. 
 - [x] Serialize all public repository SQLite operations across the read connection and short-lived write connections. Shutdown fences new work and drains the FIFO lane before closing; a regression test holds a read and proves a later write cannot enter native SQLite until the read settles.
 - [x] If a backup/restore pause request fails, restart only the processing work that was active before the request; preserve manually paused jobs and surface the failure. A regression test injects a failed pause and verifies the prior queue finishes its pending work.
 - [x] Rebuild and smoke-test the earlier crash-report fix on the dedicated iOS 26.1 Simulator: while the calendar app was running, restore a valid empty backup from Settings, allow the database replacement/reopen, and confirm the app returns to the October calendar. The updated deterministic regression holds a read, proves a later write cannot enter native SQLite concurrently, then verifies `close()` drains the queue and rejects later work. The earlier Simulator flow did not force a deliberately blocked query at the exact close boundary, so treat it as lifecycle smoke coverage, not a concurrency stress test.
+- [ ] Rebuild the current single-lane SQLite change and stress a deliberately held read against a queued write and close/WAL checkpoint on a supported Simulator; verify the app stays open and library data remains available after close/reopen.
 
 ## P1 — finish the promised user flows
 

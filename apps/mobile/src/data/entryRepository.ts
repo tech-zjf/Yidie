@@ -92,7 +92,7 @@ export function createEntryRepository(
         await tx.runAsync('DELETE FROM file_deletions WHERE entry_id=?', id);
       }),
   };
-  return guardRepositoryLifecycle(repository);
+  return serializeRepositoryOperations(repository);
 }
 
 /**
@@ -100,7 +100,7 @@ export function createEntryRepository(
  * single lane because writes use short-lived connections alongside the long-lived read connection.
  * This prevents native statement execution/finalization and connection close from overlapping.
  */
-function guardRepositoryLifecycle(repository: EntryRepository): EntryRepository {
+function serializeRepositoryOperations(repository: EntryRepository): EntryRepository {
   let tail: Promise<void> = Promise.resolve();
   let closing = false;
   let closePromise: Promise<void> | undefined;

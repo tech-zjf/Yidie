@@ -89,6 +89,16 @@ test('repository serializes SQLite work and close fences queued and later calls'
   await repository.close();
 });
 
+test('a rejected repository operation does not poison the SQLite lane', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+
+  await assert.rejects(r.repository.list({ month: '2026-13' }), /INVALID_DATE/);
+  assert.equal(await r.repository.get('missing'), null);
+  await r.repository.close();
+});
+
 test('fresh install applies every migration once and has editable sticker columns', async (t) => {
   const r = fixture();
   t.after(() => r.sqlite.close());
