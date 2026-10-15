@@ -7,8 +7,10 @@ Updated 2026-10-15. This page records the latest reproducible checks. Feature ac
 - `npm run check` passes TypeScript, ESLint, Prettier, and all 70 JavaScript tests.
 - `npm run export:ios` produces the production iOS JavaScript bundle.
 - `sh scripts/check_native.sh` passes the Swift safety suites and iOS core typecheck.
-- `python3 scripts/check_packet.py` validates local document links, SQLite schema and migrations, transaction behavior, and generated schema consistency.
+- `python3 scripts/check_packet.py` validates local document links, absence of retired HTML prototypes, SQLite schema and migrations, transaction behavior, and generated schema consistency.
 - GitHub Actions builds the unsigned Simulator Release app with the pinned Xcode 26.6 toolchain. This build does not sign or install an app on a physical iPhone.
+
+The full workflow passed for the publication-hygiene revision [`4268539`](https://github.com/tech-zjf/Yidie/commit/4268539d1d6e8aa4a7e9cfe608bedaf2441fea23) in [run 38722146950](https://github.com/tech-zjf/Yidie/actions/runs/38722146950).
 
 ## Runtime evidence
 
