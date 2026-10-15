@@ -92,13 +92,18 @@ export function EntryEditor({
                   {[0, 2, 4, 6, 8].map((width) => (
                     <Pressable
                       key={width}
+                      disabled={model.busy}
                       accessibilityRole="button"
-                      accessibilityState={{ selected: model.borderWidth === width }}
+                      accessibilityState={{
+                        selected: model.borderWidth === width,
+                        disabled: model.busy,
+                      }}
                       accessibilityLabel={copy.outlineWidthOption(width)}
                       onPress={() => model.setBorderWidth(width)}
                       style={[
                         styles.widthOption,
                         model.borderWidth === width && styles.selectedOption,
+                        model.busy && styles.disabledOption,
                       ]}
                     >
                       <Text style={model.borderWidth === width ? styles.selectedText : undefined}>
@@ -118,14 +123,19 @@ export function EntryEditor({
                   ).map(([color, label]) => (
                     <Pressable
                       key={color}
+                      disabled={model.busy}
                       accessibilityRole="button"
-                      accessibilityState={{ selected: model.borderColor === color }}
+                      accessibilityState={{
+                        selected: model.borderColor === color,
+                        disabled: model.busy,
+                      }}
                       accessibilityLabel={label}
                       onPress={() => model.setBorderColor(color)}
                       style={[
                         styles.colorOption,
                         { backgroundColor: color },
                         model.borderColor === color && styles.selectedColor,
+                        model.busy && styles.disabledOption,
                       ]}
                     />
                   ))}
@@ -224,6 +234,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedOption: { backgroundColor: colors.action },
+  disabledOption: { opacity: 0.45 },
   selectedText: { color: colors.paper },
   colorOption: {
     width: 38,
