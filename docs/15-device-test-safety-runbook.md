@@ -1,15 +1,17 @@
 # 真机开发者测试与安全回退记录
 
-记录日期：2026-10-14  
-适用项目：衣叠（`com.techzjf.yidie`）  
+记录日期：2026-10-15
+适用项目：衣叠（`com.techzjf.yidie`）
 范围：个人 Apple 账号免费签名、Xcode 本地构建与本人 iPhone 测试。此记录不包含手机序列号或 UDID。
+
+> 状态边界：下方 10 月 14 日的证书、开发者模式和衣叠安装信息是当时的最后一次详细核验，不代表手机从恢复模式更新后的当前状态。用户于 10 月 15 日提供的 Finder 截图显示 iPhone 13 Pro 已连接、运行 iOS 27.0.1、显示 47.21 GB 可用空间且同步步骤为 3/3；这只能证明 Finder 当时识别到设备和系统信息，不能证明衣叠是否已恢复、衣叠本地记录是否保留，也不能确认 Developer Mode 或开发者信任状态。恢复后这些状态尚未重新核验。任何后续真机操作前，应先由用户在手机上确认衣叠和记录；不要根据旧状态切换开发者模式、重新信任、重装、卸载或抹除。
 
 ## 当前状态
 
 - Apple 账号已在 Xcode 登录，使用免费 Personal Team；没有加入每年收费的 Apple Developer Program，也没有发生付费。
 - Xcode 为衣叠启用了自动签名，并在本机登录钥匙串创建/使用 Apple Development 签名身份及 Xcode 管理的开发描述文件；该描述文件将本人 iPhone 注册为开发测试设备。
-- iPhone 的 Developer Mode 已由用户开启；用户也在设备上信任了衣叠的开发者签名。
-- bundle ID `com.techzjf.yidie`、版本 `0.1.0` 的衣叠已安装到 iPhone。没有更新或恢复 iOS，没有清除设备数据，也没有访问照片库或触碰其他 app。
+- 截至 2026-10-14，iPhone 的 Developer Mode 已由用户开启，用户也信任了衣叠的开发者签名；恢复模式和系统更新之后的状态未知。
+- 截至 2026-10-14，bundle ID `com.techzjf.yidie`、版本 `0.1.0` 的衣叠修复版已安装并启动。2026-10-15 的 Finder 截图不能确认恢复后的衣叠安装状态或本地记录是否保留。
 - 用户在 macOS 钥匙串弹窗中选择了“始终允许”，授权 `codesign` 使用本机 Apple Development 私钥。这个授权保存在 Mac 登录钥匙串中，仍可撤销。
 - 在系统允许的只读检查中，Mac 找到 1 个有效的 Apple Development 签名身份，且 Debug app 签名验证通过。先前受限命令环境报告的“未受信任”是沙箱读取钥匙串导致的误报，不是证书故障。
 - 2026-10-14 已在 `/private/tmp/yidie-scene-device/Build/Products/Release-iphoneos/app.app` 构建修复后的签名 Release 包。签名身份为本机已有的 Apple Development；描述文件包含这台已授权测试设备，至 2026-10-21 17:42 CST 到期。安装包含 `main.jsbundle`，并已确认 `UIApplicationSceneManifest` 指向 `EXExpoAppSceneDelegate`。
@@ -44,9 +46,9 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 
 | 项目 | 当前状态 | 回退方法与注意事项 |
 | --- | --- | --- |
-| iPhone Developer Mode | 已开启 | 在 iPhone“设置 → 隐私与安全性 → 开发者模式”关闭并按系统提示重启。此操作会重启手机；不需要恢复系统。测试完成后可关闭。 |
-| iPhone 对开发者的信任 | 已由用户开启 | 信任会保留。先只删除衣叠 app；不要点击可能影响该开发者其他 app 的批量删除/撤销按钮，除非先确认其影响范围。设置入口为“设置 → 通用 → VPN 与设备管理”。 |
-| 衣叠安装 | 修复版已安装并启动；原有记录是否保留尚待用户检查 | 不卸载、不清除数据。卸载会删除衣叠沙盒里的数据库、导入副本和贴纸；不会删除照片图库中的原照片。 |
+| iPhone Developer Mode | 2026-10-14 最后确认已开启；系统恢复/更新后未知 | 先在手机“设置 → 隐私与安全性 → 开发者模式”只读查看。未经用户明确同意，不要切换或重启。关闭时按系统提示重启即可，不需要恢复系统。 |
+| iPhone 对开发者的信任 | 2026-10-14 最后确认用户已信任；系统恢复/更新后未知 | 先在“设置 → 通用 → VPN 与设备管理”只读查看。不要为确认状态删除配置或点击会影响同一开发者其他 app 的批量撤销。 |
+| 衣叠安装与记录 | 修复版曾安装并启动；恢复后的 app 和本地记录状态未知 | 由用户先在手机上确认衣叠是否存在、记录是否可见。未确认前不卸载、不重装、不清除数据或恢复；卸载可能删除衣叠沙盒数据库、导入副本和贴纸，但不会删除 Apple Photos 中的原图。 |
 | iOS 27 Scene 生命周期项目配置 | `apps/mobile/app.json` 已设置 `ios.enableSceneSupport: true`；生成的 `ios/` 目录被 Git 忽略。修复版已在模拟器和 iPhone 上构建、安装并启动 | 如需回退，删除 `enableSceneSupport` 属性或设为 `false`，再重新运行 Expo prebuild。回退会恢复旧的无 Scene 生命周期配置，在 iOS 27 SDK 下会再次无法启动；不要为解决本问题回退。 |
 | Mac CMake | Homebrew CMake 4.4.4 已安装，本轮用于本地 iOS 构建 | 如确认其他本地项目不依赖，可用 `HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew uninstall cmake` 移除。恢复原先 Python/ripgrep 版本及 Homebrew 依赖版本不是自动回退的一部分。 |
 | Apple Development 证书与私钥 | Xcode Personal Team 在 Mac 登录钥匙串中使用 | 目前无需删除。删除私钥会使此 Mac 不能继续用该身份签名，也可能影响其他项目；如将来确定停止开发，再核对 Xcode 是否有其他 app 共用后处理。 |
@@ -57,7 +59,7 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 ### 本轮执行边界
 
 - 模拟器和签名 Release 包均输出到 `/private/tmp` 下的临时构建目录，不在 Git 仓库提交证书、描述文件或构建产物。
-- 真机只安装/启动了衣叠。没有对 iPhone 执行系统更新、恢复、抹除、开发者模式切换或其他 app 操作。安装前后衣叠数据容器标识不同，数据保留情况待用户确认。
+- 2026-10-14 的真机步骤只安装/启动了衣叠。随后用户报告 iPhone 进入恢复流程并由 Finder 更新；当前文档不对恢复后的 app 安装和数据保留作推断。仍须用户先确认衣叠记录，再考虑任何后续真机测试。
 - 本轮没有读取照片、通讯录、消息或其他 app 数据。尚未完成真实照片的贴纸处理验收。
 
 ## 2026-10-15 后续本地构建记录
