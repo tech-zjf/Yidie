@@ -20,14 +20,15 @@ export function createEntryRepository(
   db: SqlDatabase,
   transaction: WriteTransaction,
 ): EntryRepository {
-  // All mutations use the same queue; rejected writes cannot poison later work.
+  // Keep mutations serialized on the shared SQLite connection. Lifecycle tracking below also
+  // counts work waiting in this queue, so close cannot pass a write that has not started yet.
   let tail: Promise<unknown> = Promise.resolve();
   const write: WriteTransaction = (action) => {
     const pending = tail.then(() => transaction(action));
     tail = pending.catch(() => {});
     return pending;
   };
-  return {
+  const repository: EntryRepository = {
     async close() {
       await db.closeAsync?.();
     },
@@ -97,5 +98,66 @@ export function createEntryRepository(
       write(async (tx) => {
         await tx.runAsync('DELETE FROM file_deletions WHERE entry_id=?', id);
       }),
+  };
+  return guardRepositoryLifecycle(repository);
+}
+
+/**
+ * Expo SQLite dispatches native calls on a concurrent queue. Track public operations so restore
+ * cannot close/finalize the shared connection while a query is in flight. Reads remain concurrent.
+ */
+function guardRepositoryLifecycle(repository: EntryRepository): EntryRepository {
+  let activeOperations = 0;
+  let closePromise: Promise<void> | undefined;
+  let resolveIdle: (() => void) | undefined;
+
+  function run<T>(operation: () => Promise<T>): Promise<T> {
+    if (closePromise) return Promise.reject(new Error('DATABASE_CLOSED'));
+    activeOperations++;
+    return Promise.resolve()
+      .then(operation)
+      .finally(() => {
+        activeOperations--;
+        if (activeOperations === 0) {
+          resolveIdle?.();
+          resolveIdle = undefined;
+        }
+      });
+  }
+
+  return {
+    begin: (...args) => run(() => repository.begin(...args)),
+    retry: (...args) => run(() => repository.retry(...args)),
+    finish: (...args) => run(() => repository.finish(...args)),
+    fail: (...args) => run(() => repository.fail(...args)),
+    list: (...args) => run(() => repository.list(...args)),
+    get: (...args) => run(() => repository.get(...args)),
+    getMany: (...args) => run(() => repository.getMany(...args)),
+    changeDate: (...args) => run(() => repository.changeDate(...args)),
+    updateStickerStyle: (...args) => run(() => repository.updateStickerStyle(...args)),
+    setCover: (...args) => run(() => repository.setCover(...args)),
+    remove: (...args) => run(() => repository.remove(...args)),
+    pendingDeletions: () => run(() => repository.pendingDeletions()),
+    acknowledgeDeletion: (...args) => run(() => repository.acknowledgeDeletion(...args)),
+    stageOrphanDeletions: (...args) => run(() => repository.stageOrphanDeletions(...args)),
+    savePhotoPreview: (...args) => run(() => repository.savePhotoPreview(...args)),
+    findDuplicate: (...args) => run(() => repository.findDuplicate(...args)),
+    queueBatch: (...args) => run(() => repository.queueBatch(...args)),
+    claimNext: () => run(() => repository.claimNext()),
+    pauseQueued: (...args) => run(() => repository.pauseQueued(...args)),
+    resumePaused: (...args) => run(() => repository.resumePaused(...args)),
+    queueCounts: () => run(() => repository.queueCounts()),
+    close() {
+      if (closePromise) return closePromise;
+      closePromise = (async () => {
+        if (activeOperations > 0) {
+          await new Promise<void>((resolve) => {
+            resolveIdle = resolve;
+          });
+        }
+        await repository.close();
+      })();
+      return closePromise;
+    },
   };
 }

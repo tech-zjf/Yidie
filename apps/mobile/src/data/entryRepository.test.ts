@@ -6,6 +6,8 @@ import type { PhotoProcessor } from '../domain/records';
 import { fixture, photo, sticker, ready } from './testSupport';
 import { createEntryActions } from '../domain/entryActions';
 import { importPhoto } from '../domain/importPhoto';
+import { createEntryRepository } from './entryRepository';
+import type { SqlDatabase } from './sqlDatabase';
 
 test('fresh schema and v1 migration preserve records and recover interrupted jobs', async (t) => {
   const r = fixture();
@@ -23,6 +25,65 @@ test('fresh schema and v1 migration preserve records and recover interrupted job
   assert.deepEqual(await r.repository.pendingDeletions(), []);
   await initializeDatabase(r.db, r.write); // Restart is idempotent.
   assert.equal((await r.repository.list()).length, 1);
+});
+
+test('repository close waits for active database work and fences later calls', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+
+  let releaseRead!: () => void;
+  let markReadStarted!: () => void;
+  let releaseWrite!: () => void;
+  let markWriteStarted!: () => void;
+  const readStarted = new Promise<void>((resolve) => {
+    markReadStarted = resolve;
+  });
+  const writeStarted = new Promise<void>((resolve) => {
+    markWriteStarted = resolve;
+  });
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  const writeGate = new Promise<void>((resolve) => {
+    releaseWrite = resolve;
+  });
+  let closed = false;
+  const db: SqlDatabase = {
+    ...r.db,
+    async getAllAsync<T>(sql: string, ...params: (string | number | null)[]) {
+      markReadStarted();
+      await readGate;
+      assert.equal(closed, false, 'the shared connection must stay open during a read');
+      return r.db.getAllAsync<T>(sql, ...params);
+    },
+    async closeAsync() {
+      closed = true;
+    },
+  };
+  const repository = createEntryRepository(db, async (action) => {
+    markWriteStarted();
+    await writeGate;
+    return r.write(action);
+  });
+
+  const read = repository.list();
+  await readStarted;
+  const write = repository.acknowledgeDeletion('missing');
+  const close = repository.close();
+  assert.equal(repository.close(), close, 'concurrent close requests share one shutdown');
+  await assert.rejects(repository.list(), /DATABASE_CLOSED/);
+  assert.equal(closed, false);
+
+  releaseRead();
+  await read;
+  await writeStarted;
+  assert.equal(closed, false, 'close must also wait for a write in progress');
+  releaseWrite();
+  await write;
+  await close;
+  assert.equal(closed, true);
+  await repository.close();
 });
 
 test('fresh install applies every migration once and has editable sticker columns', async (t) => {

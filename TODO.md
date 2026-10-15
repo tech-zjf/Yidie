@@ -17,6 +17,8 @@ This is the single working checklist for the first public, installable release. 
 - [x] Stage restores separately and use a startup-recoverable directory swap; rollback retains the current library if activation fails before commit.
 - [x] Make backup/restore discoverable in Settings and explain that backup packages are unencrypted and uninstalling without a backup can remove local records.
 - [x] Add deterministic native tests for package corruption, path traversal, future versions, storage limits, cancellation, interrupted swaps, and a live WAL database; verify the current Simulator database can be packaged and staged for restore. On the dedicated iOS 26.1 Simulator, save an empty `.yidie` package through Files, select it in Restore, confirm the 0-record replacement, and relaunch successfully to the calendar.
+- [x] Prevent repository shutdown from racing in-flight SQLite statements: fence new operations, await active and queued work, then close the shared handle. A regression test pauses a read while `close()` runs and proves the connection remains open until the read settles.
+- [ ] Rebuild and exercise restore while calendar/record reads are active on the dedicated Simulator to verify the crash-report fix at runtime. A recent simulator crash report shows `SQLiteModule.run` resetting a statement concurrently with `closeDatabase`; the source fix and regression test pass, but this runtime repro is pending CoreSimulatorService recovery. The report does not establish which user action initiated the close.
 
 ## P1 — finish the promised user flows
 
