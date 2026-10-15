@@ -29,9 +29,11 @@ expect(rendered.extent.width > sourceExtent.width && rendered.extent.height > so
        "styled output must reserve room around the subject")
 let context = CIContext(options: [.cacheIntermediates: false])
 guard let image = context.createCGImage(rendered.image, from: rendered.extent,
-                                        format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB()),
-      let pixels = image.dataProvider?.data as Data? else {
-  fatalError("FAIL: rendered image must be readable")
+                                        format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB()) else {
+  fatalError("FAIL: rendered image must produce a CGImage")
+}
+guard let pixels = image.dataProvider?.data as Data? else {
+  fatalError("FAIL: rendered CGImage has no data provider")
 }
 func pixel(x: Int, y: Int) -> (red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8) {
   let offset = y * image.bytesPerRow + x * 4
@@ -50,6 +52,19 @@ expect(shadowPixel.alpha > 0 && shadowPixel.alpha < 255,
 let unstyled = try StickerRenderer.render(cutout: subject, outlineRadius: 0, colorHex: "#FFFFFF", effect: .original)
 expect(unstyled.extent.width < rendered.extent.width,
        "original style must not expand to the outlined bounds")
+let noOutline = try StickerRenderer.render(cutout: subject, outlineRadius: 0, colorHex: "#FFFFFF", effect: .outline)
+expect(noOutline.extent == unstyled.extent,
+       "a zero-width outline must keep the unstyled canvas")
+guard let unstyledImage = context.createCGImage(unstyled.image, from: unstyled.extent,
+                                                format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB()),
+      let noOutlineImage = context.createCGImage(noOutline.image, from: noOutline.extent,
+                                                  format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB()),
+      let unstyledPixels = unstyledImage.dataProvider?.data as Data?,
+      let noOutlinePixels = noOutlineImage.dataProvider?.data as Data? else {
+  fatalError("FAIL: zero-width outline comparison must render to pixels")
+}
+expect(noOutlinePixels == unstyledPixels,
+       "a zero-width outline must not leave a one-pixel border or shadow")
 do {
   _ = try StickerRenderer.render(cutout: subject, outlineRadius: 6, colorHex: "#FF0000", effect: .outline)
   fatalError("FAIL: unknown outline colors must be rejected")

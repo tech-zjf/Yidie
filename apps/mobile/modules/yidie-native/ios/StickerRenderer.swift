@@ -75,6 +75,7 @@ enum StickerRenderer {
     }
 
     if effect == .original { return (subject, canvas) }
+    if effect == .outline && outlineRadius <= 0 { return (subject, canvas) }
 
     let radius = CGFloat(outlineRadius)
     let expandedAlpha = alphaMask
