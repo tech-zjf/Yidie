@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="design/assets/brand/yidie-app-icon.svg" width="132" alt="Yidie app icon" />
+  <img src="apps/mobile/assets/icon.png" width="132" alt="Yidie app icon" />
 </p>
 
 <h1 align="center">Yidie · 衣叠</h1>
@@ -8,11 +8,6 @@
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
 > **Development build.** The populated calendar and local sticker-outline preview/save have been exercised in an isolated Simulator with synthetic data. Empty-library backup save/restore now also passes through the iOS Files UI. Touch gestures, share delivery, corrupt-package UI handling, date-picker interaction, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
-
-<p align="center">
-  <img src="design/screenshots/app-populated-calendar.png" width="300" alt="Yidie synthetic populated calendar with a ten-outfit day stack" />
-</p>
-<p align="center"><sub>UI preview · iPhone 18 Pro / iOS 27 Simulator · synthetic artwork only; Preview scenes is development-only and the silhouette figures are layout stand-ins, not Vision results.</sub></p>
 
 ## What makes it different
 
@@ -63,10 +58,10 @@ Never attach personal outfit photos, databases, signing files, provisioning prof
 
 ```text
 apps/mobile/       Expo app, feature UI, local data layer, Swift native module
-design/            Brand assets and clearly labeled design prototypes
+assets/            Brand source artwork and font source files with licenses
 docs/              Product decisions, architecture, verification and device-safety notes
 specs/             Database and native contracts/migrations
-scripts/           Reproducible checks and design asset builders
+scripts/           Reproducible checks and source generators
 ```
 
 Start with [architecture](docs/03-architecture.md), [engineering conventions](docs/10-engineering.md), and the [delivery board](TODO.md). Product scope and the current release gate live in the [PRD](docs/02-prd.md) and [readiness review](docs/16-readiness-review.md).
@@ -75,7 +70,7 @@ Start with [architecture](docs/03-architecture.md), [engineering conventions](do
 
 Bug reports, design feedback, and focused code contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Keep date/layout rules in the domain layer, SQL in data repositories, UI in feature modules, and iOS APIs in `modules/yidie-native`. Changes that touch persistence or file ownership need failure-path tests.
 
-The project is licensed under [MIT](LICENSE). The bundled fonts and sample artwork have their own notices; see [asset provenance](design/assets/PROVENANCE.md).
+The project is licensed under [MIT](LICENSE). Bundled fonts have their own SIL Open Font License notices; see [font provenance](assets/fonts/README.md).
 
 ## Project links
 

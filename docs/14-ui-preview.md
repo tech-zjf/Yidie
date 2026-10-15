@@ -48,6 +48,6 @@ YIDIE_UI_PREVIEW=1 npm run export:ios -- --no-bytecode
 
 ## 原生运行验收边界
 
-2026-10-15 在独立的 **Yidie QA iPhone 18 Pro / iOS 27 Simulator** 上重新打开 Debug 预览，检查了 populated/empty calendar、数量角标、十张同日记录弹层、描边预览与保存、All Records、导入确认及合成失败状态。描边保存后在日期弹层可见，导入页没有场景菜单遮挡。预览只验证界面和内存替身，不代表原生 PhotoKit/Vision 行为。之前 Release 空日历截图仍保存在 [`design/screenshots/app-empty-calendar.png`](../design/screenshots/app-empty-calendar.png)。
+2026-10-15 在独立的 **Yidie QA iPhone 18 Pro / iOS 27 Simulator** 上重新打开 Debug 预览，检查了 populated/empty calendar、数量角标、十张同日记录弹层、描边预览与保存、All Records、导入确认及合成失败状态。描边保存后在日期弹层可见，导入页没有场景菜单遮挡。预览只验证界面和内存替身，不代表原生 PhotoKit/Vision 行为。公开仓库不保留这套开发场景的模拟截图，README 演示视频待正式验收后录制。
 
 尚需逐项验证日/月份触控滑动、窄屏、大字体、VoiceOver、减弱动态效果、原生 Files 备份/恢复、分享面板和系统日期选择。真实抠图质量、离线行为、内存与性能必须用用户主动选择的测试照片在真机检查；不得将几何占位素材当成真实效果。

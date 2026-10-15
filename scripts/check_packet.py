@@ -86,15 +86,3 @@ if generated.exists():
     expected += 'export const migrations: Record<number, string> = ' + json.dumps({int(p.name.split('-')[0]): p.read_text() for p in sorted((root / 'specs/migrations').glob('*.sql'))}, ensure_ascii=False) + ';\n'
     assert generated.read_text() == expected, 'Run scripts/build_schema.py after changing SQL'
     print('PASS runtime SQL matches its single source')
-
-fragment = (root / 'design/prototype.fragment.html').read_text()
-assert '__SPRITE_DATA__' not in fragment
-assert '__FONT_ROMAN__' not in fragment and '__FONT_ITALIC__' not in fragment
-assert len(fragment.encode()) < 1_000_000
-assert not re.search(r'\b(fetch\s*\(|XMLHttpRequest|WebSocket)', fragment)
-js = '\n'.join(re.findall(r'<script>([\s\S]*?)</script>', fragment))
-with tempfile.TemporaryDirectory() as temp:
-    path = Path(temp) / 'prototype.js'
-    path.write_text(js)
-    subprocess.run(['node','--check',str(path)], check=True)
-print('PASS prototype: embedded images, size, no network calls, JavaScript syntax')

@@ -1,10 +1,11 @@
-"""Optional maintainer tool: fonttools + brotli. Outputs are checked in."""
+"""Rebuild the app's local Fraunces subsets from the licensed source fonts."""
 from pathlib import Path
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 from fontTools import subset
 
-ROOT = Path(__file__).resolve().parents[1] / 'design/assets/fonts'
+ROOT = Path(__file__).resolve().parents[1] / 'assets/fonts/source'
+OUTPUT = Path(__file__).resolve().parents[1] / 'apps/mobile/assets/fonts'
 for suffix in ('', '-Italic'):
     font = TTFont(ROOT / f'Fraunces{suffix}.ttf')
     font = instantiateVariableFont(font, {'wght': 600, 'opsz': 48, 'SOFT': 30, 'WONK': 1}, inplace=True)
@@ -23,7 +24,5 @@ for suffix in ('', '-Italic'):
         elif name.nameID in (2, 17): value = 'Regular'
         else: continue
         name.string = value.encode(name.getEncoding())
-    font.save(ROOT / f'{postscript}.ttf')
-    font.flavor = 'woff2'
-    font.save(ROOT / f'{postscript}.woff2')
+    font.save(OUTPUT / f'{postscript}.ttf')
     print(postscript)

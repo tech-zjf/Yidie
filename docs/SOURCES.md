@@ -51,3 +51,4 @@
 - [Bluesky 功能模块](https://github.com/bluesky-social/social-app/tree/main/src/features)
 - [Ignite 字体配置](https://github.com/infinitered/ignite/blob/master/boilerplate/app/theme/typography.ts)
 - [Fraunces 官方字体源码与许可证](https://github.com/google/fonts/tree/main/ofl/fraunces)
+- [Bagel Fat One 字体及许可证](https://github.com/JAMO-TYPEFACE/BagelFat)
