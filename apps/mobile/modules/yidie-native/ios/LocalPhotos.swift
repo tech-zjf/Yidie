@@ -25,9 +25,21 @@ enum LocalPhotos {
     let assets = PHAsset.fetchAssets(with: .image, options: options)
     let start = max(0, offset), end = min(assets.count, start + min(60, max(1, limit)))
     guard start < end else { return [] }
+    let dateFormatter = ISO8601DateFormatter()
     return (start..<end).map { index in
       let asset = assets.object(at: index)
-      return ["id": asset.localIdentifier, "createdAt": asset.creationDate.map { ISO8601DateFormatter().string(from: $0) } as Any? ?? NSNull(), "width": asset.pixelWidth, "height": asset.pixelHeight]
+      let createdAt: Any
+      if let date = asset.creationDate {
+        createdAt = dateFormatter.string(from: date)
+      } else {
+        createdAt = NSNull()
+      }
+      return [
+        "id": asset.localIdentifier,
+        "createdAt": createdAt,
+        "width": asset.pixelWidth,
+        "height": asset.pixelHeight
+      ]
     }
   }
 
