@@ -47,7 +47,8 @@
         }
       ],
       "expo-image",
-      "expo-sqlite"
+      "expo-sqlite",
+      "./plugins/with-expo-sqlite-header-search-path"
     ]
   }
 }

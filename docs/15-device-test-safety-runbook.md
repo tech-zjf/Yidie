@@ -88,6 +88,13 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 - 15:20 再次只读执行 `xcrun simctl list devices available`，CoreSimulatorService 仍返回 `Connection refused`，且报告无法发现 Simulator runtimes；`xcodebuild -version` 正常返回 Xcode 27.0（27A266a）。本次没有启动/安装 app、重启系统服务或改变模拟器数据。
 - 本次仅重启专用空数据模拟器；没有连接实体 iPhone、打开照片库、改 Developer Mode、签名、证书或钥匙串，也没有重置/擦除模拟器内容。
 
+## 2026-10-15 ExpoSQLite 构建配置复验
+
+- 为修复 ExpoSQLite Swift 模块未找到 vendored `exsqlite3_*` 声明的问题，新增了 tracked Expo config plugin；它只给 `ExpoSQLite` CocoaPods target 增加本地头文件搜索目录。插件用单元测试验证幂等和 Podfile 模板变化时快速失败；Expo prebuild 已生成该 Podfile 片段，Ruby 语法检查通过。
+- 为应用插件，Expo prebuild 清理并重新生成了 Git 忽略的 `apps/mobile/ios/` 原生工程。物理 iPhone 上已安装的衣叠和设备数据不受此操作影响。当前生成的 Xcode 工程没有 `DEVELOPMENT_TEAM` 或描述文件设置；后续如需真机签名，可能要在 Xcode 中重新选择 Personal Team。尚未签名或安装任何新包。
+- CocoaPods 安装因 DNS 无法解析 `github.com` 与 `cdn.cocoapods.org` 未完成，当前不能做干净的本地 Xcode 重建。先前一次性全局头文件路径覆盖可完成无签名编译，但它不是插件实际生成的 Pod target 配置，不能替代后续标准构建验收。
+- 本轮未启动模拟器，遵循用户选择先完成代码和文档；未连接 iPhone、访问照片或改动 Developer Mode、Apple 账号、签名身份、证书、私钥、钥匙串授权或描述文件。
+
 ## 2026-10-15 本地月份图片导出验收
 
 - 在专用 iPhone 17 Pro / iOS 26.1 QA 模拟器中，从设置导出空的 2026 年 10 月日历；系统分享面板识别为 PNG，预览显示约 98 KB。
