@@ -9,6 +9,7 @@ Thanks for helping make Yidie easier to use, understand, and run. The project is
 - Prefer one clear model and typed contract over compatibility branches or generic frameworks. Add tests for meaningful date, migration, ownership, and failure boundaries.
 - Use the existing shared text, copy, color, spacing, and font tokens. Verify narrow screens, long English strings, large text, and reduced motion when a UI change affects them.
 - Update the current README, TODO, PRD, or verification document when user-visible behavior or a release boundary changes. Avoid adding another stage report when the live document can be updated.
+- Do not add retired browser prototypes, temporary mockups, simulator captures, generated native projects, or other machine-local artifacts. Keep an active UI preview only when it has a documented test purpose and cannot access real app data.
 
 Run from `apps/mobile`:
 

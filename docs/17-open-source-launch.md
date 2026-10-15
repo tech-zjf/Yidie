@@ -25,6 +25,8 @@ The engineering patterns that fit this repository are feature-local code, a narr
 4. A contributor should be able to build without credentials, private photos, cloud services or undocumented manual state. Clearly call out Xcode signing if installing on a personal iPhone.
 5. Screenshots and video must come from the app build being described. Label synthetic preview scenes clearly and use synthetic sample outfits for public media.
 
+GitHub's language chart reflects the repository's default branch. The current publication branch removes four historical HTML-only design prototypes; the chart will change only after that cleanup reaches the default branch. Do not use Linguist overrides to hide source files or commit those prototypes again.
+
 ## Demo recording
 
 Create two artifacts after the simulator acceptance pass:

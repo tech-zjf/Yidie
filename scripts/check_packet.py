@@ -9,7 +9,18 @@ import json
 
 root = Path(__file__).resolve().parents[1]
 tracked = subprocess.check_output(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], cwd=root).decode().split('\0')
-for name in set(tracked):
+tracked = {name for name in tracked if name}
+obsolete_design_prototypes = sorted(
+    name for name in tracked
+    if Path(name).parent == Path('design') and Path(name).suffix.lower() in {'.html', '.htm'}
+)
+assert not obsolete_design_prototypes, (
+    'Do not publish the retired HTML-only design prototypes: '
+    + ', '.join(obsolete_design_prototypes)
+)
+print('PASS publication hygiene: no retired HTML design prototypes')
+
+for name in tracked:
     file = root / name
     if file.suffix != '.md' or not file.is_file():
         continue
