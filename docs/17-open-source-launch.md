@@ -23,7 +23,7 @@ The engineering patterns that fit this repository are feature-local code, a narr
 2. Keep only current decision documents linked from the README. Preserve useful product and engineering evidence, but keep personal device-state records, credentials, and machine-specific paths out of the repository and its public history. Do not leave superseded stage reviews looking like active specifications.
 3. CI should run the lockfile-based JavaScript, SQLite and documentation checks on every pull request. Native build checks belong on a supported macOS/Xcode runner and must identify their exact toolchain.
 4. A contributor should be able to build without credentials, private photos, cloud services or undocumented manual state. Clearly call out Xcode signing if installing on a personal iPhone.
-5. Screenshots and video must come from the app build being described. Label browser prototypes as prototypes. Use synthetic sample outfits for public media.
+5. Screenshots and video must come from the app build being described. Label synthetic preview scenes clearly and use synthetic sample outfits for public media.
 
 ## Demo recording
 

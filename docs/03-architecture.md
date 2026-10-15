@@ -2,7 +2,7 @@
 
 衣叠采用 Expo / React Native 实现界面，用本地 Expo Module 调用 Apple Vision 与 PhotoKit。SQLite 保存结构化记录，沙盒目录保存图片。安装好的 Release App 将 JS 和素材一并打包，运行不依赖 Metro、业务服务器、付费 API 或用户填写密钥。
 
-基础工程采用 Expo SDK 57 / React Native 0.86 / React 19.2，完整编译要求 Xcode 26.4+ 与 macOS 26.2+；具体依赖写入 lockfile。升级 SDK 时先复核 Xcode 要求。目前尚无真机性能数据，不能将可交互网页原型当作原生能力证明。
+基础工程采用 Expo SDK 57 / React Native 0.86 / React 19.2，完整编译要求 Xcode 26.4+ 与 macOS 26.2+；具体依赖写入 lockfile。升级 SDK 时先复核 Xcode 要求。目前尚无真机性能数据；合成预览只能验证组件布局，不能证明 PhotoKit、Vision 或设备性能。
 
 ## 模块划分
 

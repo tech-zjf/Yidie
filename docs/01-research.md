@@ -43,7 +43,7 @@
 
 初期不进入 App Store，真实使用的最大阻力可能是安装。iOS 没有面向所有人的通用“下载 IPA 即安装”方式。自行签名和 Xcode 适合开发者；Apple Personal Team 的描述文件有效期有限，官方说明为 7 天。TestFlight 适合后续测试分发，但需要开发者计划与 App Store Connect 流程，外部测试可能需要审核。它不等于公开上架，也不等于无成本、永久免维护。[Apple 账号说明](https://developer.apple.com/help/account/basics/about-your-developer-account)、[TestFlight](https://developer.apple.com/testflight/)
 
-因此先以“愿意本地构建的 iOS / RN 开发者 + 少量愿意反馈的穿搭用户”为受众。公开的浏览器交互演示可降低看懂项目的门槛，但不替代安装或真实使用数据。
+因此先以“愿意本地构建的 iOS / RN 开发者 + 少量愿意反馈的穿搭用户”为受众。仓库应提供可复现的本地构建和真实 App 演示；录屏必须在对应功能完成验收后制作，不用早期网页界面替代产品体验。
 
 ## 投入与停止条件
 
