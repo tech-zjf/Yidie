@@ -12,7 +12,7 @@ Updated 2026-10-15. This page records the latest reproducible checks. Feature ac
 
 The latest complete workflow passed for PR head [`60e54cb`](https://github.com/tech-zjf/Yidie/commit/60e54cbe9044f5c66b0e1558aa5390551adef4ae) in [run 38728466183](https://github.com/tech-zjf/Yidie/actions/runs/38728466183). It includes the 71-test suite, iOS export, documentation and native safety checks, Expo prebuild, CocoaPods, and the unsigned Simulator Release build.
 
-The current PR head is [`6ced968`](https://github.com/tech-zjf/Yidie/commit/6ced96866015580cd3e2c3f1f37cad56c729f234). Its JavaScript checks, 71 tests, iOS export, documentation checks, native safety tests, Expo prebuild, and CocoaPods installation have passed. The unsigned Simulator Release build is still running in [run 38729213583](https://github.com/tech-zjf/Yidie/actions/runs/38729213583); do not report this head as fully green until that run completes.
+The latest app-source commit is [`6ced968`](https://github.com/tech-zjf/Yidie/commit/6ced96866015580cd3e2c3f1f37cad56c729f234). Its JavaScript checks, 71 tests, iOS export, documentation checks, native safety tests, Expo prebuild, and CocoaPods installation passed. The unsigned Simulator Release build was still running in [run 38729213583](https://github.com/tech-zjf/Yidie/actions/runs/38729213583) when the documentation was updated. A subsequent documentation-only commit, `63b1a5b`, triggered fresh CI run [38729783023](https://github.com/tech-zjf/Yidie/actions/runs/38729783023); verify that run before describing the latest PR revision as fully green.
 
 ## Runtime evidence
 
