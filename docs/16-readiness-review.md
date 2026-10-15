@@ -13,12 +13,12 @@ Updated 2026-10-15. Yidie is an offline-first iOS development build, not a relea
 
 ## Verification
 
-- `npm run check`: TypeScript, ESLint, Prettier, and all 71 JavaScript tests, including a file-backed SQLite WAL close/reopen case. The current PR head `6ced968` has passed this suite and the iOS export/docs job in GitHub Actions.
+- `npm run check`: TypeScript, ESLint, Prettier, and all 71 JavaScript tests, including a file-backed SQLite WAL close/reopen case.
 - `npm run export:ios`: production JavaScript bundle; preview fixtures are excluded from the release export.
 - `sh scripts/check_native.sh`: Swift safety tests and iOS core typecheck.
 - `python3 scripts/check_packet.py`: documentation links, publication hygiene, SQLite schema/migrations, and repository contracts.
 - A dedicated iOS 27 Simulator preview used synthetic data to inspect the calendar, same-day stacks, outline preview/save, All Records, and import states. An iOS 26.1 Simulator completed an empty-backup save/restore through Files and reopened the calendar. An empty-month PNG was saved and opened in Preview.
-- [GitHub Actions run 38730612647](https://github.com/tech-zjf/Yidie/actions/runs/38730612647) passed at PR head `7522e55`, including the 71-test JavaScript suite, production iOS export, documentation/native contracts, Swift safety tests, Expo prebuild, CocoaPods, and the unsigned Simulator Release build on Xcode 26.6. The PR remains a development snapshot: this CI result does not close the runtime and device acceptance gates below.
+- The [GitHub Actions workflow](https://github.com/tech-zjf/Yidie/actions/workflows/ci.yml) runs the JavaScript suite, production iOS export, documentation/native contracts, Swift safety tests, Expo prebuild, CocoaPods, and an unsigned Simulator Release build on Xcode 26.6. CI verifies reproducible compilation; it does not close the runtime and device acceptance gates below.
 
 These checks did not use a physical iPhone, personal Photos library, Developer Mode, signing identity, certificate, or keychain. Synthetic previews do not prove Apple Vision cutout quality or real-photo import behavior.
 
@@ -39,4 +39,4 @@ The lockfile resolves two high-severity advisories in the local toolchain (revie
 
 These packages are reached through Expo/Metro development and build tooling, not through Yidie's app imports; they were not found in the exported application bundle. Treat them as toolchain exposure, not as evidence of an app-runtime vulnerability. The advisory databases still show no fixed release. The full npm registry audit remains open until registry access is available; do not suppress these findings with an unreviewed override or downgrade Expo to unrelated versions.
 
-For local development and build reproduction, see the [mobile build guide](../apps/mobile/README.md) and [build log](09-build-log.md). Keep machine-specific signing, device, and keychain notes outside the public repository.
+For local development and build reproduction, see the [mobile build guide](../apps/mobile/README.md). Keep machine-specific signing, device, and keychain notes outside the public repository.
