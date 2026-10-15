@@ -1,6 +1,6 @@
 # Security policy
 
-Yidie is an early-stage local-first app. Please do not use it as the only copy of important photos until in-app backup/restore is complete.
+Yidie is an early-stage local-first app. Backup and restore are implemented, but `.yidie` packages are not encrypted and must be saved to a location you control and verified before relying on them. Keep an independent copy of important photos; uninstalling Yidie can remove its local records and imported copies.
 
 Do not report a suspected vulnerability with private photos, app databases, device identifiers, credentials, signing certificates, or provisioning profiles attached.
 
