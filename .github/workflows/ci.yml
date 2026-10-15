@@ -97,4 +97,16 @@ jobs:
           trap shutdown_simulator EXIT
           xcrun simctl bootstatus "$simulator_udid" -b
           npm run test:sticker:sim -- "$simulator_udid"
+          app_path="$RUNNER_TEMP/yidie-derived-data/Build/Products/Release-iphonesimulator/Yidie.app"
+          if [ ! -d "$app_path" ]; then
+            printf 'Built app not found: %s\n' "$app_path" >&2
+            exit 1
+          fi
+          xcrun simctl install "$simulator_udid" "$app_path"
+          launch_output=$(xcrun simctl launch --terminate-running-process "$simulator_udid" com.techzjf.yidie)
+          printf 'Launched current Yidie build: %s\n' "$launch_output"
+          sleep 5
+          screenshot_path="$RUNNER_TEMP/yidie-simulator-launch.png"
+          xcrun simctl io "$simulator_udid" screenshot "$screenshot_path" >/dev/null
+          swift "$GITHUB_WORKSPACE/scripts/assert_simulator_launch.swift" "$screenshot_path"
         working-directory: apps/mobile
