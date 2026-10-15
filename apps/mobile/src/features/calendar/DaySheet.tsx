@@ -75,7 +75,6 @@ export function DaySheet({
         setEditing(null);
         onClose();
         afterClose();
-        onDismiss();
         setClosing(false);
         return;
       }
@@ -92,11 +91,10 @@ export function DaySheet({
         setEditing(null);
         onClose();
         afterClose();
-        onDismiss();
         setClosing(false);
       });
     },
-    [closing, onClose, onDismiss, progress, reduceMotion],
+    [closing, onClose, progress, reduceMotion],
   );
 
   const sheetHeight = editing || fontScale > 1.4 ? height - insets.top - 12 : height * 0.72;
@@ -123,6 +121,7 @@ export function DaySheet({
       transparent
       animationType="none"
       onRequestClose={() => closeAfterAnimation()}
+      onDismiss={onDismiss}
     >
       <View style={styles.overlay}>
         <Animated.View
