@@ -17,6 +17,7 @@ function entry(id: string, date: string, index: number, ready = true): Entry {
     thumbnailPath: ready ? `previews/${id}-v0.png` : null,
     borderWidth: 4,
     borderColor: '#FFFFFF',
+    effect: 'outline',
     styleRevision: 0,
     width: ready ? 300 : null,
     height: ready ? 520 : null,

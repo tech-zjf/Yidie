@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Entry, Sticker, StickerBorderColor } from '../../domain/records';
+import type { Entry, Sticker, StickerBorderColor, StickerEffect } from '../../domain/records';
 import { isRecordDate } from '../../domain/datePolicy';
 import { errorCode } from '../../domain/importPhoto';
 import type { AppServices } from '../../services';
@@ -21,6 +21,7 @@ export function useEntryEditor(
   const [borderColor, setBorderColor] = useState<StickerBorderColor>(
     initial.borderColor ?? '#FFFFFF',
   );
+  const [effect, setEffect] = useState<StickerEffect>(initial.effect ?? 'outline');
   const [stylePreview, setStylePreview] = useState<Sticker | null>(null);
   const stagedVersion = useRef<number | null>(null),
     styleCommitted = useRef(false);
@@ -137,6 +138,13 @@ export function useEntryEditor(
       setStylePreview(null);
       styleCommitted.current = false;
     },
+    effect,
+    setEffect: (value: StickerEffect) => {
+      if (lock.current) return;
+      setEffect(value);
+      setStylePreview(null);
+      styleCommitted.current = false;
+    },
     stylePreview,
     previewStyle: () =>
       run(async () => {
@@ -146,6 +154,7 @@ export function useEntryEditor(
           revision,
           borderWidth,
           borderColor,
+          effect,
         );
         if (!active.current) {
           await services.photos.discardStickerStyleVersion(entry.id, revision).catch(() => {});

@@ -24,8 +24,9 @@ test('fresh schema and v1 migration preserve records and recover interrupted job
     VALUES ('interrupted','unknown','originals/interrupted.source','running',0,1,'now','now');
     INSERT INTO processing_jobs VALUES ('interrupted','interrupted','running',0,1,NULL,'now','now')`);
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 6);
   assert.equal((await r.repository.get('interrupted'))?.status, 'paused');
+  assert.equal((await r.repository.get('interrupted'))?.effect, 'outline');
   assert.equal(r.sqlite.prepare('SELECT state FROM processing_jobs').get()?.state, 'paused');
   assert.deepEqual(await r.repository.pendingDeletions(), []);
   await initializeDatabase(r.db, r.write); // Restart is idempotent.
@@ -214,7 +215,7 @@ test('fresh install applies every migration once and has editable sticker column
   const r = fixture();
   t.after(() => r.sqlite.close());
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 6);
   const columns = new Set(
     (r.sqlite.prepare('PRAGMA table_info(entries)').all() as { name: string }[]).map(
       (column) => column.name,
@@ -223,9 +224,10 @@ test('fresh install applies every migration once and has editable sticker column
   assert.ok(columns.has('cutout_path'));
   assert.ok(columns.has('border_color'));
   assert.ok(columns.has('style_revision'));
+  assert.ok(columns.has('sticker_effect'));
   assert.equal(
     r.sqlite.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get()?.value,
-    '5',
+    '6',
   );
 });
 
@@ -267,6 +269,7 @@ test('sticker style updates are local metadata transactions guarded by the entry
     instanceCount: 1,
     borderWidth: 8,
     borderColor: '#242424' as const,
+    effect: 'comic' as const,
     styleRevision: 1,
   };
   await r.repository.updateStickerStyle('a', 0, style);
@@ -274,11 +277,19 @@ test('sticker style updates are local metadata transactions guarded by the entry
   assert.equal(entry?.stickerPath, style.stickerPath);
   assert.equal(entry?.borderWidth, 8);
   assert.equal(entry?.borderColor, '#242424');
+  assert.equal(entry?.effect, 'comic');
   assert.equal(entry?.styleRevision, 1);
   assert.equal(entry?.revision, 1);
   await assert.rejects(r.repository.updateStickerStyle('a', 0, style), /STALE_RESULT/);
   await assert.rejects(
     r.repository.updateStickerStyle('a', 1, { ...style, stickerPath: 'outside/a.png' }),
+    /INVALID_STICKER_STYLE/,
+  );
+  await assert.rejects(
+    r.repository.updateStickerStyle('a', 1, {
+      ...style,
+      effect: 'invalid' as (typeof style)['effect'],
+    }),
     /INVALID_STICKER_STYLE/,
   );
   assert.equal((await r.repository.get('a'))?.stickerPath, style.stickerPath);

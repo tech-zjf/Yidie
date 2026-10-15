@@ -11,12 +11,13 @@ enum StickerProcessor {
   static func create(id: String) throws -> [String: Any] {
     let result = try makeCutout(id: id)
     try writePNG(result.image, to: NativeFileStore.file(id, kind: "cutout"))
-    return try render(id: id, cutout: result.image, revision: 0, borderWidth: 4, borderColor: "#FFFFFF", instanceCount: result.instanceCount)
+    return try render(id: id, cutout: result.image, revision: 0, borderWidth: 4, borderColor: "#FFFFFF", effect: .outline, instanceCount: result.instanceCount)
   }
 
-  static func renderStyle(id: String, revision: Int, borderWidth: Double, borderColor: String) throws -> [String: Any] {
+  static func renderStyle(id: String, revision: Int, borderWidth: Double, borderColor: String, effectName: String) throws -> [String: Any] {
     try NativeFileStore.validateID(id)
-    guard revision > 0, borderWidth.isFinite, (0...8).contains(borderWidth), allowedColors.contains(borderColor) else {
+    guard revision > 0, borderWidth.isFinite, (0...8).contains(borderWidth), allowedColors.contains(borderColor),
+          let effect = StickerEffect(rawValue: effectName) else {
       throw YidieError(code: "INVALID_STICKER_STYLE")
     }
     let cutoutURL = try NativeFileStore.file(id, kind: "cutout")
@@ -29,7 +30,7 @@ enum StickerProcessor {
       cutout = try makeCutout(id: id).image
       try writePNG(cutout, to: cutoutURL)
     }
-    return try render(id: id, cutout: cutout, revision: revision, borderWidth: borderWidth, borderColor: borderColor, instanceCount: 1)
+    return try render(id: id, cutout: cutout, revision: revision, borderWidth: borderWidth, borderColor: borderColor, effect: effect, instanceCount: 1)
   }
 
   private static func makeCutout(id: String) throws -> (image: CIImage, instanceCount: Int) {
@@ -90,7 +91,7 @@ enum StickerProcessor {
     return (foreground.cropped(to: canvas), instanceCount)
   }
 
-  private static func render(id: String, cutout: CIImage, revision: Int, borderWidth: Double, borderColor: String, instanceCount: Int) throws -> [String: Any] {
+  private static func render(id: String, cutout: CIImage, revision: Int, borderWidth: Double, borderColor: String, effect: StickerEffect, instanceCount: Int) throws -> [String: Any] {
     let sourceExtent = cutout.extent.integral
     let outlineRadius = StickerGeometry.outlineRadius(
       controlValue: borderWidth,
@@ -98,7 +99,16 @@ enum StickerProcessor {
     )
     let rendered: (image: CIImage, extent: CGRect)
     do {
-      rendered = try StickerRenderer.render(cutout: cutout, outlineRadius: outlineRadius, colorHex: borderColor)
+      let renderRadius: Double
+      switch effect {
+      case .original:
+        renderRadius = 0
+      case .outline:
+        renderRadius = outlineRadius
+      case .comic, .dimensional, .shimmer:
+        renderRadius = max(outlineRadius, 4)
+      }
+      rendered = try StickerRenderer.render(cutout: cutout, outlineRadius: renderRadius, colorHex: borderColor, effect: effect)
     } catch {
       throw YidieError(code: "INVALID_STICKER_STYLE")
     }
@@ -124,6 +134,7 @@ enum StickerProcessor {
       "instanceCount": instanceCount,
       "borderWidth": borderWidth,
       "borderColor": borderColor,
+      "effect": effect.rawValue,
       "styleRevision": revision
     ]
   }

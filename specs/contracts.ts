@@ -2,7 +2,7 @@
  * Month export and backup types below are targets for later implementation stages.
  */
 export type { DateProposal, DateSource } from '../apps/mobile/src/domain/datePolicy';
-export type { Asset, ImportedPhoto, Sticker, Entry, EntryRepository, PhotoProcessor } from '../apps/mobile/src/domain/records';
+export type { Asset, ImportedPhoto, Sticker, StickerEffect, Entry, EntryRepository, PhotoProcessor } from '../apps/mobile/src/domain/records';
 export type { BatchItem, DuplicateEntry, PauseReason, QueueCounts } from '../apps/mobile/src/domain/records';
 export type { PhotoPreview, ImageFileStore } from '../apps/mobile/src/domain/records';
 export type { LocalModule as YidieNative } from '../apps/mobile/modules/yidie-native';

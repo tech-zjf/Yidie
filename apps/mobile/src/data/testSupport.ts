@@ -44,6 +44,7 @@ export function sticker(id: string): Sticker {
     instanceCount: 1,
     borderWidth: 4,
     borderColor: '#FFFFFF',
+    effect: 'outline',
     styleRevision: 0,
   };
 }

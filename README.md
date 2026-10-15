@@ -7,14 +7,14 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** The populated calendar and local sticker-outline preview/save have been exercised in an isolated Simulator with synthetic data. Empty-library backup save/restore now also passes through the iOS Files UI. Touch gestures, share delivery, corrupt-package UI handling, date-picker interaction, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
+> **Development build.** The populated calendar and outline preview/save have been exercised in an isolated Simulator with synthetic data. Five local effect presets now compile and pass native pixel/migration tests; their interactive effect-picker flow and real-photo appearance still need acceptance. Empty-library backup save/restore now also passes through the iOS Files UI. Touch gestures, share delivery, corrupt-package UI handling, date-picker interaction, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
 
 ## What makes it different
 
 - **Calendar first.** A worn outfit becomes a sticker on its day. Multiple looks stack, then open into a horizontal photo viewer.
 - **Private by design.** Photo selection, date records, foreground cutouts, and sticker styles stay on the device. No account, backend, analytics, cloud inference, or photo upload.
 - **A small tool, not a digital closet.** No garment catalog, social feed, recommendations, or shopping layer. Keep a visual record of what you actually wore.
-- **Built with native iOS image processing.** Apple Vision creates the transparent cutout; Core Image redraws editable outlines locally.
+- **Built with native iOS image processing.** Apple Vision creates the transparent cutout; Core Image renders editable Original, Outline, Comic, 3D, and Shimmer looks locally. These are independent visual approximations, not pixel-identical copies of Apple Photos effects.
 
 ## Product status
 
@@ -22,7 +22,7 @@
 | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
 | Calendar, date browsing, same-day stacks and count badges        | Populated/empty simulator scenes and month arrows checked; touch swipes remain due |
 | Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted   |
-| Sticker outline preview and editing                              | Preview/save checked with synthetic simulator data; verify quality with an opt-in test photo |
+| Local sticker effect preview and editing                         | Five effect choices; native pixel tests pass; real-photo appearance remains unaccepted |
 | Backup/restore and native date picker                            | Empty backup save/restore passes in Simulator; invalid-package UI and date-picker acceptance due |
 | Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; payload delivery acceptance due |
 | Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                 |

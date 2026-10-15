@@ -9,7 +9,7 @@ test('preview sticker edits stay in memory and never open real app storage', asy
   const entry = entries[0];
   assert.ok(entry);
 
-  const style = await services.photos.renderStickerStyle(entry.id, 1, 6, '#242424');
+  const style = await services.photos.renderStickerStyle(entry.id, 1, 6, '#242424', 'outline');
   const beforeSave = await services.repository.get(entry.id);
   assert.equal(beforeSave?.styleRevision, entry.styleRevision);
   assert.equal(style.cutoutPath, entry.cutoutPath);
@@ -33,7 +33,7 @@ test('previewing the no-outline option produces no decorative stroke', async () 
   const entry = entries[0];
   assert.ok(entry);
 
-  const preview = await services.photos.renderStickerStyle(entry.id, 1, 0, '#FFFFFF');
+  const preview = await services.photos.renderStickerStyle(entry.id, 1, 0, '#FFFFFF', 'original');
   assert.ok(preview.thumbnailPath);
   const svg = decodeURIComponent(preview.thumbnailPath.slice('data:image/svg+xml;utf8,'.length));
 

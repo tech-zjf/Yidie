@@ -27,6 +27,7 @@ const sticker: Sticker = {
   instanceCount: 1,
   borderWidth: 4,
   borderColor: '#FFFFFF',
+  effect: 'outline',
   styleRevision: 0,
 };
 function rig(failure?: string) {

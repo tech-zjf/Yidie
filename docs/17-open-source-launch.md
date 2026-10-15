@@ -31,7 +31,7 @@ GitHub's language chart reflects the repository's default branch. The current pu
 
 Create two artifacts after the simulator acceptance pass:
 
-- A short, silent README loop (roughly 15–20 seconds) showing the calendar stack, opening a day, paging through same-day photos, and previewing/saving an outline. Capture it on the user's iPhone with a real test photo the user selected. Keep it small and readable at repository width; provide a reduced-motion still screenshot as a fallback.
+- A short, silent README loop (roughly 15–20 seconds) showing the calendar stack, opening a day, paging through same-day photos, and previewing/saving a sticker effect. Capture it on the user's iPhone with a real test photo the user selected. Keep it small and readable at repository width; provide a reduced-motion still screenshot as a fallback.
 - A 12–15 second, captioned portrait cut for X. Show one complete user job rather than a tour of menus: a quick calendar view, open a day, swipe once, save an outline. Capture on the user's iPhone with a user-selected test photo, hide system controls where possible, and exclude personal data.
 
 Before recording, verify that every shown interaction works in the current simulator build. Do not depict backup, export, or device Vision success until those flows pass. Add the capture date and build identifier to the release notes, not to the visible UI.

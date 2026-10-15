@@ -65,6 +65,7 @@ export function createEntryMutations(
           sticker.borderWidth < 0 ||
           sticker.borderWidth > 8 ||
           !['#FFFFFF', '#242424', '#0786A8'].includes(sticker.borderColor) ||
+          !['original', 'outline', 'comic', 'dimensional', 'shimmer'].includes(sticker.effect) ||
           !Number.isInteger(sticker.width) ||
           !Number.isInteger(sticker.height) ||
           sticker.width <= 0 ||
@@ -73,7 +74,7 @@ export function createEntryMutations(
           throw new Error('INVALID_STICKER_STYLE');
         const result = await tx.runAsync(
           `UPDATE entries SET sticker_path=?,cutout_path=?,thumbnail_path=?,sticker_width=?,sticker_height=?,
-            border_width=?,border_color=?,style_revision=?,revision=revision+1,updated_at=?
+            border_width=?,border_color=?,sticker_effect=?,style_revision=?,revision=revision+1,updated_at=?
            WHERE id=? AND revision=? AND processing_state='ready'`,
           sticker.stickerPath,
           sticker.cutoutPath,
@@ -82,6 +83,7 @@ export function createEntryMutations(
           sticker.height,
           sticker.borderWidth,
           sticker.borderColor,
+          sticker.effect,
           sticker.styleRevision,
           new Date().toISOString(),
           id,

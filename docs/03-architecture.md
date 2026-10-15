@@ -45,6 +45,8 @@ Data                 Native Expo Module
 
 Apple 框架没有按次调用账单，无需自托管推理服务器。具体照片效果、最低硬件支持和内存峰值必须通过真机验证。[Vision API](https://developer.apple.com/documentation/vision/vngenerateforegroundinstancemaskrequest)、[官方前景效果示例](https://developer.apple.com/documentation/vision/applying-visual-effects-to-foreground-subjects)
 
+贴纸样式在设备本地从保留的透明 cutout 重绘，可切换原图、描边、漫画、立体感和闪亮效果；Core Image 提供基础滤镜和 alpha 合成能力。漫画、立体感与闪亮是本项目的视觉近似，不是 Apple Photos 内部效果的复用或像素级复刻。Photos 没有公开其贴纸效果管线。样式选择通过 `sticker_effect` 持久化，旧记录迁移后默认沿用描边。
+
 ## 批量队列与性能
 
 首版图片处理并发 1，逐张释放图像缓冲；处理不占用 UI 主线程。SQLite 持久化任务状态、attempt、revision 和 pause_reason；纯 TypeScript 调度器只保存前台意图和界面快照，不把 JS timer 当可靠后台队列。进入后台停止领取新任务，不保证当前任务在系统挂起前完成。冷启动将遗留 running/queued 标记 paused/interrupted，用户确认后恢复。回前台仅自动恢复 background 暂停项；主动暂停、空间不足与重启恢复不会自动继续。
@@ -57,7 +59,7 @@ Apple 框架没有按次调用账单，无需自托管推理服务器。具体�
 
 ## 日期与数据
 
-数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [文件清理迁移](../specs/migrations/002-file-deletions.sql)、[队列迁移](../specs/migrations/003-processing-queue.sql)、[照片预览迁移](../specs/migrations/004-photo-previews.sql)、[可编辑贴纸迁移](../specs/migrations/005-editable-stickers.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
+数据契约见 v1 基线 [schema.sql](../specs/schema.sql)、后续 [文件清理迁移](../specs/migrations/002-file-deletions.sql)、[队列迁移](../specs/migrations/003-processing-queue.sql)、[照片预览迁移](../specs/migrations/004-photo-previews.sql)、[可编辑贴纸迁移](../specs/migrations/005-editable-stickers.sql)、[贴纸效果迁移](../specs/migrations/006-sticker-effects.sql) 和 [contracts.ts](../specs/contracts.ts)。`record_date` 使用 `YYYY-MM-DD` 字符串，确认后不再按设备时区从 timestamp 重算。保留 `source_datetime`、`source_offset_minutes`、`suggested_timezone`、`date_source`，用于解释与纠正。SQL 检查格式，领域层检查真实日期、闰年和范围。
 
 EXIF 日期含偏移时使用原本日历日期；不含偏移时保留原字面日期。相册 creationDate 只有绝对时间时，用导入时确定的时区生成建议并由用户确认。不要用 `toISOString().slice(0,10)` 处理本地日期，跨午夜会归错天。
 

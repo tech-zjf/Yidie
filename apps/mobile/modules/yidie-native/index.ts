@@ -4,6 +4,7 @@ import type {
   ImportedPhoto,
   Sticker,
   StickerBorderColor,
+  StickerEffect,
   ImageFileStore,
 } from '../../src/domain/records';
 import type { MonthExportPayload } from '../../src/domain/monthLayout';
@@ -24,6 +25,7 @@ export interface LocalModule extends ImageFileStore {
     styleRevision: number,
     borderWidth: number,
     borderColor: StickerBorderColor,
+    effect: StickerEffect,
   ): Promise<Sticker>;
   discardStickerStyleVersion(id: string, styleRevision: number): Promise<void>;
   pruneStickerStyles(id: string, keepingRevision: number): Promise<void>;

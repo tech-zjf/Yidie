@@ -5,7 +5,7 @@ Updated 2026-10-15. Yidie is an offline-first iOS development build, not a relea
 ## Implemented
 
 - An Expo/React Native calendar with same-day sticker stacks, count badges, month navigation, animated sheets, record browsing, English copy, and a centered Add action.
-- On-device photo processing and transparent sticker editing with locally rendered outline color and width options. No remote API, account, analytics, or cloud image processing is used.
+- On-device photo processing and transparent sticker editing with Original, Outline, Comic, 3D, and Shimmer presets. Core Image effects are local visual approximations; they are not Apple Photos' private pipeline. No remote API, account, analytics, or cloud image processing is used.
 - Photo-library access states, a persistent local processing queue, date editing, local sticker/month exports, and optional default-off export signature.
 - A portable `.yidie` backup with integrity checks, staged restore, recovery behavior, and native validation tests.
 - A single-owner SQLite connection and FIFO operation lane that serialize reads, writes, transactions, and close.
@@ -18,6 +18,7 @@ Updated 2026-10-15. Yidie is an offline-first iOS development build, not a relea
 - `sh scripts/check_native.sh`: Swift safety tests and iOS core typecheck.
 - `python3 scripts/check_packet.py`: documentation links, publication hygiene, SQLite schema/migrations, and repository contracts.
 - A dedicated iOS 27 Simulator preview used synthetic data to inspect the calendar, same-day stacks, outline preview/save, All Records, and import states. An iOS 26.1 Simulator completed an empty-backup save/restore through Files and reopened the calendar. An empty-month PNG was saved and opened in Preview.
+- The latest iOS 27 unsigned Release app builds and launches on the dedicated empty QA Simulator; its database migrates to schema 6. Core Image pixel fixtures cover the five output styles. The new on-screen effect-picker flow and any real-photo rendering quality remain unaccepted.
 - The [GitHub Actions workflow](https://github.com/tech-zjf/Yidie/actions/workflows/ci.yml) runs the JavaScript suite, production iOS export, documentation/native contracts, Swift safety tests, Expo prebuild, CocoaPods, and an unsigned Simulator Release build on Xcode 26.6. CI verifies reproducible compilation; it does not close the runtime and device acceptance gates below.
 
 These checks did not use a physical iPhone, personal Photos library, Developer Mode, signing identity, certificate, or keychain. Synthetic previews do not prove Apple Vision cutout quality or real-photo import behavior.

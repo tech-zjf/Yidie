@@ -25,9 +25,11 @@ export interface Sticker {
   instanceCount: number;
   borderWidth: number;
   borderColor: StickerBorderColor;
+  effect: StickerEffect;
   styleRevision: number;
 }
 export type StickerBorderColor = '#FFFFFF' | '#242424' | '#0786A8';
+export type StickerEffect = 'original' | 'outline' | 'comic' | 'dimensional' | 'shimmer';
 export interface Entry {
   id: string;
   date: string | null;
@@ -41,6 +43,7 @@ export interface Entry {
   thumbnailPath: string | null;
   borderWidth: number;
   borderColor: StickerBorderColor;
+  effect: StickerEffect;
   styleRevision: number;
   width: number | null;
   height: number | null;

@@ -25,6 +25,7 @@ function record(index: number, date: string | null, status: Entry['status'] = 'r
     thumbnailPath: status === 'ready' ? cutout : null,
     borderWidth: 4,
     borderColor: '#FFFFFF',
+    effect: 'outline',
     styleRevision: 0,
     width: index % 3 === 0 ? 180 : 110,
     height: index % 3 === 0 ? 210 : 340,
