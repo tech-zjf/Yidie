@@ -9,7 +9,7 @@ import type { Entry } from '../../domain/records';
 import { Text } from '../../ui/Text';
 import { colors, fonts } from '../../ui/tokens';
 import { copy } from '../../ui/copy';
-import { monthSwipeDelta } from '../../domain/monthSwipe';
+import { monthSwipeDelta, shouldCaptureMonthSwipe } from '../../domain/monthSwipe';
 
 export const MonthGrid = memo(function MonthGrid({
   year,
@@ -34,9 +34,11 @@ export const MonthGrid = memo(function MonthGrid({
   const monthSwipe = useMemo(
     () =>
       PanResponder.create({
-        // Capture horizontal drags before a date cell's Pressable claims the touch responder.
+        // Capture deliberate horizontal movement before a date cell's Pressable claims it.
         onMoveShouldSetPanResponderCapture: (_, gesture) =>
-          Math.abs(gesture.dx) >= 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.25,
+          shouldCaptureMonthSwipe(gesture.dx, gesture.dy),
+        // Once the horizontal axis is claimed, do not let the vertical ScrollView steal the rest.
+        onPanResponderTerminationRequest: () => false,
         onPanResponderRelease: (_, gesture) => {
           const delta = monthSwipeDelta(gesture.dx, gesture.dy, gesture.vx);
           if (delta !== 0) swipeMonth.current(delta);

@@ -1,6 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { monthSwipeDelta } from './monthSwipe';
+import { monthSwipeDelta, shouldCaptureMonthSwipe } from './monthSwipe';
+
+test('month swipe responder captures horizontal movement after slop, not vertical scrolling', () => {
+  assert.equal(shouldCaptureMonthSwipe(12, 0), true);
+  assert.equal(shouldCaptureMonthSwipe(-16, 8), true);
+  assert.equal(shouldCaptureMonthSwipe(11, 0), false);
+  assert.equal(shouldCaptureMonthSwipe(20, 16), false);
+  assert.equal(shouldCaptureMonthSwipe(0, 30), false);
+});
 
 test('month swipe accepts deliberate horizontal drags in either direction', () => {
   assert.equal(monthSwipeDelta(-60, 8, -0.2), 1);
