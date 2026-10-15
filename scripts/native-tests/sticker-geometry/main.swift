@@ -17,10 +17,10 @@ expect(StickerGeometry.outlineRadius(controlValue: 4, subjectLength: 2_000) == 4
        "large cutouts must scale the radius with the subject")
 expect(StickerGeometry.outlineRadius(controlValue: .infinity, subjectLength: 200) == 0,
        "non-finite style values must not enter image rendering")
-expect(StickerGeometry.renderingPadding(outlineRadius: 40) >= 104,
+expect(StickerGeometry.renderingPadding(subjectLength: 2_000) >= 200,
        "large outlines need enough transparent room for the soft shadow")
-expect(StickerGeometry.renderingPadding(outlineRadius: 0) == 12,
-       "unstyled cutouts keep a small antialiasing margin")
+expect(StickerGeometry.renderingPadding(subjectLength: 200) == 28,
+       "all styles reserve the same maximum-outline canvas")
 
 let sourceExtent = CGRect(x: 30, y: 20, width: 80, height: 160)
 let subject = CIImage(color: CIColor(red: 0.8, green: 0.2, blue: 0.1, alpha: 1)).cropped(to: sourceExtent)
@@ -39,7 +39,7 @@ func pixel(x: Int, y: Int) -> (red: UInt8, green: UInt8, blue: UInt8, alpha: UIn
   let offset = y * image.bytesPerRow + x * 4
   return (pixels[offset], pixels[offset + 1], pixels[offset + 2], pixels[offset + 3])
 }
-let padding = StickerGeometry.renderingPadding(outlineRadius: 6)
+let padding = StickerGeometry.renderingPadding(subjectLength: Double(max(sourceExtent.width, sourceExtent.height)))
 let subjectPixel = pixel(x: padding + 40, y: padding + 80)
 let outlinePixel = pixel(x: padding - 1, y: padding + 80)
 let shadowPixel = pixel(x: padding - 10, y: padding + 80)
@@ -50,11 +50,25 @@ expect(outlinePixel.red > 230 && outlinePixel.green > 230 && outlinePixel.blue >
 expect(shadowPixel.alpha > 0 && shadowPixel.alpha < 255,
        "outline style must include a soft translucent shadow")
 let unstyled = try StickerRenderer.render(cutout: subject, outlineRadius: 0, colorHex: "#FFFFFF", effect: .original)
-expect(unstyled.extent.width < rendered.extent.width,
-       "original style must not expand to the outlined bounds")
+expect(unstyled.extent == rendered.extent,
+       "original and outlined styles must preserve the same canvas and subject scale")
 let noOutline = try StickerRenderer.render(cutout: subject, outlineRadius: 0, colorHex: "#FFFFFF", effect: .outline)
 expect(noOutline.extent == unstyled.extent,
        "a zero-width outline must keep the unstyled canvas")
+for width in [2.0, 4.0, 6.0, 8.0] {
+  let radius = StickerGeometry.outlineRadius(
+    controlValue: width,
+    subjectLength: Double(max(sourceExtent.width, sourceExtent.height))
+  )
+  let variant = try StickerRenderer.render(
+    cutout: subject,
+    outlineRadius: radius,
+    colorHex: "#FFFFFF",
+    effect: .outline
+  )
+  expect(variant.extent == unstyled.extent,
+         "outline width \(width) must not change the visible subject scale")
+}
 guard let unstyledImage = context.createCGImage(unstyled.image, from: unstyled.extent,
                                                 format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB()),
       let noOutlineImage = context.createCGImage(noOutline.image, from: noOutline.extent,

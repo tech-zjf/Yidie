@@ -45,7 +45,7 @@ Data                 Native Expo Module
 
 Apple 框架没有按次调用账单，无需自托管推理服务器。具体照片效果、最低硬件支持和内存峰值必须通过真机验证。[Vision API](https://developer.apple.com/documentation/vision/vngenerateforegroundinstancemaskrequest)、[官方前景效果示例](https://developer.apple.com/documentation/vision/applying-visual-effects-to-foreground-subjects)
 
-贴纸样式在设备本地从保留的透明 cutout 重绘，可切换原图、描边、漫画、立体感和闪亮效果；Core Image 提供基础滤镜和 alpha 合成能力。漫画、立体感与闪亮是本项目的视觉近似，不是 Apple Photos 内部效果的复用或像素级复刻。Photos 没有公开其贴纸效果管线。样式选择通过 `sticker_effect` 持久化，旧记录迁移后默认沿用描边。
+贴纸样式在设备本地从保留的透明 cutout 重绘，可切换原图、描边、漫画、立体感和闪亮效果；Core Image 提供基础滤镜和 alpha 合成能力。每种样式都为最大描边和阴影预留相同画布，避免切换样式时透明边距改变、人物视觉尺寸跟着缩放。漫画、立体感与闪亮是本项目的视觉近似，不是 Apple Photos 内部效果的复用或像素级复刻。Photos 没有公开其贴纸效果管线。样式选择通过 `sticker_effect` 持久化，旧记录迁移后默认沿用描边。
 
 ## 批量队列与性能
 

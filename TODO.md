@@ -7,7 +7,7 @@ This is the single working checklist for the first public, installable release. 
 - [x] iOS-first Expo/React Native app with local PhotoKit import, confirmed dates, persistent processing queue, SQLite records, and Apple Vision sticker generation.
 - [x] Calendar-first interaction: sticker stacks, count badges, month-arrow navigation, month/day swipe handlers, animated sheets, centered Add action, English UI, and local identity. Touch-driven paging remains unaccepted until it works on a Simulator touch surface.
 - [x] Local sticker outline editing: preserve the transparent cutout, preview and save color/width variants without rerunning Vision.
-- [x] Add local Original, Outline, Comic, 3D, and Shimmer sticker-effect choices. Effects render from the saved transparent cutout with public Core Image filters; these are visual approximations, not a 1:1 Photos pipeline clone.
+- [x] Add local Original, Outline, Comic, 3D, and Shimmer sticker-effect choices. Effects render from the saved transparent cutout with public Core Image filters; every style reserves the same maximum-outline canvas so changing effects does not rescale the subject. These are visual approximations, not a 1:1 Photos pipeline clone.
 - [ ] Verify each sticker effect on a user-selected real test photo on iPhone. The Simulator pixel fixtures validate rendering contracts, not the visual quality or segmentation accuracy of a real outfit.
 - [x] Distinguish not-yet-requested, authorized, limited, denied, and restricted Photos access; load an already-authorized library automatically and direct denied users to Settings.
 - [x] Fence Settings export/restore/share actions synchronously against rapid duplicate taps; keep the sheet open while an operation or its queue cleanup is active.

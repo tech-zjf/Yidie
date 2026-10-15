@@ -4,6 +4,7 @@ import Foundation
 /// remains visible after the cutout is displayed at calendar or sticker size.
 enum StickerGeometry {
   static let referenceSubjectLength = 200.0
+  static let maximumOutlineControlValue = 8.0
 
   static func outlineRadius(controlValue: Double, subjectLength: Double) -> Double {
     guard controlValue > 0, subjectLength > 0,
@@ -11,9 +12,14 @@ enum StickerGeometry {
     return controlValue * subjectLength / referenceSubjectLength
   }
 
-  static func renderingPadding(outlineRadius: Double) -> Int {
-    guard outlineRadius > 0, outlineRadius.isFinite else { return 12 }
-    // Leave room for the outline, its soft shadow, and antialiasing.
-    return max(12, Int(ceil(outlineRadius * 2.4)) + 8)
+  static func renderingPadding(subjectLength: Double) -> Int {
+    guard subjectLength > 0, subjectLength.isFinite else { return 12 }
+    let maximumRadius = outlineRadius(
+      controlValue: maximumOutlineControlValue,
+      subjectLength: subjectLength
+    )
+    // Keep the transparent canvas identical for every style and reserve room
+    // for the widest outline, its shadow, and antialiasing.
+    return max(12, Int(ceil(maximumRadius * 2.4)) + 8)
   }
 }

@@ -31,7 +31,9 @@ enum StickerRenderer {
     effect: StickerEffect
   ) throws -> (image: CIImage, extent: CGRect) {
     let source = cutout.extent.integral
-    let padding = CGFloat(StickerGeometry.renderingPadding(outlineRadius: outlineRadius))
+    let padding = CGFloat(StickerGeometry.renderingPadding(
+      subjectLength: Double(max(source.width, source.height))
+    ))
     let canvas = CGRect(x: 0, y: 0, width: source.width + padding * 2, height: source.height + padding * 2).integral
     let subject = cutout
       .transformed(by: CGAffineTransform(translationX: padding - source.minX, y: padding - source.minY))
