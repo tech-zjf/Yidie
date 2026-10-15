@@ -13,12 +13,13 @@ Updated 2026-10-15. Yidie is an offline-first iOS development build, not a relea
 
 ## Verification
 
-- `npm run check`: TypeScript, ESLint, Prettier, and 71 JavaScript tests in the current local worktree, including a file-backed SQLite WAL close/reopen case. The latest GitHub Actions run at PR head `1381fd7` ran 70 tests before this additional test was added; the current worktree has not yet been pushed or run in CI.
+- `npm run check`: TypeScript, ESLint, Prettier, and all 71 JavaScript tests, including a file-backed SQLite WAL close/reopen case. The current PR head `6ced968` has passed this suite and the iOS export/docs job in GitHub Actions.
 - `npm run export:ios`: production JavaScript bundle; preview fixtures are excluded from the release export.
 - `sh scripts/check_native.sh`: Swift safety tests and iOS core typecheck.
 - `python3 scripts/check_packet.py`: documentation links, publication hygiene, SQLite schema/migrations, and repository contracts.
 - A dedicated iOS 27 Simulator preview used synthetic data to inspect the calendar, same-day stacks, outline preview/save, All Records, and import states. An iOS 26.1 Simulator completed an empty-backup save/restore through Files and reopened the calendar. An empty-month PNG was saved and opened in Preview.
-- [GitHub Actions run 38725891588](https://github.com/tech-zjf/Yidie/actions/runs/38725891588) passed at PR head `1381fd7`, including JavaScript checks, tests, iOS export, native safety tests, Expo prebuild, CocoaPods, and an unsigned Simulator Release build on Xcode 26.6. See the [build log](09-build-log.md) for reproducible local commands and the newer local-only test evidence.
+- [GitHub Actions run 38728466183](https://github.com/tech-zjf/Yidie/actions/runs/38728466183) passed at PR head `60e54cb`, including JavaScript checks, tests, iOS export, native safety tests, Expo prebuild, CocoaPods, and an unsigned Simulator Release build on Xcode 26.6.
+- At current PR head [`6ced968`](https://github.com/tech-zjf/Yidie/commit/6ced96866015580cd3e2c3f1f37cad56c729f234), the JavaScript and native-safety stages have passed; CocoaPods is installed and the unsigned Simulator Release build remains in progress in [run 38729213583](https://github.com/tech-zjf/Yidie/actions/runs/38729213583). See the [build log](09-build-log.md) for the complete distinction between passed and pending checks.
 
 These checks did not use a physical iPhone, personal Photos library, Developer Mode, signing identity, certificate, or keychain. Synthetic previews do not prove Apple Vision cutout quality or real-photo import behavior.
 

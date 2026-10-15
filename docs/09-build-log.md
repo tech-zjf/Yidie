@@ -10,7 +10,9 @@ Updated 2026-10-15. This page records the latest reproducible checks. Feature ac
 - `python3 scripts/check_packet.py` validates local document links, absence of retired HTML prototypes, test-to-CI inventory, SQLite schema and migrations, transaction behavior, and generated schema consistency.
 - GitHub Actions builds the unsigned Simulator Release app with the pinned Xcode 26.6 toolchain. This build does not sign or install an app on a physical iPhone.
 
-The latest full workflow passed for PR head [`1381fd7`](https://github.com/tech-zjf/Yidie/commit/1381fd7e9a5960f43f4a56de72787c897dc4668d) in [run 38725891588](https://github.com/tech-zjf/Yidie/actions/runs/38725891588). It ran 70 JavaScript tests before the local file-backed WAL lifecycle test was added. The current 71-test worktree has not yet been pushed or run in CI.
+The latest complete workflow passed for PR head [`60e54cb`](https://github.com/tech-zjf/Yidie/commit/60e54cbe9044f5c66b0e1558aa5390551adef4ae) in [run 38728466183](https://github.com/tech-zjf/Yidie/actions/runs/38728466183). It includes the 71-test suite, iOS export, documentation and native safety checks, Expo prebuild, CocoaPods, and the unsigned Simulator Release build.
+
+The current PR head is [`6ced968`](https://github.com/tech-zjf/Yidie/commit/6ced96866015580cd3e2c3f1f37cad56c729f234). Its JavaScript checks, 71 tests, iOS export, documentation checks, native safety tests, Expo prebuild, and CocoaPods installation have passed. The unsigned Simulator Release build is still running in [run 38729213583](https://github.com/tech-zjf/Yidie/actions/runs/38729213583); do not report this head as fully green until that run completes.
 
 ## Runtime evidence
 
