@@ -40,7 +40,7 @@ This is the single working checklist for the first public, installable release. 
 - [ ] Publish the prepared `.github/workflows/ci.yml` and confirm it runs green for lockfile install, static checks, tests, and JS export. GitHub currently rejects workflow writes because the connected OAuth app lacks the `workflow` scope; do not change that authorization until the owner approves. Add native build checks only on a pinned supported macOS/Xcode runner.
 - [x] Add issue templates, security contact/reporting guidance, and contribution instructions that protect personal data.
 - [ ] Capture a populated app-screen demo for the README and X after the simulator walkthrough is visually verified; include captions and use synthetic or explicitly consented imagery. A clearly labeled empty-calendar screenshot is available meanwhile.
-- [ ] Publish a small, honest launch sequence: product problem and demo, local-only architecture, one engineering lesson, invitation to test/contribute; track repository visits, stars, issues, and tester feedback without promising reach.
+- [x] Prepare an honest X launch sequence and measurement plan: product problem, demo copy, local-only architecture, one engineering lesson, and a bounded tester invitation. Actual external posts wait for a verified recording and an explicit posting request.
 
 ## Definition of done
 
