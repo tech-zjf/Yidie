@@ -85,6 +85,7 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 
 - 经用户先前授权，通过 Device Hub 的 Restart 重启专用 iPhone 17 Pro / iOS 26.1 QA 模拟器；未选择 Reset Content and Settings。Yidie 仍已安装，Spotlight 启动后显示空的 2026 年 10 月日历，月份箭头往返正常。
 - 重启后 `xcrun simctl list devices booted` 仍因 CoreSimulatorService / `simdiskimaged` 断连失败；尝试用 `launchctl kickstart` 重启 system `simdiskimaged` 被 macOS 拒绝，未改变 launchd 配置或服务权限。Device Hub 拖动仍未切换月份，触控手势验收保持未通过。
+- 15:20 再次只读执行 `xcrun simctl list devices available`，CoreSimulatorService 仍返回 `Connection refused`，且报告无法发现 Simulator runtimes；`xcodebuild -version` 正常返回 Xcode 27.0（27A266a）。本次没有启动/安装 app、重启系统服务或改变模拟器数据。
 - 本次仅重启专用空数据模拟器；没有连接实体 iPhone、打开照片库、改 Developer Mode、签名、证书或钥匙串，也没有重置/擦除模拟器内容。
 
 ## 2026-10-15 本地月份图片导出验收
