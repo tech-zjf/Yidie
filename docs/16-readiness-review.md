@@ -31,6 +31,13 @@ The repository snapshot removes the four retired HTML prototypes from its curren
 
 ## Known dependency advisories
 
-The lockfile currently resolves `node-forge@1.4.0` through Expo's build tooling and `braces@3.0.3` through Metro. GitHub advisories [GHSA-86w9-cpqp-85rv](https://github.com/advisories/GHSA-86w9-cpqp-85rv) and [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) list these versions as affected; no patched upstream release was available at the last check. They are development/build dependencies and were not found in the exported application bundle. Recheck with registry access and update when compatible upstream fixes are available; do not force an unreviewed major-version override.
+The lockfile resolves two high-severity advisories in the local toolchain (reviewed 2026-10-15):
+
+| Package | Lockfile version and dependency path | Advisory status |
+| --- | --- | --- |
+| `node-forge@1.4.0` | Expo CLI → `@expo/code-signing-certificates` → `node-forge` | [GHSA-86w9-cpqp-85rv / CVE-2026-85393](https://github.com/advisories/GHSA-86w9-cpqp-85rv) affects versions through 1.4.0; no patched version is listed. |
+| `braces@3.0.3` | Expo Metro → `metro-file-map` → `micromatch` → `braces` | [GHSA-vfj7-8cjw-p6xm / CVE-2026-93687](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) affects versions through 3.0.3; no patched version is listed. |
+
+These packages are reached through Expo/Metro development and build tooling, not through Yidie's app imports; they were not found in the exported application bundle. Treat them as toolchain exposure, not as evidence of an app-runtime vulnerability. The advisory databases still show no fixed release. The full npm registry audit remains open until registry access is available; do not suppress these findings with an unreviewed override or downgrade Expo to unrelated versions.
 
 For local development and build reproduction, see the [mobile build guide](../apps/mobile/README.md) and [build log](09-build-log.md). Keep machine-specific signing, device, and keychain notes outside the public repository.
