@@ -181,6 +181,44 @@ func runBackupTests() throws {
   }
   try check(FileManager.default.fileExists(atPath: currentMarker.path), "Checksum failure changed current library")
 
+  let foreignKeyMismatch = temporary.appendingPathComponent("ForeignKeyMismatch.yidie", isDirectory: true)
+  try FileManager.default.copyItem(at: package, to: foreignKeyMismatch)
+  let mismatchDatabase = foreignKeyMismatch.appendingPathComponent("database/yidie.sqlite")
+  var mismatchConnection: OpaquePointer?
+  guard sqlite3_open(mismatchDatabase.path, &mismatchConnection) == SQLITE_OK,
+        let mismatchConnection else {
+    throw BackupTestFailure.assertion("Could not open malformed foreign-key fixture")
+  }
+  let mismatchSchema = """
+  DROP TABLE entries;
+  CREATE TABLE parent (id TEXT);
+  CREATE TABLE entries (
+    original_path TEXT, sticker_path TEXT, thumbnail_path TEXT,
+    cutout_path TEXT, photo_preview_path TEXT,
+    parent_id TEXT REFERENCES parent(id)
+  );
+  INSERT INTO entries (parent_id) VALUES ('missing-parent');
+  PRAGMA user_version=\(LocalBackup.schemaVersion);
+  """
+  let mismatchResult = sqlite3_exec(mismatchConnection, mismatchSchema, nil, nil, nil)
+  sqlite3_close(mismatchConnection)
+  try check(mismatchResult == SQLITE_OK, "Could not create malformed foreign-key fixture")
+  let mismatchSize = try FileManager.default.attributesOfItem(atPath: mismatchDatabase.path)[.size] as? NSNumber
+  guard let mismatchSize else { throw BackupTestFailure.assertion("Could not read malformed database size") }
+  let mismatchHash = try sha256(mismatchDatabase)
+  try rewriteManifest(foreignKeyMismatch) { manifest in
+    manifest["entryCount"] = 1
+    manifest["totalBytes"] = mismatchSize.int64Value
+    var files = manifest["files"] as! [[String: Any]]
+    files[0]["byteCount"] = mismatchSize.int64Value
+    files[0]["sha256"] = mismatchHash
+    manifest["files"] = files
+  }
+  try expectBackupError("INVALID_BACKUP") {
+    _ = try LocalBackup.stageRestore(from: foreignKeyMismatch, support: support)
+  }
+  try check(FileManager.default.fileExists(atPath: currentMarker.path), "Malformed schema changed current library")
+
   let pathTraversal = temporary.appendingPathComponent("PathTraversal.yidie", isDirectory: true)
   try FileManager.default.copyItem(at: package, to: pathTraversal)
   let pathTraversalDatabase = pathTraversal.appendingPathComponent("database/yidie.sqlite")

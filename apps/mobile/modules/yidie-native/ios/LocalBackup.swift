@@ -258,13 +258,16 @@ enum LocalBackup {
           try rowCount(db, "PRAGMA foreign_key_check") == 0 else { throw YidieError(code: "INVALID_BACKUP") }
     let statement = try prepare(db, "SELECT original_path,sticker_path,thumbnail_path,cutout_path,photo_preview_path FROM entries")
     defer { sqlite3_finalize(statement) }
-    while sqlite3_step(statement) == SQLITE_ROW {
+    var result = sqlite3_step(statement)
+    while result == SQLITE_ROW {
       for index in 0..<5 {
         guard let raw = sqlite3_column_text(statement, Int32(index)) else { continue }
         let path = String(cString: raw)
         guard isAllowedResourcePath(path), allowedPaths.contains(path) else { throw YidieError(code: "INVALID_BACKUP") }
       }
+      result = sqlite3_step(statement)
     }
+    guard result == SQLITE_DONE else { throw YidieError(code: "INVALID_BACKUP") }
   }
 
   private static func fileRecords(in package: URL) throws -> [FileRecord] {
@@ -439,7 +442,12 @@ enum LocalBackup {
     let statement = try prepare(db, sql)
     defer { sqlite3_finalize(statement) }
     var count = 0
-    while sqlite3_step(statement) == SQLITE_ROW { count += 1 }
+    var result = sqlite3_step(statement)
+    while result == SQLITE_ROW {
+      count += 1
+      result = sqlite3_step(statement)
+    }
+    guard result == SQLITE_DONE else { throw YidieError(code: "INVALID_BACKUP") }
     return count
   }
 
