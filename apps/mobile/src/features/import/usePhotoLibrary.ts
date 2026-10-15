@@ -1,93 +1,128 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Linking } from 'react-native';
 import type { AppServices } from '../../services';
 import type { Asset } from '../../domain/records';
+import { canReadPhotos, type PhotoPermission } from '../../domain/photoPermission';
 import { errorCode } from '../../domain/importPhoto';
 import { copy } from '../../ui/copy';
 
+const pageSize = 60;
+
 export function usePhotoLibrary(services: AppServices) {
-  const [assets, setAssets] = useState<Asset[]>([]),
-    [permission, setPermission] = useState(false),
-    [limited, setLimited] = useState(false);
-  const [busy, setBusy] = useState(false),
-    [error, setError] = useState(''),
-    [hasMore, setHasMore] = useState(false);
-  const active = useRef(true),
-    lock = useRef(false),
-    offset = useRef(0);
-  useEffect(() => {
-    active.current = true;
-    return () => {
-      active.current = false;
-    };
-  }, []);
-  async function load(authorize: boolean) {
-    if (lock.current) return;
-    lock.current = true;
-    setBusy(true);
-    setError('');
-    try {
-      if (authorize) {
-        const status = await services.photos.requestPermission();
-        if (status === 'denied') throw new Error('PHOTO_PERMISSION_DENIED');
-        if (active.current) {
-          setPermission(true);
-          setLimited(status === 'limited');
-        }
-      }
-      const page = await services.photos.listPhotos(offset.current, 60);
-      offset.current += page.length;
-      if (active.current) {
-        setAssets((old) => [
-          ...new Map([...old, ...page].map((asset) => [asset.id, asset])).values(),
-        ]);
-        setHasMore(page.length === 60);
-      }
-    } catch (error) {
-      if (active.current) setError(copy.errors[errorCode(error)] ?? copy.errors.PROCESSING_FAILED);
-    } finally {
-      lock.current = false;
-      if (active.current) setBusy(false);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [permission, setPermission] = useState(() => services.photos.permissionStatus());
+  const [busy, setBusy] = useState(() => canReadPhotos(services.photos.permissionStatus()));
+  const [error, setError] = useState('');
+  const [hasMore, setHasMore] = useState(false);
+  const active = useRef(true);
+  const lock = useRef(false);
+  const offset = useRef(0);
+  const permissionRef = useRef(permission);
+
+  const updatePermission = useCallback((next: PhotoPermission) => {
+    if (!active.current) return;
+    permissionRef.current = next;
+    setPermission(next);
+    if (!canReadPhotos(next)) {
+      offset.current = 0;
+      setAssets([]);
+      setHasMore(false);
     }
-  }
-  return {
-    assets,
-    permission,
-    limited,
-    busy,
-    error,
-    hasMore,
-    authorize: () => load(true),
-    loadMore: () => load(false),
-    manageAccess: async () => {
-      if (lock.current) return;
+  }, []);
+
+  const load = useCallback(
+    async ({ request = false, reset = false }: { request?: boolean; reset?: boolean } = {}) => {
+      if (!active.current || lock.current) return;
       lock.current = true;
       setBusy(true);
       setError('');
       try {
-        await services.photos.presentLimitedLibraryPicker();
-        const status = services.photos.permissionStatus();
+        const status = request
+          ? await services.photos.requestPermission()
+          : services.photos.permissionStatus();
+        if (!active.current) return;
+        updatePermission(status);
+        if (!canReadPhotos(status)) return;
+
+        const start = reset ? 0 : offset.current;
+        const page = await services.photos.listPhotos(start, pageSize);
+        offset.current = start + page.length;
         if (active.current) {
-          setPermission(status !== 'denied');
-          setLimited(status === 'limited');
-          setAssets([]);
-          setHasMore(false);
-          offset.current = 0;
+          setAssets((existing) =>
+            reset
+              ? page
+              : [...new Map([...existing, ...page].map((asset) => [asset.id, asset])).values()],
+          );
+          setHasMore(page.length === pageSize);
         }
-        if (status !== 'denied') {
-          const page = await services.photos.listPhotos(0, 60);
-          offset.current = page.length;
-          if (active.current) {
-            setAssets(page);
-            setHasMore(page.length === 60);
-          }
-        }
-      } catch (error) {
+      } catch (cause) {
         if (active.current)
-          setError(copy.errors[errorCode(error)] ?? copy.errors.PROCESSING_FAILED);
+          setError(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
       } finally {
         lock.current = false;
         if (active.current) setBusy(false);
       }
     },
+    [services.photos, updatePermission],
+  );
+
+  useEffect(() => {
+    active.current = true;
+    if (canReadPhotos(permissionRef.current)) void load({ reset: true });
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void load({ reset: true });
+    });
+    return () => {
+      active.current = false;
+      subscription.remove();
+    };
+  }, [load]);
+
+  const manageAccess = useCallback(async () => {
+    if (lock.current || permissionRef.current !== 'limited') return;
+    lock.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      await services.photos.presentLimitedLibraryPicker();
+      if (!active.current) return;
+      const status = services.photos.permissionStatus();
+      updatePermission(status);
+      if (canReadPhotos(status)) {
+        const page = await services.photos.listPhotos(0, pageSize);
+        offset.current = page.length;
+        if (active.current) {
+          setAssets(page);
+          setHasMore(page.length === pageSize);
+        }
+      }
+    } catch (cause) {
+      if (active.current) setError(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
+    } finally {
+      lock.current = false;
+      if (active.current) setBusy(false);
+    }
+  }, [services.photos, updatePermission]);
+
+  const openSettings = useCallback(async () => {
+    try {
+      await Linking.openSettings();
+    } catch {
+      if (active.current) setError(copy.errors.PROCESSING_FAILED);
+    }
+  }, []);
+
+  return {
+    assets,
+    permission,
+    hasAccess: canReadPhotos(permission),
+    limited: permission === 'limited',
+    busy,
+    error,
+    hasMore,
+    authorize: () => load({ request: true, reset: true }),
+    loadMore: () => load(),
+    openSettings,
+    manageAccess,
   };
 }

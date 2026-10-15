@@ -214,7 +214,10 @@ public class YidieNativeModule: Module {
     switch status {
     case .authorized: return "authorized"
     case .limited: return "limited"
-    default: return "denied"
+    case .notDetermined: return "notDetermined"
+    case .denied: return "denied"
+    case .restricted: return "restricted"
+    @unknown default: return "restricted"
     }
   }
 

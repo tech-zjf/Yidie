@@ -7,11 +7,12 @@ import type {
   ImageFileStore,
 } from '../../src/domain/records';
 import type { MonthExportPayload } from '../../src/domain/monthLayout';
+import type { PhotoPermission } from '../../src/domain/photoPermission';
 export interface LocalModule extends ImageFileStore {
   capabilities(): { simulator: boolean; minimumIOS: number };
   prepareStorage(): Promise<{ rootUri: string; databaseUri: string }>;
-  requestPermission(): Promise<'authorized' | 'limited' | 'denied'>;
-  permissionStatus(): 'authorized' | 'limited' | 'denied';
+  requestPermission(): Promise<PhotoPermission>;
+  permissionStatus(): PhotoPermission;
   chooseDate(currentDate: string | null): Promise<string | null>;
   presentLimitedLibraryPicker(): Promise<void>;
   listPhotos(offset: number, limit: number): Promise<Asset[]>;

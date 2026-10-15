@@ -11,6 +11,7 @@ import { PhotoTile } from './PhotoTile';
 import { BatchReview } from './BatchReview';
 import { QueuePanel } from '../processing/QueuePanel';
 import { SheetHandle } from '../../ui/SheetHandle';
+import { photoPermissionAction } from '../../domain/photoPermission';
 
 export function PhotoImportSheet({
   services,
@@ -53,17 +54,30 @@ export function PhotoImportSheet({
         />
       </>
     );
-  } else if (!library.permission) {
+  } else if (!library.hasAccess) {
+    const permissionAction = photoPermissionAction(library.permission);
+    const permissionDenied = permissionAction === 'openSettings';
+    const permissionMessage = {
+      request: copy.permissionHelp,
+      openSettings: copy.permissionDenied,
+      explainRestriction: copy.permissionRestricted,
+      showLibrary: copy.permissionHelp,
+    }[permissionAction];
+    let permissionButton = null;
+    if (permissionDenied) {
+      permissionButton = (
+        <Button primary label={copy.openSettings} onPress={library.openSettings} disabled={busy} />
+      );
+    } else if (permissionAction === 'request') {
+      permissionButton = (
+        <Button primary label={copy.permissionButton} onPress={library.authorize} disabled={busy} />
+      );
+    }
     content = (
       <View style={styles.permissionState}>
         <View style={styles.permissionAction}>
-          <Text style={styles.permissionHelp}>{copy.permissionHelp}</Text>
-          <Button
-            primary
-            label={copy.permissionButton}
-            onPress={library.authorize}
-            disabled={busy}
-          />
+          <Text style={styles.permissionHelp}>{permissionMessage}</Text>
+          {permissionButton}
         </View>
       </View>
     );
