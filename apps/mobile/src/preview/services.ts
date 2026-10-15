@@ -103,8 +103,10 @@ export async function previewServices(entries: Entry[]): Promise<AppServices> {
     thumbnail: readOnly,
     importPhoto: readOnly,
     createSticker: readOnly,
-    renderStickerStyle: async (id, revision, borderWidth, borderColor) =>
-      sampleOutline(id, revision, borderWidth, borderColor).sticker,
+    renderStickerStyle: async (id, revision, borderWidth, borderColor) => ({
+      ...sampleOutline(id, revision, borderWidth, borderColor).sticker,
+      cutoutPath: findEntry(id).cutoutPath ?? `preview-cutout:${id}`,
+    }),
     discardStickerStyleVersion: async () => {},
     pruneStickerStyles: async () => {},
     discardImport: readOnly,

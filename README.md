@@ -10,11 +10,6 @@
 > **Development build.** The populated calendar and local sticker-outline preview/save have been exercised in an isolated Simulator with synthetic data. Touch gestures, native backup/share sheets, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
 
 <p align="center">
-  <img src="design/screenshots/app-empty-calendar.png" width="300" alt="Yidie empty calendar on iPhone 18 Pro Simulator" />
-</p>
-<p align="center"><sub>UI reference captured 2026-10-14 · empty local library · iPhone 18 Pro Simulator (not a screenshot of the latest source build)</sub></p>
-
-<p align="center">
   <img src="design/screenshots/app-populated-calendar.png" width="300" alt="Yidie synthetic populated calendar with a ten-outfit day stack" />
 </p>
 <p align="center"><sub>Latest source · iPhone 18 Pro / iOS 27 Simulator · synthetic preview artwork only; the Preview scenes control is development-only and the silhouette figures are layout stand-ins, not Vision results.</sub></p>
