@@ -80,3 +80,9 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 - iOS 27.0 runtime 当前仍无法挂载，启动时报 `Cryptex Mount Preferred`；专用 iPhone 18 Pro / iOS 27 Simulator 未能启动。Xcode 安装路径下也未发现 `Simulator.app`。后续需在 Mac 解锁后从 Xcode Settings > Components 修复/安装 Simulator app 与 runtime，再重试；在成功之前不要把本次 iOS 26.1 检查描述为 iOS 27 验收。
 - 为减少临时副本占用，已删除 `/private/tmp/yidie-ios27-platform` 中导出的 7.5 GB runtime bundle；已注册的 Simulator runtime 留在系统 CoreSimulator 目录。无须删除证书、描述文件或钥匙串授权。
 - 本轮没有连接或操作实体 iPhone，没有改变 Developer Mode、iOS、照片、签名身份或钥匙串；仅在模拟器安装 app，并在本机注册 iOS 27 runtime。
+
+## 2026-10-15 CoreSimulator 服务故障排查
+
+- 经用户先前授权，通过 Device Hub 的 Restart 重启专用 iPhone 17 Pro / iOS 26.1 QA 模拟器；未选择 Reset Content and Settings。Yidie 仍已安装，Spotlight 启动后显示空的 2026 年 10 月日历，月份箭头往返正常。
+- 重启后 `xcrun simctl list devices booted` 仍因 CoreSimulatorService / `simdiskimaged` 断连失败；尝试用 `launchctl kickstart` 重启 system `simdiskimaged` 被 macOS 拒绝，未改变 launchd 配置或服务权限。Device Hub 拖动仍未切换月份，触控手势验收保持未通过。
+- 本次仅重启专用空数据模拟器；没有连接实体 iPhone、打开照片库、改 Developer Mode、签名、证书或钥匙串，也没有重置/擦除模拟器内容。
