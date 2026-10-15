@@ -16,7 +16,8 @@ This page records current, bounded evidence. The active checklist is [TODO.md](.
 
 - GitHub Actions [run 38804212797](https://github.com/tech-zjf/Yidie/actions/runs/38804212797) passed on commit `93b5d3a`: 76 JavaScript tests, type/lint/format checks, iOS bundle export, documentation/native contracts, Swift file and backup tests, Core Image pixel assertions, Expo prebuild, CocoaPods installation, and unsigned iOS Simulator Release compilation with Xcode 26.6.
 - GitHub Actions [run 38809374999](https://github.com/tech-zjf/Yidie/actions/runs/38809374999) passed on commit `3268fcd`: the checks above plus the dedicated fixture launched in a hosted iPhone Simulator. It verified renderer geometry and actual Core Image pixels for the white outline, shadow, zero-outline identity, stable canvas, and distinct effects.
-- The hosted build compiled Yidie for Simulator but did not launch the product app. The fixture launches only a temporary test program, not Yidie; it uses synthetic transparent pixels and does not exercise Vision segmentation or real-photo appearance. The editor, gestures, date-picker, backup-error and real-photo Vision flows remain open for interactive acceptance.
+- GitHub Actions [run 38812014157](https://github.com/tech-zjf/Yidie/actions/runs/38812014157) passed on commit `9377601`: it installed and launched the current Release app in an isolated iPhone Simulator and used Vision OCR to confirm the Yidie wordmark rendered. The same run passed all native safety checks, the unsigned build, synthetic sticker pixels, 76 JavaScript tests, and iOS bundle export.
+- This is a launch smoke check, not a screen-by-screen walkthrough. The sticker fixture still uses synthetic transparent pixels and does not exercise Vision segmentation or real-photo appearance. The editor, gestures, date-picker, backup-error and real-photo Vision flows remain open for interactive acceptance.
 
 ## Sticker evidence and limits
 

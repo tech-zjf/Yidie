@@ -7,7 +7,7 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** GitHub Actions run 38809374999 passed the unsigned iOS Simulator Release build, isolated iPhone Simulator sticker pixel checks, native safety checks, 76 JavaScript tests, and production bundle export. This Mac still cannot launch Simulator; the app's interactive flows and Vision quality from a real photo remain unaccepted. See the live [delivery board](TODO.md).
+> **Development build.** GitHub Actions [run 38812014157](https://github.com/tech-zjf/Yidie/actions/runs/38812014157) passed the unsigned iOS Simulator Release build, isolated sticker pixel checks, and a current-app install/launch smoke check that recognized the rendered Yidie wordmark. Interactive flows and Vision quality from a real photo remain unaccepted. This Mac still cannot launch Simulator. See the live [delivery board](TODO.md).
 
 ## What makes it different
 
@@ -20,15 +20,15 @@ The editor prefers Apple's public VisionKit subject-lifting API, then falls back
 
 ## Product status
 
-| Area                                                             | Status                                                           |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Calendar, date browsing, same-day stacks and count badges        | Populated/empty simulator scenes and month arrows checked; touch swipes remain due |
-| Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted   |
+| Area                                                             | Status                                                                                                                                                                     |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Calendar, date browsing, same-day stacks and count badges        | Current app launch is verified in hosted Simulator CI; earlier populated/empty scenes and month arrows checked; touch swipes remain due                                    |
+| Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted                                                                                                             |
 | Sticker style preview and editing                                | Synthetic Core Image pixel checks pass on iOS Simulator in CI; Vision cutouts, real-photo edge quality, editor interaction, and physical-device behavior remain unaccepted |
-| Backup/restore and native date picker                            | Empty backup save/restore passes in Simulator; invalid-package UI and date-picker acceptance due |
-| Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; payload delivery acceptance due |
-| Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                 |
-| Public App Store or general device distribution                  | Not available                                                    |
+| Backup/restore and native date picker                            | Empty backup save/restore passes in Simulator; invalid-package UI and date-picker acceptance due                                                                           |
+| Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; payload delivery acceptance due                                                                            |
+| Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                                                                                                                           |
+| Public App Store or general device distribution                  | Not available                                                                                                                                                              |
 
 ## Run from source
 
