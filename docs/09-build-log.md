@@ -12,7 +12,7 @@ Updated 2026-10-15. This page records the latest reproducible checks. Feature ac
 
 The latest complete workflow passed for PR head [`60e54cb`](https://github.com/tech-zjf/Yidie/commit/60e54cbe9044f5c66b0e1558aa5390551adef4ae) in [run 38728466183](https://github.com/tech-zjf/Yidie/actions/runs/38728466183). It includes the 71-test suite, iOS export, documentation and native safety checks, Expo prebuild, CocoaPods, and the unsigned Simulator Release build.
 
-The latest app-source commit is [`6ced968`](https://github.com/tech-zjf/Yidie/commit/6ced96866015580cd3e2c3f1f37cad56c729f234). Its JavaScript checks, 71 tests, iOS export, documentation checks, native safety tests, Expo prebuild, and CocoaPods installation passed. The unsigned Simulator Release build was still running in [run 38729213583](https://github.com/tech-zjf/Yidie/actions/runs/38729213583) when this evidence was recorded. Subsequent commits only corrected documentation. Check the live [PR checks](https://github.com/tech-zjf/Yidie/pull/1) before describing its latest revision as fully green.
+The latest workflow passed for PR head [`7522e55`](https://github.com/tech-zjf/Yidie/commit/7522e558ac23c149ac83864d79e3ca2f053beff5) in [run 38730612647](https://github.com/tech-zjf/Yidie/actions/runs/38730612647). Both CI jobs succeeded: all 71 JavaScript tests, type/lint/format checks, production iOS export, docs/native contracts, Swift safety tests, Expo prebuild, CocoaPods, and the unsigned Simulator Release build on Xcode 26.6. This verifies compilation, not touch-driven runtime behavior or physical-device photo processing.
 
 ## Runtime evidence
 
