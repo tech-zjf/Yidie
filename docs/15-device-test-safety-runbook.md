@@ -65,3 +65,10 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 - Xcode 27 对当前源码完成了一次完整的 iOS Simulator Release 编译与链接，使用 `CODE_SIGNING_ALLOWED=NO`，构建产物位于 `/private/tmp/YidieDerivedData`。这次只编译通用模拟器目标，没有启动或安装到实体 iPhone。
 - 当前 Mac 已解锁，Xcode Settings 显示 iOS 27.0 Simulator runtime 已安装；但本会话无法发现 Simulator.app，CoreSimulatorService 连接失败，因此没有进行模拟器交互、导入照片或访问设备数据。
 - 本轮没有改变 Developer Mode、Apple 账号、签名身份、证书、描述文件或钥匙串授权，也没有连接或操作 iPhone。验证完成后已清理本轮生成的 2 GB 临时 DerivedData、Swift module cache 与类型检查 stub。
+
+## 2026-10-15 后续隔离模拟器验收
+
+- 在独立的 iPhone 18 Pro / iOS 27 Simulator 上运行无签名 Debug 构建，使用 app 内合成场景。可见地检查了多人同日叠图及数量角标、打开十条记录的日期、选择深色 4 px 描边、预览并保存、返回后看到更新后的贴纸，以及空月份和月份箭头。没有授权照片访问，预览服务不连接真实数据库或照片存储。
+- 另完成 iOS Simulator Release 全量编译（Xcodebuild 退出码 0，`CODE_SIGNING_ALLOWED=NO`，产物在 `/private/tmp/YidieFinalRelease`）。没有安装到实体 iPhone。
+- Device Hub 能够传递点击，但拖动没有触发可观察的月份/照片页变化。因此横向手势仍待在模拟器触摸界面或用户真机验收。此项不改变设备安全状态。
+- 所有以上操作未触碰 iPhone、照片图库、Developer Mode、Apple 账号、证书、描述文件或钥匙串。临时构建数据保留在 `/private/tmp`，可在确认不再需要后清理。

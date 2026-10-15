@@ -7,12 +7,17 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** Core local flows, editable sticker outlines, verified backup package handling, and image sharing are implemented. Interactive Simulator acceptance for populated screens and real-device Vision quality remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
+> **Development build.** The populated calendar and local sticker-outline preview/save have been exercised in an isolated Simulator with synthetic data. Touch gestures, native backup/share sheets, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
 
 <p align="center">
   <img src="design/screenshots/app-empty-calendar.png" width="300" alt="Yidie empty calendar on iPhone 18 Pro Simulator" />
 </p>
 <p align="center"><sub>UI reference captured 2026-10-14 · empty local library · iPhone 18 Pro Simulator (not a screenshot of the latest source build)</sub></p>
+
+<p align="center">
+  <img src="design/screenshots/app-populated-calendar.png" width="300" alt="Yidie synthetic populated calendar with a ten-outfit day stack" />
+</p>
+<p align="center"><sub>Latest source · iPhone 18 Pro / iOS 27 Simulator · synthetic preview artwork only; the Preview scenes control is development-only and the silhouette figures are layout stand-ins, not Vision results.</sub></p>
 
 ## What makes it different
 
@@ -25,9 +30,9 @@
 
 | Area                                                             | Status                                                           |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Calendar, date browsing, same-day stacks and count badges        | Implemented; simulator scenario review is still due              |
+| Calendar, date browsing, same-day stacks and count badges        | Populated/empty simulator scenes and month arrows checked; touch swipes remain due |
 | Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted   |
-| Sticker outline preview and editing                              | Implemented locally; verify with an opt-in test photo on device  |
+| Sticker outline preview and editing                              | Preview/save checked with synthetic simulator data; verify quality with an opt-in test photo |
 | Backup/restore and native date picker                            | Source and deterministic backup tests pass; picker interaction due |
 | Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; native share-sheet interaction due |
 | Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                 |

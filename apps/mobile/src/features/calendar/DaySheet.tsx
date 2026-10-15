@@ -6,7 +6,6 @@ import {
   Modal,
   PanResponder,
   Pressable,
-  ScrollView,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -205,48 +204,46 @@ function DayContents({
         </View>
         <Button label={copy.close} onPress={onClose} />
       </View>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <FlatList
-          horizontal
-          data={entries}
-          keyExtractor={(entry) => entry.id}
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={itemWidth + 16}
-          decelerationRate="fast"
-          contentContainerStyle={styles.photos}
-          style={{ flexGrow: 0 }}
-          renderItem={({ item, index }) => (
-            <View style={[styles.photoPage, { width: itemWidth }]}>
-              <RecordImage
-                entry={item}
-                services={services}
-                variant="detail"
-                style={{ width: '100%', height: Math.min(300, height * 0.3) }}
-              />
-              <View style={styles.itemMeta}>
-                {item.status !== 'ready' && (
-                  <Text style={styles.state}>
-                    {item.status === 'failed' && item.errorCode
-                      ? (copy.errors[item.errorCode] ?? copy.recordState[item.status])
-                      : copy.recordState[item.status]}
-                  </Text>
-                )}
-                <Button
-                  label={copy.edit}
-                  labelStyle={styles.actionLabel}
-                  onPress={() => onEdit(item)}
-                />
-                <Text style={styles.position} accessibilityLiveRegion="polite">
-                  {copy.dayPosition(index + 1, entries.length)}
+      <FlatList
+        horizontal
+        data={entries}
+        keyExtractor={(entry) => entry.id}
+        showsHorizontalScrollIndicator={false}
+        snapToInterval={itemWidth + 16}
+        snapToAlignment="start"
+        decelerationRate="fast"
+        disableIntervalMomentum
+        contentContainerStyle={styles.photos}
+        style={styles.photoList}
+        renderItem={({ item, index }) => (
+          <View style={[styles.photoPage, { width: itemWidth }]}>
+            <RecordImage
+              entry={item}
+              services={services}
+              variant="detail"
+              style={{ width: '100%', height: Math.min(300, height * 0.3) }}
+            />
+            <View style={styles.itemMeta}>
+              {item.status !== 'ready' && (
+                <Text style={styles.state}>
+                  {item.status === 'failed' && item.errorCode
+                    ? (copy.errors[item.errorCode] ?? copy.recordState[item.status])
+                    : copy.recordState[item.status]}
                 </Text>
-              </View>
+              )}
+              <Button
+                label={copy.edit}
+                labelStyle={styles.actionLabel}
+                onPress={() => onEdit(item)}
+              />
+              <Text style={styles.position} accessibilityLiveRegion="polite">
+                {copy.dayPosition(index + 1, entries.length)}
+              </Text>
             </View>
-          )}
-          ListEmptyComponent={
-            <Text style={[styles.empty, { width: itemWidth }]}>{copy.noDay}</Text>
-          }
-        />
-      </ScrollView>
+          </View>
+        )}
+        ListEmptyComponent={<Text style={[styles.empty, { width: itemWidth }]}>{copy.noDay}</Text>}
+      />
       <View style={styles.footer}>
         <Button primary label={copy.addToDay} onPress={onAdd} />
       </View>
@@ -266,6 +263,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 24, paddingBottom: 20 },
   title: { fontFamily: fonts.month, fontSize: 42, lineHeight: 56, letterSpacing: -1 },
   help: { color: colors.muted, fontSize: 13 },
+  photoList: { flex: 1 },
   photos: { paddingHorizontal: 24, gap: 16 },
   photoPage: { alignItems: 'stretch' },
   itemMeta: { alignItems: 'center', paddingTop: 8 },

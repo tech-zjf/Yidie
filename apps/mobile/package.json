@@ -28,7 +28,7 @@
     "ios": "EXPO_NO_TELEMETRY=1 expo run:ios",
     "ios:release": "EXPO_NO_TELEMETRY=1 expo run:ios --configuration Release",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/domain/*.test.ts src/data/*.test.ts",
+    "test": "node --import tsx --test src/domain/*.test.ts src/data/*.test.ts src/preview/*.test.ts",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "export:ios": "EXPO_NO_TELEMETRY=1 expo export --platform ios",
     "prebuild:ios": "EXPO_NO_TELEMETRY=1 expo prebuild --platform ios --no-install",

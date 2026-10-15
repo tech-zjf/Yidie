@@ -6,10 +6,10 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 
 | Area | Implementation | Evidence and remaining boundary |
 | --- | --- | --- |
-| Calendar and brand | English iOS calendar, display typography, sticker-first occupied days, horizontal month/day browsing, animated sheets, centered Add action, app icon | Earlier iPhone 18 Pro / iOS 27 Simulator launch captured only the empty calendar on 2026-10-14; no screenshot of the latest source build is available yet |
-| Same-day stacks | Up to three offset, rotated stickers; count badge uses the total number of entries | Shared pure layout feeds UI and export; geometry tests cover narrow cells, six-week months, rotations and badge bounds; populated visual acceptance remains open |
-| Sticker editing | Local outline preview/save, 0–8 px, white/dark/blue, preserved transparent cutout | SQLite revision and native paths covered by automated tests; real Vision input quality requires an opt-in physical-device photo |
-| Day and record browsing | Animated bottom sheet with handle, horizontal photo paging; all-record grid and revision-safe editor | Domain/SQLite scenarios pass; interactive native gestures still need Simulator acceptance |
+| Calendar and brand | English iOS calendar, display typography, sticker-first occupied days, horizontal month/day browsing, animated sheets, centered Add action, app icon | Dedicated iPhone 18 Pro / iOS 27 Simulator visibly passed populated and empty preview scenes; arrows changed the month; drag gestures still need a touch-surface check |
+| Same-day stacks | Up to three offset, rotated stickers; count badge uses the total number of entries | Shared pure layout feeds UI and export; geometry tests cover narrow cells, six-week months, rotations and badge bounds; simulator showed a ten-entry stack and count badge |
+| Sticker editing | Local outline preview/save, 0–8 px, white/dark/blue, preserved transparent cutout | Synthetic simulator flow selected, previewed, and saved a dark outline; no-outline preview regression is tested. Real Vision input quality requires an opt-in physical-device photo |
+| Day and record browsing | Animated bottom sheet with handle, horizontal photo paging; all-record grid and revision-safe editor | The ten-entry day sheet and editor opened in Simulator. Device Hub did not deliver a verifiable drag gesture, so horizontal paging remains unaccepted |
 | Import and processing | User-selected PhotoKit assets, date review, duplicate handling, local persistent serial queue, retry and recovery | Domain/SQLite tests pass; Vision quality and system photo-picker behavior are not accepted on this Simulator |
 | Date editing | Native date picker, cancel-safe selection and date relocation | Source builds and static tests pass; native picker interaction remains to be accepted |
 | Local backup | User-controlled `.yidie` package, SQLite snapshot, checksums, strict path/schema validation, staged restore and startup rollback | Deterministic native tests cover corruption, database path traversal, future schema, storage limits, cancellation, current-library preservation and interrupted swaps; Files picker end-to-end flow remains open |
@@ -20,7 +20,7 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 
 | Priority | Gate | Completion evidence |
 | --- | --- | --- |
-| P0 | Simulator UI walkthrough | Verify day stack/count badge, horizontal photo paging, month swipe/arrows, editor preview/save, empty/loading/failure states, sheet motion, Add and All Records |
+| P0 | Simulator UI walkthrough | Completed: populated stack/count badge, day sheet, outline preview/save, empty month and arrow navigation. Remaining: confirm horizontal day paging and month swipe with simulator touch input, then cover loading/failure, motion, Add, All Records, backup and share flows |
 | P0 | Backup and share system flows | In Simulator, export and restore a synthetic `.yidie` library; cancel and reject a corrupt package without changing current data; share/cancel sticker and month images |
 | P1 | Supported-size and accessibility pass | Smallest supported iPhone, 4/5/6-week months, large text, VoiceOver focus/labels, reduced motion, no unintended scroll indicator or clipped controls |
 | P1 | Physical-device photo acceptance | Only a photo deliberately selected by the user; validate orientation, Vision cutout and outline, offline behavior, failure recovery, responsiveness and memory |
@@ -29,8 +29,8 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 
 ## Verified in this worktree
 
-- TypeScript, ESLint, Prettier, 51 domain/SQLite tests, native backup/file inventory tests, Swift core typecheck, repository/SQL contracts, and packet checks pass once run with the configured Node runtime. The updated `CalendarExporter.swift` also passes an isolated iOS SDK Swift typecheck using temporary stubs for app-owned dependencies; this checks API/type correctness, not app linking or rendering behavior.
-- iOS JavaScript Release export passes for the current source. The current source also completed a full unsigned iOS Simulator Release build with Xcode 27 and linked Expo Pods successfully. Xcode Settings reports the iOS 27.0 Simulator runtime installed, but no Simulator.app is discoverable in this session and CoreSimulatorService refuses connections, so the app could not be launched and interactive behavior is not accepted. The earlier iPhone 18 Pro screenshot shows only the empty home and predates recent editor and Reduce Motion changes.
+- TypeScript, ESLint, Prettier, 53 domain/SQLite/preview tests, native backup/file-inventory tests, Swift core typecheck, repository/SQL contracts, and packet checks pass with the configured Node runtime. The standalone Swift exporter typecheck checks API/type correctness, not the rendered image.
+- iOS JavaScript export and unsigned iOS Simulator Release and Debug builds pass with Xcode 27. The latest Debug source ran on a dedicated iPhone 18 Pro / iOS 27 Simulator. Taps opened a populated month, a same-day ten-entry stack, the day sheet, and the style editor; a dark outline preview was saved and visible on return. This uses synthetic stand-ins and does not verify real Vision cutout quality. Device Hub drag gestures did not change the page or month, so touch paging/swipe remains open.
 - No physical iPhone, Photos library, Developer Mode, signing identity, certificate, or keychain was accessed or changed. Xcode regenerated the ignored local iOS project; the Simulator build had code signing disabled.
 
 This is suitable as a **development milestone** for GitHub, not a complete or generally installable v0.1 release. The principal blockers are Simulator interaction coverage and a user-authorized real-device Vision photo test. The detailed security-state history is in [the device test safety runbook](15-device-test-safety-runbook.md); the active checklist is [TODO.md](../TODO.md).

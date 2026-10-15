@@ -33,7 +33,8 @@ export const MonthGrid = memo(function MonthGrid({
   const monthSwipe = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) =>
+        // Capture horizontal drags before a date cell's Pressable claims the touch responder.
+        onMoveShouldSetPanResponderCapture: (_, gesture) =>
           Math.abs(gesture.dx) > 18 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.35,
         onPanResponderRelease: (_, gesture) => {
           if (Math.abs(gesture.dx) >= 56) swipeMonth.current(gesture.dx < 0 ? 1 : -1);
