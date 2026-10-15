@@ -205,6 +205,7 @@ function DayContents({
       </View>
       <FlatList
         horizontal
+        accessibilityHint={copy.swipe}
         data={entries}
         keyExtractor={(entry) => entry.id}
         showsHorizontalScrollIndicator={false}
@@ -220,6 +221,7 @@ function DayContents({
               entry={item}
               services={services}
               variant="detail"
+              accessibilityLabel={`${copy.outfitPhoto}, ${copy.dayPosition(index + 1, entries.length)}`}
               style={{ width: '100%', height: Math.min(300, height * 0.3) }}
             />
             <View style={styles.itemMeta}>
