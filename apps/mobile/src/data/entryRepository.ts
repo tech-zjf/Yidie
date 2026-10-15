@@ -20,14 +20,7 @@ export function createEntryRepository(
   db: SqlDatabase,
   transaction: WriteTransaction,
 ): EntryRepository {
-  // Keep mutations serialized on the shared SQLite connection. Lifecycle tracking below also
-  // counts work waiting in this queue, so close cannot pass a write that has not started yet.
-  let tail: Promise<unknown> = Promise.resolve();
-  const write: WriteTransaction = (action) => {
-    const pending = tail.then(() => transaction(action));
-    tail = pending.catch(() => {});
-    return pending;
-  };
+  const write = transaction;
   const repository: EntryRepository = {
     async close() {
       await db.closeAsync?.();
@@ -103,26 +96,23 @@ export function createEntryRepository(
 }
 
 /**
- * Expo SQLite dispatches native calls on a concurrent queue. Track public operations so restore
- * cannot close/finalize the shared connection while a query is in flight. Reads remain concurrent.
+ * Expo SQLite dispatches native calls on a concurrent queue. Keep each repository operation on a
+ * single lane because writes use short-lived connections alongside the long-lived read connection.
+ * This prevents native statement execution/finalization and connection close from overlapping.
  */
 function guardRepositoryLifecycle(repository: EntryRepository): EntryRepository {
-  let activeOperations = 0;
+  let tail: Promise<void> = Promise.resolve();
+  let closing = false;
   let closePromise: Promise<void> | undefined;
-  let resolveIdle: (() => void) | undefined;
 
   function run<T>(operation: () => Promise<T>): Promise<T> {
-    if (closePromise) return Promise.reject(new Error('DATABASE_CLOSED'));
-    activeOperations++;
-    return Promise.resolve()
-      .then(operation)
-      .finally(() => {
-        activeOperations--;
-        if (activeOperations === 0) {
-          resolveIdle?.();
-          resolveIdle = undefined;
-        }
-      });
+    if (closing) return Promise.reject(new Error('DATABASE_CLOSED'));
+    const pending = tail.then(operation);
+    tail = pending.then(
+      () => undefined,
+      () => undefined,
+    );
+    return pending;
   }
 
   return {
@@ -149,14 +139,8 @@ function guardRepositoryLifecycle(repository: EntryRepository): EntryRepository 
     queueCounts: () => run(() => repository.queueCounts()),
     close() {
       if (closePromise) return closePromise;
-      closePromise = (async () => {
-        if (activeOperations > 0) {
-          await new Promise<void>((resolve) => {
-            resolveIdle = resolve;
-          });
-        }
-        await repository.close();
-      })();
+      closing = true;
+      closePromise = tail.then(() => repository.close());
       return closePromise;
     },
   };

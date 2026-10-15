@@ -27,7 +27,7 @@ test('fresh schema and v1 migration preserve records and recover interrupted job
   assert.equal((await r.repository.list()).length, 1);
 });
 
-test('repository close waits for active database work and fences later calls', async (t) => {
+test('repository serializes SQLite work and close fences queued and later calls', async (t) => {
   const r = fixture();
   t.after(() => r.sqlite.close());
   await initializeDatabase(r.db, r.write);
@@ -49,6 +49,7 @@ test('repository close waits for active database work and fences later calls', a
     releaseWrite = resolve;
   });
   let closed = false;
+  let writeHasStarted = false;
   const db: SqlDatabase = {
     ...r.db,
     async getAllAsync<T>(sql: string, ...params: (string | number | null)[]) {
@@ -62,6 +63,7 @@ test('repository close waits for active database work and fences later calls', a
     },
   };
   const repository = createEntryRepository(db, async (action) => {
+    writeHasStarted = true;
     markWriteStarted();
     await writeGate;
     return r.write(action);
@@ -73,6 +75,7 @@ test('repository close waits for active database work and fences later calls', a
   const close = repository.close();
   assert.equal(repository.close(), close, 'concurrent close requests share one shutdown');
   await assert.rejects(repository.list(), /DATABASE_CLOSED/);
+  assert.equal(writeHasStarted, false, 'SQLite operations must not overlap');
   assert.equal(closed, false);
 
   releaseRead();
