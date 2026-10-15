@@ -10,6 +10,7 @@ import { copy } from '../../ui/copy';
 import type { Entry } from '../../domain/records';
 import { EntryEditor } from '../records/EntryEditor';
 import { SheetHandle } from '../../ui/SheetHandle';
+import { useReducedMotion } from '../../ui/useReducedMotion';
 export function RecordList({
   services,
   onClose,
@@ -21,11 +22,17 @@ export function RecordList({
 }) {
   const model = useRecordList(services);
   const { width, fontScale } = useWindowDimensions();
+  const reduceMotion = useReducedMotion();
   const columns = fontScale >= 1.8 ? 1 : 2;
   const cardWidth = (width - 48 - (columns - 1) * 14) / columns;
   const [editing, setEditing] = useState<Entry | null>(null);
   return (
-    <Modal visible presentationStyle="pageSheet" animationType="slide" onRequestClose={onClose}>
+    <Modal
+      visible
+      presentationStyle="pageSheet"
+      animationType={reduceMotion ? 'none' : 'slide'}
+      onRequestClose={onClose}
+    >
       {editing ? (
         <EntryEditor
           key={editing.id}
