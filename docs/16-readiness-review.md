@@ -20,11 +20,11 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 
 | Priority | Gate | Completion evidence |
 | --- | --- | --- |
-| P0 | Simulator UI walkthrough | Completed: populated stack/count badge, day sheet, outline preview/save, empty month, arrow navigation, Import Review, synthetic failure states, and All Records. Remaining: confirm horizontal day paging/month swipe and animated dismissal with native touch input; Xcode currently reports CoreSimulatorService disconnected |
+| P0 | Simulator UI walkthrough | Completed: populated stack/count badge, day sheet, outline preview/save, empty month, arrow navigation, Import Review, synthetic failure states, and All Records. Remaining: confirm horizontal day paging/month swipe and animated dismissal with native touch input. Current Xcode 27 lacks Simulator.app and an iOS runtime, and CoreSimulatorService is disconnected |
 | P0 | Backup and share system flows | In Simulator, export and restore a synthetic `.yidie` library; cancel and reject a corrupt package without changing current data; share/cancel sticker and month images |
 | P1 | Supported-size and accessibility pass | Smallest supported iPhone, 4/5/6-week months, large text, VoiceOver focus/labels, reduced motion, no unintended scroll indicator or clipped controls |
 | P1 | Physical-device photo acceptance | Only a photo deliberately selected by the user; validate orientation, Vision cutout and outline, offline behavior, failure recovery, responsiveness and memory |
-| P1 | Open-source CI and reproducibility | GitHub CI green, clean lockfile install, JS export and documented Simulator Release build reproduced from source |
+| P1 | Open-source CI and reproducibility | GitHub CI green, clean lockfile install, JS export and documented Simulator Release build reproduced from source. The user approved GitHub OAuth reauthorization, but the connected credential still lacks `workflow`; the attempted push was rejected |
 | P2 | Public demo and launch material | Capture only verified flows with synthetic or explicitly consented material; publish no message on X without a separate user instruction |
 
 ## Verified in this worktree
