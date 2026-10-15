@@ -130,10 +130,28 @@ func runBackupTests() throws {
   let corrupt = temporary.appendingPathComponent("Corrupt.yidie", isDirectory: true)
   try FileManager.default.copyItem(at: package, to: corrupt)
   try rewriteManifest(corrupt) { manifest in manifest["totalBytes"] = -1 }
-  try expectBackupError("BACKUP_VERSION_UNSUPPORTED") {
+  try expectBackupError("INVALID_BACKUP") {
     _ = try LocalBackup.stageRestore(from: corrupt, support: support)
   }
   try check(FileManager.default.fileExists(atPath: currentMarker.path), "Rejected backup changed current library")
+
+  let negativeCount = temporary.appendingPathComponent("NegativeCount.yidie", isDirectory: true)
+  try FileManager.default.copyItem(at: package, to: negativeCount)
+  try rewriteManifest(negativeCount) { manifest in manifest["entryCount"] = -1 }
+  try expectBackupError("INVALID_BACKUP") {
+    _ = try LocalBackup.stageRestore(from: negativeCount, support: support)
+  }
+  try check(FileManager.default.fileExists(atPath: currentMarker.path), "Invalid counts changed current library")
+
+  let oversizedManifest = temporary.appendingPathComponent("OversizedManifest.yidie", isDirectory: true)
+  try FileManager.default.copyItem(at: package, to: oversizedManifest)
+  try rewriteManifest(oversizedManifest) { manifest in
+    manifest["totalBytes"] = LocalBackup.maxTotalBytes + 1
+  }
+  try expectBackupError("BACKUP_TOO_LARGE") {
+    _ = try LocalBackup.stageRestore(from: oversizedManifest, support: support)
+  }
+  try check(FileManager.default.fileExists(atPath: currentMarker.path), "Oversized manifest changed current library")
 
   let future = temporary.appendingPathComponent("Future.yidie", isDirectory: true)
   try FileManager.default.copyItem(at: package, to: future)

@@ -225,10 +225,15 @@ enum LocalBackup {
     let manifestSize = try manifestURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
     guard Int64(manifestSize) <= maxManifestBytes else { throw YidieError(code: "INVALID_BACKUP") }
     let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: manifestURL))
-    guard manifest.formatVersion == formatVersion, manifest.schemaVersion == schemaVersion,
-          manifest.entryCount >= 0, manifest.assetCount >= 0,
-          manifest.files.count <= maxFiles, manifest.totalBytes >= 0,
-          manifest.totalBytes <= maxTotalBytes else { throw YidieError(code: "BACKUP_VERSION_UNSUPPORTED") }
+    guard manifest.formatVersion == formatVersion, manifest.schemaVersion == schemaVersion else {
+      throw YidieError(code: "BACKUP_VERSION_UNSUPPORTED")
+    }
+    guard manifest.entryCount >= 0, manifest.assetCount >= 0, manifest.totalBytes >= 0 else {
+      throw YidieError(code: "INVALID_BACKUP")
+    }
+    guard manifest.files.count <= maxFiles, manifest.totalBytes <= maxTotalBytes else {
+      throw YidieError(code: "BACKUP_TOO_LARGE")
+    }
     let actual = try fileRecords(in: package)
     guard actual.count == manifest.files.count,
           actual.sorted(by: { $0.path < $1.path }).elementsEqual(manifest.files.sorted(by: { $0.path < $1.path }), by: {
