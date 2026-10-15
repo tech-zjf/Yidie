@@ -43,10 +43,11 @@ Requirements: macOS, a compatible Xcode installation, and Node.js 22 or newer. E
 cd apps/mobile
 npm ci
 npm run check
-npm run ios
+npm run ios:sim -- --list
+npm run ios:sim -- <simulator-udid>
 ```
 
-To run the native UI preview with fixed sample data, use `npm run preview:ios`. The preview does not access Photos or the real database. Details are in the [mobile build guide](apps/mobile/README.md).
+The Simulator helper validates the UDID against `simctl` before invoking Expo and fails closed when the Simulator service is unavailable; it will not target a physical phone. To run the native UI preview with fixed sample data, use `npm run preview:ios`. The preview does not access Photos or the real database. Details are in the [mobile build guide](apps/mobile/README.md).
 
 Installing on a personal iPhone requires building and signing with your own Apple development identity. This repository does not provide a signed public download. A free personal development profile is for testing on your own registered device and expires; broader iOS distribution has separate Apple requirements.
 

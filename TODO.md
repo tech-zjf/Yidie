@@ -9,6 +9,7 @@ This is the single working checklist for the first public, installable release. 
 - [x] Local sticker outline editing: preserve the transparent cutout, preview and save color/width variants without rerunning Vision.
 - [x] Distinguish not-yet-requested, authorized, limited, denied, and restricted Photos access; load an already-authorized library automatically and direct denied users to Settings.
 - [x] Automated domain/SQLite, TypeScript, lint, formatting, native file-catalog, and documentation-contract checks.
+- [x] Add a Simulator-only Expo launch command that validates an exact available iOS Simulator UDID and stops before Expo when CoreSimulator is unavailable; test selection fail-closed behavior without launching a device.
 
 ## P0 — keep user data safe
 
