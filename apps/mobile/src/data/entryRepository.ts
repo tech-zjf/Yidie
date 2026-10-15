@@ -97,9 +97,8 @@ export function createEntryRepository(
 }
 
 /**
- * Expo SQLite dispatches native calls on a concurrent queue. Keep each repository operation on a
- * single lane because writes use short-lived connections alongside the long-lived read connection.
- * This prevents native statement execution/finalization and connection close from overlapping.
+ * Expo SQLite dispatches native calls on a concurrent queue. Keep reads, writes, and shutdown on
+ * one lane and one repository-owned connection so statement work cannot race a connection close.
  */
 function serializeRepositoryOperations(repository: EntryRepository): EntryRepository {
   const enqueue = createSerialWork();

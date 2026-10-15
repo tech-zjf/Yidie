@@ -4,7 +4,11 @@ import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
 const currentVersion = 5;
 
 export async function initializeDatabase(db: SqlDatabase, write: WriteTransaction) {
-  await db.execAsync('PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;');
+  await db.execAsync(
+    'PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000; PRAGMA journal_mode = WAL;',
+  );
+  const foreignKeys = await db.getFirstAsync<{ foreign_keys: number }>('PRAGMA foreign_keys');
+  if (foreignKeys?.foreign_keys !== 1) throw new Error('FOREIGN_KEYS_DISABLED');
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');
   const version = row?.user_version ?? 0;
   if (version > currentVersion) throw new Error('DATABASE_VERSION_TOO_NEW');
