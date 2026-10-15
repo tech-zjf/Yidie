@@ -25,7 +25,7 @@ Review date: 2026-10-15. This describes the current development build, not a rel
 | P0 | Backup and share system flows | Empty `.yidie` backup was saved and restored from the simulator Files app; restore confirmation specified 0 records/0 images, and the app returned to the empty calendar. Native tests cover malformed packages. Remaining UI acceptance: corrupt-package rejection while preserving current data, and sticker/month share payload inspection through a non-external test destination |
 | P1 | Supported-size and accessibility pass | Smallest supported iPhone, 4/5/6-week months, large text, VoiceOver focus/labels, reduced motion, no unintended scroll indicator or clipped controls |
 | P1 | Physical-device photo acceptance | Only a photo deliberately selected by the user; validate orientation, Vision cutout and outline, offline behavior, failure recovery, responsiveness and memory |
-| P1 | Open-source CI and reproducibility | GitHub CI green, clean lockfile install, JS export and documented Simulator Release build reproduced from source. The user approved GitHub OAuth reauthorization, but the connected credential still lacks `workflow`; the attempted push was rejected |
+| P1 | Open-source CI and reproducibility | GitHub CI green, clean lockfile install, JS export and documented Simulator Release build reproduced from source. The user approved GitHub OAuth reauthorization, but GitHub still rejects pushes because the active credential lacks `workflow`; no remote ref changed |
 | P2 | Public demo and launch material | Capture only verified flows with synthetic or explicitly consented material; publish no message on X without a separate user instruction |
 
 ## Verified in this worktree
