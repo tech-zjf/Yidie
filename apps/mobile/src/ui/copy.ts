@@ -44,7 +44,6 @@ export const copy = {
   weekdays: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
   months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
   empty: 'Layer today into your calendar.',
-  emptyHelp: 'Choose an outfit photo to make your first sticker.',
   local: 'Your photos and stickers stay on this iPhone.',
   permissionHelp:
     'Choose the photos you want to add. Yidie copies only the photos you import; originals stay in Apple Photos.',
