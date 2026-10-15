@@ -1,13 +1,14 @@
-"""Rebuild the app's local Fraunces subsets from the licensed source fonts."""
+"""Rebuild the app's licensed Fraunces subsets as bundled TTF assets."""
 from pathlib import Path
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 from fontTools import subset
 
-ROOT = Path(__file__).resolve().parents[1] / 'assets/fonts/source'
-OUTPUT = Path(__file__).resolve().parents[1] / 'apps/mobile/assets/fonts'
+REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = REPOSITORY_ROOT / 'design/assets/fonts'
+OUTPUT_ROOT = REPOSITORY_ROOT / 'apps/mobile/assets/fonts'
 for suffix in ('', '-Italic'):
-    font = TTFont(ROOT / f'Fraunces{suffix}.ttf')
+    font = TTFont(SOURCE_ROOT / f'Fraunces{suffix}.ttf')
     font = instantiateVariableFont(font, {'wght': 600, 'opsz': 48, 'SOFT': 30, 'WONK': 1}, inplace=True)
     options = subset.Options()
     options.name_IDs = ['*']
@@ -24,5 +25,5 @@ for suffix in ('', '-Italic'):
         elif name.nameID in (2, 17): value = 'Regular'
         else: continue
         name.string = value.encode(name.getEncoding())
-    font.save(OUTPUT / f'{postscript}.ttf')
+    font.save(OUTPUT_ROOT / f'{postscript}.ttf')
     print(postscript)

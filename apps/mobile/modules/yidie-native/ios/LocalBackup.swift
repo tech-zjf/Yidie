@@ -17,7 +17,8 @@ struct LocalBackupSummary {
 /// Owns the portable `.yidie` document package and crash-safe replacement of app data.
 enum LocalBackup {
   static let formatVersion = 1
-  static let schemaVersion = 5
+  static let schemaVersion = 6
+  private static let minimumSupportedSchemaVersion = 5
   static let assetDirectories = ["originals", "stickers", "previews", "cutouts", "photo-previews"]
   static let maxFiles = 25_000
   static let maxFileBytes: Int64 = 512 * 1024 * 1024
@@ -79,7 +80,9 @@ enum LocalBackup {
       let allowedPaths = Set(records.map(\.path))
       let db = try openSQLite(snapshotDB, flags: SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX)
       defer { sqlite3_close(db) }
-      try validateDatabase(db, allowedPaths: allowedPaths)
+      guard try validateDatabase(db, allowedPaths: allowedPaths) == schemaVersion else {
+        throw YidieError(code: "BACKUP_VERSION_UNSUPPORTED")
+      }
       let entryCount = try scalarInt(db, "SELECT COUNT(*) FROM entries")
       guard records.count <= maxFiles else { throw YidieError(code: "BACKUP_TOO_LARGE") }
       let total = records.reduce(Int64(0)) { $0 + $1.byteCount }
@@ -225,7 +228,8 @@ enum LocalBackup {
     let manifestSize = try manifestURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
     guard Int64(manifestSize) <= maxManifestBytes else { throw YidieError(code: "INVALID_BACKUP") }
     let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: manifestURL))
-    guard manifest.formatVersion == formatVersion, manifest.schemaVersion == schemaVersion else {
+    guard manifest.formatVersion == formatVersion,
+          (minimumSupportedSchemaVersion...schemaVersion).contains(manifest.schemaVersion) else {
       throw YidieError(code: "BACKUP_VERSION_UNSUPPORTED")
     }
     guard manifest.entryCount >= 0, manifest.assetCount >= 0, manifest.totalBytes >= 0 else {
@@ -245,16 +249,20 @@ enum LocalBackup {
     let databaseURL = package.appendingPathComponent("database/yidie.sqlite")
     let db = try openSQLite(databaseURL, flags: SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX)
     defer { sqlite3_close(db) }
-    try validateDatabase(db, allowedPaths: Set(actual.map(\.path)))
+    let databaseVersion = try validateDatabase(db, allowedPaths: Set(actual.map(\.path)))
+    guard manifest.schemaVersion == databaseVersion else {
+      throw YidieError(code: "INVALID_BACKUP")
+    }
     guard try scalarInt(db, "SELECT COUNT(*) FROM entries") == manifest.entryCount else {
       throw YidieError(code: "BACKUP_CHECKSUM_FAILED")
     }
     return LocalBackupSummary(entryCount: manifest.entryCount, assetCount: manifest.assetCount, totalBytes: manifest.totalBytes)
   }
 
-  private static func validateDatabase(_ db: OpaquePointer, allowedPaths: Set<String>) throws {
+  private static func validateDatabase(_ db: OpaquePointer, allowedPaths: Set<String>) throws -> Int {
+    let databaseVersion = try scalarInt(db, "PRAGMA user_version")
     guard try scalarText(db, "PRAGMA integrity_check") == "ok",
-          try scalarInt(db, "PRAGMA user_version") == schemaVersion,
+          (minimumSupportedSchemaVersion...schemaVersion).contains(databaseVersion),
           try rowCount(db, "PRAGMA foreign_key_check") == 0 else { throw YidieError(code: "INVALID_BACKUP") }
     let statement = try prepare(db, "SELECT original_path,sticker_path,thumbnail_path,cutout_path,photo_preview_path FROM entries")
     defer { sqlite3_finalize(statement) }
@@ -268,6 +276,7 @@ enum LocalBackup {
       result = sqlite3_step(statement)
     }
     guard result == SQLITE_DONE else { throw YidieError(code: "INVALID_BACKUP") }
+    return databaseVersion
   }
 
   private static func fileRecords(in package: URL) throws -> [FileRecord] {
@@ -312,7 +321,7 @@ enum LocalBackup {
       "^originals/\(uuid)\\.source$",
       "^stickers/\(uuid)(-v[0-9]+)?\\.png$",
       "^previews/\(uuid)(-v[0-9]+)?\\.png$",
-      "^cutouts/\(uuid)\\.png$",
+      "^cutouts/\(uuid)(-v[1-9][0-9]*)?\\.png$",
       "^photo-previews/\(uuid)\\.jpg$",
     ]
     return patterns.contains { path.range(of: $0, options: .regularExpression) != nil }

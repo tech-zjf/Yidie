@@ -16,7 +16,7 @@ enum NativeFileStore {
     var values = URLResourceValues()
     values.isExcludedFromBackup = true
     try root.setResourceValues(values)
-    for name in ["originals", "stickers", "previews", "cutouts", "photo-previews", "database"] {
+    for name in ["originals", "stickers", "previews", "cutouts", "photo-previews", "drafts", "database"] {
       var child = root.appendingPathComponent(name, isDirectory: true)
       try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
       try validateDirectory(child)
@@ -34,19 +34,43 @@ enum NativeFileStore {
     guard UUID(uuidString: id)?.uuidString == id else { throw YidieError(code: "INVALID_RESOURCE") }
   }
 
-  static func file(_ id: String, kind: String, styleRevision: Int? = nil) throws -> URL {
+  static func file(
+    _ id: String, kind: String, styleRevision: Int? = nil, cutoutRevision: Int? = nil
+  ) throws -> URL {
     try validateID(id)
     if let styleRevision, styleRevision < 0 { throw YidieError(code: "INVALID_RESOURCE") }
+    if let cutoutRevision, cutoutRevision <= 0 { throw YidieError(code: "INVALID_RESOURCE") }
     let relative: String
     switch kind {
     case "original": relative = "originals/\(id).source"
     case "sticker": relative = "stickers/\(id)\(styleRevision.map { "-v\($0)" } ?? "").png"
     case "thumbnail": relative = "previews/\(id)\(styleRevision.map { "-v\($0)" } ?? "").png"
-    case "cutout": relative = "cutouts/\(id).png"
+    case "cutout": relative = "cutouts/\(id)\(cutoutRevision.map { "-v\($0)" } ?? "").png"
     case "photoPreview": relative = "photo-previews/\(id).jpg"
     default: throw YidieError(code: "INVALID_RESOURCE")
     }
     return try root().appendingPathComponent(relative)
+  }
+
+  static func cutoutFile(_ id: String, relativePath: String) throws -> URL {
+    try StickerAssetStore(root: root()).cutoutFile(id: id, relativePath: relativePath)
+  }
+
+  static func subjectDraftFile(_ id: String, relativePath: String) throws -> URL {
+    try StickerAssetStore(root: root()).subjectDraftFile(id: id, relativePath: relativePath)
+  }
+
+  static func discardSubjectDrafts(_ id: String) throws {
+    try StickerAssetStore(root: root()).discardSubjectDrafts(id: id)
+  }
+
+  static func discardStaleSubjectDrafts() throws {
+    try StickerAssetStore(root: root()).discardStaleSubjectDrafts()
+  }
+
+  static func stageSubjectCutout(_ id: String, draftPath: String, revision: Int) throws -> String {
+    try StickerAssetStore(root: root()).stageSubjectCutout(
+      id: id, draftPath: draftPath, revision: revision)
   }
 
   static func discard(_ id: String) throws {
@@ -54,26 +78,18 @@ enum NativeFileStore {
     try ImageFileCatalog(root: root()).remove(id)
   }
 
-  static func discardStyleVersion(_ id: String, revision: Int) throws {
-    try validateID(id)
-    guard revision >= 0 else { throw YidieError(code: "INVALID_RESOURCE") }
-    for (kind, directory) in [("sticker", "stickers"), ("thumbnail", "previews")] {
-      let file = try self.file(id, kind: kind, styleRevision: revision)
-      var candidates = [file]
-      if revision == 0 { candidates.append(try self.file(id, kind: kind)) }
-      for candidate in candidates {
-        if !FileManager.default.fileExists(atPath: candidate.path) { continue }
-        let values = try candidate.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
-        guard values.isRegularFile == true, values.isSymbolicLink != true,
-              candidate.deletingLastPathComponent().lastPathComponent == directory else {
-          throw YidieError(code: "INVALID_RESOURCE")
-        }
-        try FileManager.default.removeItem(at: candidate)
-      }
-    }
+  static func discardStyleVersion(
+    _ id: String, revision: Int, cutoutPath: String? = nil
+  ) throws {
+    try StickerAssetStore(root: root()).discardStyleVersion(
+      id: id, revision: revision, cutoutPath: cutoutPath)
   }
 
-  static func pruneStickerStyles(_ id: String, keeping revision: Int) throws {
-    try ImageFileCatalog(root: root()).pruneStickerStyles(id, keeping: revision)
+  static func pruneStickerStyles(
+    _ id: String, keeping revision: Int, cutoutPath: String
+  ) throws {
+    _ = try cutoutFile(id, relativePath: cutoutPath)
+    try ImageFileCatalog(root: root()).pruneStickerStyles(
+      id, keeping: revision, cutoutPath: cutoutPath)
   }
 }

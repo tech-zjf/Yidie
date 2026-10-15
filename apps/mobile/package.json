@@ -25,9 +25,10 @@
   },
   "scripts": {
     "start": "EXPO_NO_TELEMETRY=1 expo start --localhost",
-    "ios": "EXPO_NO_TELEMETRY=1 expo run:ios",
+    "ios": "EXPO_NO_TELEMETRY=1 node scripts/run-ios-simulator.mjs",
     "ios:sim": "EXPO_NO_TELEMETRY=1 node scripts/run-ios-simulator.mjs",
-    "ios:release": "EXPO_NO_TELEMETRY=1 expo run:ios --configuration Release",
+    "ios:release": "EXPO_NO_TELEMETRY=1 node scripts/run-ios-simulator.mjs --configuration Release",
+    "test:sticker:sim": "sh scripts/test-sticker-renderer-simulator.sh",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test src/domain/*.test.ts src/data/*.test.ts src/preview/*.test.ts plugins/*.test.js scripts/*.test.mjs",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
@@ -37,7 +38,6 @@
     "format": "prettier --write src modules plugins scripts index.ts App.tsx *.json *.js",
     "format:check": "prettier --check src modules plugins scripts index.ts App.tsx *.json *.js",
     "preview:ios": "YIDIE_UI_PREVIEW=1 EXPO_PUBLIC_YIDIE_PREVIEW_CONTROLS=1 EXPO_NO_TELEMETRY=1 expo start --localhost",
-    "preview:clean": "YIDIE_UI_PREVIEW=1 EXPO_NO_TELEMETRY=1 expo start --localhost",
     "preview:export": "YIDIE_UI_PREVIEW=1 EXPO_NO_TELEMETRY=1 expo export --platform ios --dev --output-dir dist-preview"
   },
   "private": true,

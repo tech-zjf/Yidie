@@ -42,9 +42,9 @@ export function sticker(id: string): Sticker {
     width: 100,
     height: 200,
     instanceCount: 1,
+    effect: 'outline',
     borderWidth: 4,
     borderColor: '#FFFFFF',
-    effect: 'outline',
     styleRevision: 0,
   };
 }

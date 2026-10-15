@@ -1,6 +1,4 @@
-/** Current runtime types are re-exported, not independently redefined here.
- * Month export and backup types below are targets for later implementation stages.
- */
+/** Public app contracts re-export current runtime types instead of redefining them. */
 export type { DateProposal, DateSource } from '../apps/mobile/src/domain/datePolicy';
 export type { Asset, ImportedPhoto, Sticker, StickerEffect, Entry, EntryRepository, PhotoProcessor } from '../apps/mobile/src/domain/records';
 export type { BatchItem, DuplicateEntry, PauseReason, QueueCounts } from '../apps/mobile/src/domain/records';

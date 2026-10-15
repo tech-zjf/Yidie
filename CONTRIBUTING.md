@@ -33,4 +33,4 @@ Use the GitHub issue templates. Include the app version, iOS version, steps, exp
 
 ## Pull requests
 
-Describe the user-visible change, the checks you ran, and any unverified device behavior. Keep unrelated changes separate. UI changes should include an app screenshot or screen recording from the tested build, with synthetic or consented content.
+Describe the user-visible change, the checks you ran, and any unverified device behavior. Keep unrelated changes separate. UI changes should include a capture from the tested build when practical; public-facing screenshots and recordings require the owner's approval and a real photo captured in Yidie. Do not add generated people or synthetic outfit stand-ins to project marketing materials.

@@ -8,7 +8,10 @@ public class YidieNativeModule: Module {
   private var shareController: UIActivityViewController?
 
   private func reject(_ error: Error, _ promise: Promise) {
-    let code = (error as? YidieError)?.code ?? ((error as NSError).code == NSFileWriteOutOfSpaceError ? "INSUFFICIENT_STORAGE" : "PROCESSING_FAILED")
+    let code =
+      (error as? YidieError)?.code
+      ?? ((error as NSError).code == NSFileWriteOutOfSpaceError
+        ? "INSUFFICIENT_STORAGE" : "PROCESSING_FAILED")
     promise.reject(code, code)
   }
 
@@ -16,9 +19,9 @@ public class YidieNativeModule: Module {
     Name("YidieNative")
     Function("capabilities") { () -> [String: Any] in
       #if targetEnvironment(simulator)
-      let simulator = true
+        let simulator = true
       #else
-      let simulator = false
+        let simulator = false
       #endif
       return ["simulator": simulator, "minimumIOS": 17]
     }
@@ -27,7 +30,12 @@ public class YidieNativeModule: Module {
         do {
           try LocalBackup.recoverIfNeeded()
           let root = try NativeFileStore.root()
-          promise.resolve(["rootUri": root.absoluteString + (root.absoluteString.hasSuffix("/") ? "" : "/"), "databaseUri": root.appendingPathComponent("database", isDirectory: true).absoluteString])
+          try NativeFileStore.discardStaleSubjectDrafts()
+          promise.resolve([
+            "rootUri": root.absoluteString + (root.absoluteString.hasSuffix("/") ? "" : "/"),
+            "databaseUri": root.appendingPathComponent("database", isDirectory: true)
+              .absoluteString,
+          ])
         } catch { self.reject(error, promise) }
       }
     }
@@ -99,8 +107,9 @@ public class YidieNativeModule: Module {
             NativeFileStore.queue.async {
               let accessed = url.startAccessingSecurityScopedResource()
               defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-              do { promise.resolve(try LocalBackup.stageRestore(from: url).dictionary) }
-              catch { self.reject(error, promise) }
+              do { promise.resolve(try LocalBackup.stageRestore(from: url).dictionary) } catch {
+                self.reject(error, promise)
+              }
             }
           }
         }
@@ -110,21 +119,27 @@ public class YidieNativeModule: Module {
     }
     AsyncFunction("discardRestore") { (promise: Promise) in
       NativeFileStore.queue.async {
-        do { try LocalBackup.discardRestore(); promise.resolve(nil) }
-        catch { self.reject(error, promise) }
+        do {
+          try LocalBackup.discardRestore()
+          promise.resolve(nil)
+        } catch { self.reject(error, promise) }
       }
     }
     AsyncFunction("activateRestore") { (promise: Promise) in
       NativeFileStore.queue.async {
-        do { try LocalBackup.activateRestore(); promise.resolve(nil) }
-        catch { self.reject(error, promise) }
+        do {
+          try LocalBackup.activateRestore()
+          promise.resolve(nil)
+        } catch { self.reject(error, promise) }
       }
     }
     AsyncFunction("shareSticker") { (id: String, revision: Int, promise: Promise) in
       NativeFileStore.queue.async {
         do {
           let url = try NativeFileStore.file(id, kind: "sticker", styleRevision: revision)
-          guard FileManager.default.fileExists(atPath: url.path) else { throw YidieError(code: "EXPORT_IMAGE_MISSING") }
+          guard FileManager.default.fileExists(atPath: url.path) else {
+            throw YidieError(code: "EXPORT_IMAGE_MISSING")
+          }
           DispatchQueue.main.async { self.presentShare(url, temporary: false, promise: promise) }
         } catch { self.reject(error, promise) }
       }
@@ -140,7 +155,8 @@ public class YidieNativeModule: Module {
     AsyncFunction("presentLimitedLibraryPicker") { (promise: Promise) in
       DispatchQueue.main.async {
         guard PHPhotoLibrary.authorizationStatus(for: .readWrite) == .limited,
-              let presenter = self.appContext?.utilities?.currentViewController() else {
+          let presenter = self.appContext?.utilities?.currentViewController()
+        else {
           promise.reject("PHOTO_PERMISSION_UNAVAILABLE", "PHOTO_PERMISSION_UNAVAILABLE")
           return
         }
@@ -149,63 +165,115 @@ public class YidieNativeModule: Module {
         }
       }
     }
-    AsyncFunction("listPhotos") { (offset: Int, limit: Int) in try LocalPhotos.list(offset: offset, limit: limit) }
+    AsyncFunction("listPhotos") { (offset: Int, limit: Int) in
+      try LocalPhotos.list(offset: offset, limit: limit)
+    }
     AsyncFunction("thumbnail") { (id: String, promise: Promise) in
       LocalPhotos.thumbnail(id) { result in
-        switch result { case .success(let uri): promise.resolve(uri); case .failure(let error): self.reject(error, promise) }
+        switch result {
+        case .success(let uri): promise.resolve(uri)
+        case .failure(let error): self.reject(error, promise)
+        }
       }
     }
     AsyncFunction("importPhoto") { (id: String, promise: Promise) in
       LocalPhotos.read(id) { result in
-        switch result { case .success(let photo): promise.resolve(photo); case .failure(let error): self.reject(error, promise) }
+        switch result {
+        case .success(let photo): promise.resolve(photo)
+        case .failure(let error): self.reject(error, promise)
+        }
       }
     }
     AsyncFunction("createSticker") { (id: String, promise: Promise) in
-      NativeFileStore.queue.async {
-        autoreleasepool {
-          do { promise.resolve(try StickerProcessor.create(id: id)) }
-          catch { self.reject(error, promise) }
+      StickerProcessor.create(id: id) { result in
+        switch result {
+        case .success(let sticker): promise.resolve(sticker)
+        case .failure(let error): self.reject(error, promise)
         }
       }
     }
-    AsyncFunction("renderStickerStyle") { (id: String, revision: Int, borderWidth: Double, borderColor: String, effect: String, promise: Promise) in
-      NativeFileStore.queue.async {
-        autoreleasepool {
-          do { promise.resolve(try StickerProcessor.renderStyle(id: id, revision: revision, borderWidth: borderWidth, borderColor: borderColor, effectName: effect)) }
-          catch { self.reject(error, promise) }
+    AsyncFunction("listStickerSubjects") { (id: String, promise: Promise) in
+      StickerProcessor.subjectCandidates(id: id) { result in
+        switch result {
+        case .success(let candidates): promise.resolve(candidates)
+        case .failure(let error): self.reject(error, promise)
         }
       }
     }
-    AsyncFunction("discardStickerStyleVersion") { (id: String, revision: Int, promise: Promise) in
+    AsyncFunction("stageStickerSubject") {
+      (id: String, candidatePath: String, styleRevision: Int, promise: Promise) in
       NativeFileStore.queue.async {
-        do { try NativeFileStore.discardStyleVersion(id, revision: revision); promise.resolve(nil) }
-        catch { self.reject(error, promise) }
+        do {
+          promise.resolve(
+            try NativeFileStore.stageSubjectCutout(
+              id, draftPath: candidatePath, revision: styleRevision))
+        } catch { self.reject(error, promise) }
       }
     }
-    AsyncFunction("pruneStickerStyles") { (id: String, keepingRevision: Int, promise: Promise) in
+    AsyncFunction("discardStickerSubjectDrafts") { (id: String, promise: Promise) in
       NativeFileStore.queue.async {
-        do { try NativeFileStore.pruneStickerStyles(id, keeping: keepingRevision); promise.resolve(nil) }
-        catch { self.reject(error, promise) }
+        do {
+          try NativeFileStore.discardSubjectDrafts(id)
+          promise.resolve(nil)
+        } catch { self.reject(error, promise) }
+      }
+    }
+    AsyncFunction("renderStickerStyle") {
+      (
+        id: String, revision: Int, cutoutPath: String?, effect: String, borderWidth: Double,
+        borderColor: String, promise: Promise
+      ) in
+      NativeFileStore.queue.async {
+        autoreleasepool {
+          do {
+            promise.resolve(
+              try StickerProcessor.renderStyle(
+                id: id, revision: revision, cutoutPath: cutoutPath, effect: effect,
+                borderWidth: borderWidth, borderColor: borderColor))
+          } catch { self.reject(error, promise) }
+        }
+      }
+    }
+    AsyncFunction("discardStickerStyleVersion") {
+      (id: String, revision: Int, cutoutPath: String?, promise: Promise) in
+      NativeFileStore.queue.async {
+        do {
+          try NativeFileStore.discardStyleVersion(id, revision: revision, cutoutPath: cutoutPath)
+          promise.resolve(nil)
+        } catch { self.reject(error, promise) }
+      }
+    }
+    AsyncFunction("pruneStickerStyles") {
+      (id: String, keepingRevision: Int, cutoutPath: String, promise: Promise) in
+      NativeFileStore.queue.async {
+        do {
+          try NativeFileStore.pruneStickerStyles(
+            id, keeping: keepingRevision, cutoutPath: cutoutPath)
+          promise.resolve(nil)
+        } catch { self.reject(error, promise) }
       }
     }
     AsyncFunction("createPhotoPreview") { (id: String, promise: Promise) in
       NativeFileStore.queue.async {
         autoreleasepool {
-          do { promise.resolve(try PhotoPreview.create(id: id).dictionary) }
-          catch { self.reject(error, promise) }
+          do { promise.resolve(try PhotoPreview.create(id: id).dictionary) } catch {
+            self.reject(error, promise)
+          }
         }
       }
     }
     AsyncFunction("listImportIDs") { (promise: Promise) in
       NativeFileStore.queue.async {
-        do { promise.resolve(try ImageFileCatalog(root: NativeFileStore.root()).importIDs()) }
-        catch { self.reject(error, promise) }
+        do { promise.resolve(try ImageFileCatalog(root: NativeFileStore.root()).importIDs()) } catch
+        { self.reject(error, promise) }
       }
     }
     AsyncFunction("discardImport") { (id: String, promise: Promise) in
       NativeFileStore.queue.async {
-        do { try NativeFileStore.discard(id); promise.resolve(nil) }
-        catch { self.reject(error, promise) }
+        do {
+          try NativeFileStore.discard(id)
+          promise.resolve(nil)
+        } catch { self.reject(error, promise) }
       }
     }
   }
@@ -223,21 +291,27 @@ public class YidieNativeModule: Module {
 
   private func presentShare(_ url: URL, temporary: Bool, promise: Promise) {
     guard shareController == nil,
-          let presenter = appContext?.utilities?.currentViewController() else {
+      let presenter = appContext?.utilities?.currentViewController()
+    else {
       if temporary { try? FileManager.default.removeItem(at: url) }
-      promise.reject(shareController == nil ? "SHARE_UNAVAILABLE" : "SHARE_IN_PROGRESS", "SHARE_UNAVAILABLE")
+      promise.reject(
+        shareController == nil ? "SHARE_UNAVAILABLE" : "SHARE_IN_PROGRESS", "SHARE_UNAVAILABLE")
       return
     }
     let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
     controller.completionWithItemsHandler = { [weak self] _, completed, _, error in
       self?.shareController = nil
       if temporary { try? FileManager.default.removeItem(at: url) }
-      if let error { promise.reject("SHARE_FAILED", error.localizedDescription) }
-      else { promise.resolve(completed) }
+      if let error {
+        promise.reject("SHARE_FAILED", error.localizedDescription)
+      } else {
+        promise.resolve(completed)
+      }
     }
     if let popover = controller.popoverPresentationController {
       popover.sourceView = presenter.view
-      popover.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
+      popover.sourceRect = CGRect(
+        x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
     }
     shareController = controller
     presenter.present(controller, animated: true)

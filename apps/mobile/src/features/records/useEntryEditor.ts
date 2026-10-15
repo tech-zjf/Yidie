@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Entry, Sticker, StickerBorderColor, StickerEffect } from '../../domain/records';
+import type {
+  Entry,
+  Sticker,
+  StickerBorderColor,
+  StickerEffect,
+  StickerSubjectCandidate,
+} from '../../domain/records';
 import { isRecordDate } from '../../domain/datePolicy';
 import { errorCode } from '../../domain/importPhoto';
 import type { AppServices } from '../../services';
@@ -17,13 +23,30 @@ export function useEntryEditor(
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
   const [deleted, setDeleted] = useState(false);
+  const [effect, setEffect] = useState<StickerEffect>(initial.effect ?? 'outline');
   const [borderWidth, setBorderWidth] = useState(initial.borderWidth ?? 4);
   const [borderColor, setBorderColor] = useState<StickerBorderColor>(
     initial.borderColor ?? '#FFFFFF',
   );
-  const [effect, setEffect] = useState<StickerEffect>(initial.effect ?? 'outline');
+  const lastOutlineWidth = useRef(borderWidth === 0 ? 4 : borderWidth);
   const [stylePreview, setStylePreview] = useState<Sticker | null>(null);
+  const [stylePreviewToken, setStylePreviewToken] = useState(0);
+  const [subjectCandidates, setSubjectCandidates] = useState<StickerSubjectCandidate[] | null>(
+    null,
+  );
+  const [subjectsVisible, setSubjectsVisible] = useState(false);
+  const [selectedSubjectPath, setSelectedSubjectPath] = useState<string | null>(null);
+  const [selectedSubjectCandidatePath, setSelectedSubjectCandidatePath] = useState<string | null>(
+    null,
+  );
+  const subjectDraftsLoaded = useRef(false);
+  const styleChanged =
+    effect !== entry.effect ||
+    (selectedSubjectPath !== null && selectedSubjectPath !== entry.cutoutPath) ||
+    (effect !== 'original' &&
+      (borderWidth !== entry.borderWidth || borderColor !== entry.borderColor));
   const stagedVersion = useRef<number | null>(null),
+    stagedCutoutPath = useRef<string | null>(null),
     styleCommitted = useRef(false);
   const active = useRef(true),
     lock = useRef(false),
@@ -39,12 +62,28 @@ export function useEntryEditor(
   }, []);
   useEffect(
     () => () => {
-      const revision = stagedVersion.current;
-      if (revision !== null && !styleCommitted.current) {
-        void services.photos.discardStickerStyleVersion(initial.id, revision).catch(() => {});
+      if (subjectDraftsLoaded.current) {
+        void services.photos.discardStickerSubjectDrafts(initial.id).catch(() => {});
+      }
+      if (!styleCommitted.current) {
+        const cutoutPath = stagedCutoutPath.current;
+        const revision =
+          stagedVersion.current ??
+          (cutoutPath !== null && cutoutPath !== initial.cutoutPath
+            ? initial.styleRevision + 1
+            : null);
+        if (revision !== null) {
+          void services.photos
+            .discardStickerStyleVersion(
+              initial.id,
+              revision,
+              cutoutPath !== initial.cutoutPath ? cutoutPath : null,
+            )
+            .catch(() => {});
+        }
       }
     },
-    [services.photos, initial.id],
+    [services.photos, initial.id, initial.cutoutPath, initial.styleRevision],
   );
   const reload = useCallback(
     async (resetDate: boolean) => {
@@ -95,6 +134,37 @@ export function useEntryEditor(
       if (active.current) setBusy(false);
     }
   }
+  async function makeStylePreview(
+    nextEffect: StickerEffect,
+    nextBorderWidth: number,
+    nextBorderColor: StickerBorderColor,
+    cutoutPath = stagedCutoutPath.current ?? entry.cutoutPath,
+  ) {
+    const revision = entry.styleRevision + 1;
+    const sticker = await services.photos.renderStickerStyle(
+      entry.id,
+      revision,
+      cutoutPath,
+      nextEffect,
+      nextBorderWidth,
+      nextBorderColor,
+    );
+    if (!active.current) {
+      await services.photos
+        .discardStickerStyleVersion(
+          entry.id,
+          revision,
+          sticker.cutoutPath !== entry.cutoutPath ? sticker.cutoutPath : null,
+        )
+        .catch(() => {});
+      return;
+    }
+    stagedVersion.current = revision;
+    stagedCutoutPath.current = sticker.cutoutPath;
+    setStylePreview(sticker);
+    setStylePreviewToken((token) => token + 1);
+    setNotice(copy.stylePreview);
+  }
   async function chooseDate() {
     if (datePickerOpen.current || busy || !active.current) return;
     datePickerOpen.current = true;
@@ -124,46 +194,85 @@ export function useEntryEditor(
         await services.repository.changeDate(entry.id, entry.revision, next || null);
         if (active.current) setNotice(copy.dateSaved);
       }, true),
+    effect,
+    setEffect: (value: StickerEffect) => {
+      if (lock.current) return;
+      if (value === effect && !styleChanged && !stylePreview) return;
+      const nextBorderWidth =
+        value === 'original' ? 0 : borderWidth === 0 ? lastOutlineWidth.current : borderWidth;
+      if (value === 'original' && borderWidth > 0) lastOutlineWidth.current = borderWidth;
+      setBorderWidth(nextBorderWidth);
+      setEffect(value);
+      setStylePreview(null);
+      styleCommitted.current = false;
+      void run(() => makeStylePreview(value, nextBorderWidth, borderColor));
+    },
+    styleChanged,
+    subjectCandidates,
+    subjectsVisible,
+    selectedSubjectPath,
+    selectedSubjectCandidatePath,
+    toggleSubjectPicker: () => {
+      if (subjectCandidates) {
+        setSubjectsVisible(!subjectsVisible);
+        return;
+      }
+      return run(async () => {
+        const candidates = await services.photos.listStickerSubjects(entry.id);
+        if (!active.current) {
+          await services.photos.discardStickerSubjectDrafts(entry.id).catch(() => {});
+          return;
+        }
+        if (!candidates.length) throw new Error('NO_FOREGROUND');
+        subjectDraftsLoaded.current = true;
+        setSubjectCandidates(candidates);
+        setSubjectsVisible(true);
+      });
+    },
+    chooseSubject: (candidate: StickerSubjectCandidate) =>
+      run(async () => {
+        const revision = entry.styleRevision + 1;
+        const cutoutPath = await services.photos.stageStickerSubject(
+          entry.id,
+          candidate.path,
+          revision,
+        );
+        if (!active.current) {
+          await services.photos
+            .discardStickerStyleVersion(entry.id, revision, cutoutPath)
+            .catch(() => {});
+          return;
+        }
+        stagedCutoutPath.current = cutoutPath;
+        setSelectedSubjectPath(cutoutPath);
+        setSelectedSubjectCandidatePath(candidate.path);
+        setStylePreview(null);
+        styleCommitted.current = false;
+        await makeStylePreview(effect, borderWidth, borderColor, cutoutPath);
+      }),
     borderWidth,
     setBorderWidth: (value: number) => {
       if (lock.current) return;
+      if (value === borderWidth && effect === 'outline' && !styleChanged && !stylePreview) return;
+      const nextEffect: StickerEffect = 'outline';
+      lastOutlineWidth.current = value;
+      setEffect(nextEffect);
       setBorderWidth(value);
       setStylePreview(null);
       styleCommitted.current = false;
+      void run(() => makeStylePreview(nextEffect, value, borderColor));
     },
     borderColor,
     setBorderColor: (value: StickerBorderColor) => {
       if (lock.current) return;
+      if (value === borderColor && !styleChanged && !stylePreview) return;
       setBorderColor(value);
       setStylePreview(null);
       styleCommitted.current = false;
-    },
-    effect,
-    setEffect: (value: StickerEffect) => {
-      if (lock.current) return;
-      setEffect(value);
-      setStylePreview(null);
-      styleCommitted.current = false;
+      void run(() => makeStylePreview(effect, borderWidth, value));
     },
     stylePreview,
-    previewStyle: () =>
-      run(async () => {
-        const revision = entry.styleRevision + 1;
-        const sticker = await services.photos.renderStickerStyle(
-          entry.id,
-          revision,
-          borderWidth,
-          borderColor,
-          effect,
-        );
-        if (!active.current) {
-          await services.photos.discardStickerStyleVersion(entry.id, revision).catch(() => {});
-          return;
-        }
-        stagedVersion.current = revision;
-        setStylePreview(sticker);
-        setNotice(copy.stylePreview);
-      }),
+    stylePreviewToken,
     saveStickerStyle: () => {
       if (!stylePreview) return;
       return run(async () => {
@@ -171,18 +280,36 @@ export function useEntryEditor(
           styleCommitted.current = true;
           await services.repository.updateStickerStyle(entry.id, entry.revision, stylePreview);
           stagedVersion.current = null;
+          stagedCutoutPath.current = null;
+          setSelectedSubjectPath(null);
+          setSelectedSubjectCandidatePath(null);
           setStylePreview(null);
           await services.photos
-            .pruneStickerStyles(entry.id, stylePreview.styleRevision)
+            .pruneStickerStyles(entry.id, stylePreview.styleRevision, stylePreview.cutoutPath)
             .catch(() => {});
+          await services.photos.discardStickerSubjectDrafts(entry.id).catch(() => {});
+          subjectDraftsLoaded.current = false;
           if (active.current) setNotice(copy.styleSaved);
         } catch (cause) {
           styleCommitted.current = false;
           await services.photos
-            .discardStickerStyleVersion(entry.id, stylePreview.styleRevision)
+            .discardStickerStyleVersion(
+              entry.id,
+              stylePreview.styleRevision,
+              stylePreview.cutoutPath !== entry.cutoutPath ? stylePreview.cutoutPath : null,
+            )
             .catch(() => {});
           stagedVersion.current = null;
-          if (active.current) setStylePreview(null);
+          stagedCutoutPath.current = null;
+          if (active.current) {
+            // The failed save removes a newly selected subject cutout. Clear its
+            // selection too, or a later preview would silently use the old cutout.
+            if (stylePreview.cutoutPath !== entry.cutoutPath) {
+              setSelectedSubjectPath(null);
+              setSelectedSubjectCandidatePath(null);
+            }
+            setStylePreview(null);
+          }
           throw cause;
         }
       }, true);

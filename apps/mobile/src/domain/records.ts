@@ -23,13 +23,18 @@ export interface Sticker {
   width: number;
   height: number;
   instanceCount: number;
+  effect: StickerEffect;
   borderWidth: number;
   borderColor: StickerBorderColor;
-  effect: StickerEffect;
   styleRevision: number;
 }
-export type StickerBorderColor = '#FFFFFF' | '#242424' | '#0786A8';
+export interface StickerSubjectCandidate {
+  path: string;
+  width: number;
+  height: number;
+}
 export type StickerEffect = 'original' | 'outline' | 'comic' | 'dimensional' | 'shimmer';
+export type StickerBorderColor = '#FFFFFF' | '#242424' | '#0786A8';
 export interface Entry {
   id: string;
   date: string | null;
@@ -41,9 +46,9 @@ export interface Entry {
   stickerPath: string | null;
   cutoutPath: string | null;
   thumbnailPath: string | null;
+  effect: StickerEffect;
   borderWidth: number;
   borderColor: StickerBorderColor;
-  effect: StickerEffect;
   styleRevision: number;
   width: number | null;
   height: number | null;

@@ -2,7 +2,7 @@
 
 衣叠采用 Expo / React Native 实现界面，用本地 Expo Module 调用 Apple Vision 与 PhotoKit。SQLite 保存结构化记录，沙盒目录保存图片。安装好的 Release App 将 JS 和素材一并打包，运行不依赖 Metro、业务服务器、付费 API 或用户填写密钥。
 
-基础工程采用 Expo SDK 57 / React Native 0.86 / React 19.2，完整编译要求 Xcode 26.4+ 与 macOS 26.2+；具体依赖写入 lockfile。升级 SDK 时先复核 Xcode 要求。目前尚无真机性能数据；合成预览只能验证组件布局，不能证明 PhotoKit、Vision 或设备性能。
+基础工程采用 Expo SDK 57 / React Native 0.86 / React 19.2，完整编译要求 Xcode 26.4+ 与 macOS 26.2+；具体依赖写入 lockfile。升级 SDK 时先复核 Xcode 要求。目前尚无真机性能数据；内存预览和自动化测试都不能替代 PhotoKit/Vision 真机验收。
 
 ## 模块划分
 
@@ -38,14 +38,12 @@ Data                 Native Expo Module
 
 1. 获取用户明确选择的资源，提取元数据。先判断原照片是否可在本机读取。对 PhotoKit 请求设置 `isNetworkAccessAllowed=false`，仅在本地存在时继续。
 2. 在自有目录原子写入原图并计算内容摘要，校验文件可读；生成最长边 512px 的照片预览及尺寸，供等待/失败界面使用。日期确认后再在事务中写 entry 与 job；若事务失败，先确认没有持久记录拥有该资源，再移除本次新增文件；归属无法确认时保留文件。
-3. 纠正 EXIF orientation；按目标分辨率解码，用 Vision 的 `VNGenerateForegroundInstanceMaskRequest` 得到前景实例。验证阶段保留所有前景实例；后续根据真机效果实现主体选择，当前未提供自动主要人物识别。
+3. 纠正 EXIF orientation；按目标分辨率解码，优先使用 VisionKit 的公开主体提取；不可用时依次回退到 Vision 人物实例分割和通用前景分割。编辑器可暂存 VisionKit 分离出的候选供用户选择，不推断“主要人物”；Vision 的低层请求用于离线回退和效果合成。
 4. 获取主体 alpha mask，合成人像透明图。主体应包含外套、裙摆、包等，不能仅使用脸部或人像半身裁剪替代全身抠图。
-5. 对 alpha 膨胀得到外轮廓，在其下绘制用户选择的描边色，再覆盖原主体；透明底稿单独保存，阴影作为布局效果处理。裁剪时保留足够的描边余量。
+5. 单独保存透明抠图底稿，贴纸样式编辑只重绘，不重新运行分割。优先用 VisionKit 的公开主体提取和 alpha 裁边，再回退到 Vision 人物实例分割及通用前景分割；编辑器可在 VisionKit 能分离主体时暂存并选择单个候选，重叠主体可能仍被系统合并。`StickerAssetStore` 负责限制草稿路径、复制版本化 cutout，并清理取消或冷启动遗留的草稿；它接受应用图片根目录作为依赖，以便在隔离临时目录中验证文件归属、路径穿越和符号链接。当前本地样式为 Original、Outline、Comic、3D、Shimmer：几何、效果合成分别由 `StickerGeometry` 和 `StickerRenderer` 负责；Core Image 公共滤镜近似漫画、高光与立体阴影。描边宽度按主体长度归一化；所有样式共用为最大效果预留的透明画布，保持主体显示尺寸与日历几何稳定。VisionKit 可公开提取透明主体，但 Apple Photos 的具体贴纸效果管线仍不对第三方公开；本地效果是独立实现，不能宣称与 Photos 1:1。候选选择 UI 和真实照片边缘效果尚未通过 Simulator/设备验收。
 6. 保存透明 PNG 与月历缩略图，事务更新 ready。缩略图与大图均携带尺寸和裁剪边界，不在 JS bridge 传大段 base64。
 
-Apple 框架没有按次调用账单，无需自托管推理服务器。具体照片效果、最低硬件支持和内存峰值必须通过真机验证。[Vision API](https://developer.apple.com/documentation/vision/vngenerateforegroundinstancemaskrequest)、[官方前景效果示例](https://developer.apple.com/documentation/vision/applying-visual-effects-to-foreground-subjects)
-
-贴纸样式在设备本地从保留的透明 cutout 重绘，可切换原图、描边、漫画、立体感和闪亮效果；Core Image 提供基础滤镜和 alpha 合成能力。每种样式都为最大描边和阴影预留相同画布，避免切换样式时透明边距改变、人物视觉尺寸跟着缩放。漫画、立体感与闪亮是本项目的视觉近似，不是 Apple Photos 内部效果的复用或像素级复刻。Photos 没有公开其贴纸效果管线。样式选择通过 `sticker_effect` 持久化，旧记录迁移后默认沿用描边。
+Apple 框架没有按次调用账单，无需自托管推理服务器。具体照片效果、最低硬件支持和内存峰值必须通过真机验证。[VisionKit 主体提取](https://developer.apple.com/documentation/visionkit/imageanalysisinteraction/subject)、[Vision API](https://developer.apple.com/documentation/vision/vngenerateforegroundinstancemaskrequest)、[Apple WWDC 主体提取与 Core Image 效果示例](https://developer.apple.com/videos/play/wwdc2023/10176/)
 
 ## 批量队列与性能
 
@@ -75,7 +73,7 @@ PhotoKit 浏览缩略图只写入系统临时目录下独立的 `YidieThumbnails
 
 月历每格最多 3 层：建议 -11° / -4° / 9°；后两层水平偏移约 ±4pt、垂直上移约 2pt。主体需要按可见 alpha 边界归一化；长裙和半身照都以统一视觉高度适配。有记录的格子直接用贴纸替代日期；同日多张时在叠图右上显示张数小圆标，单张不显示角标；空格数字居中。底部弹层和无障碍名称保留准确日期及总张数。满月只调整主体尺度和层间错位，不重新加回数字。
 
-贴纸样式在本地保存 Vision 生成的透明抠图底稿。人物实例分割优先，未识别到人物时再使用通用前景分割；两种路径都按识别主体范围裁剪，避免原照片留白压小人物。Core Image 将编辑器描边值按主体像素尺寸缩放，并在白色外描边下合成轻柔阴影，让轮廓在浅色日历格中仍可见。预览和保存都在设备上运行，不访问网络。编辑保存先写入带样式版本的贴纸与缩略图，再以 SQLite revision 条件提交路径和样式；失败删除暂存版本，成功后清理旧版本。删除记录时目录清单按严格 UUID 文件名清除所有样式版本。旧记录的透明底稿在用户首次点预览时按需从 App 自有照片副本生成。人物抠图边界和描边观感仍需用用户主动选择的真机测试照片验收。
+贴纸样式在本地优先使用 VisionKit 公共主体提取生成透明底稿，再按 alpha 边界裁紧；不可用或失败时回退到 Vision 人物实例分割和通用前景分割。VisionKit 分离出的多个主体可在编辑器中预览并选取，系统可能将重叠主体合并，且仍需 Simulator 和真实照片验收。候选只暂存在应用专属草稿目录，不能进入备份；保存样式后切换到版本化 cutout，取消、删除及下次启动清理临时文件。Core Image 使用底稿重绘 Original、Outline、Comic、3D、Shimmer 五类视觉近似；Outline 提供白色、深色或蓝色 0–8 档描边，控制宽度按裁切后主体长边归一化。所有效果使用 `StickerGeometry` 计算一致的画布边距，避免编辑前后贴纸主体忽大忽小。预览和保存都在设备上运行，不访问网络。Apple 未公开照片 App 的贴纸效果渲染实现，因此这些本地效果不宣称像素级复刻。编辑保存先写入带样式版本的贴纸与缩略图，再以 SQLite revision 条件提交路径和样式；失败删除暂存版本，成功后清理旧版本。删除记录时目录清单按严格 UUID 文件名清除所有样式版本。旧记录的透明底稿在用户首次点预览时按需从 App 自有照片副本生成。
 
 首版导出采用原生 Core Graphics / Core Image 画布，根据同一布局描述绘制白底、英文文字和贴纸；RN 使用同一布局坐标，避免截屏包含系统栏或因离屏视图缺图。输出目标 2048px 宽，导出前检查空间，图片不复制原图 EXIF。月份与数字使用随包分发的 Yidie Display 字体；导出仍需和 RN 字体度量做截图对比。App 当前仅提供英文界面。
 
@@ -91,7 +89,7 @@ PhotoKit 浏览缩略图只写入系统临时目录下独立的 `YidieThumbnails
 
 ## 备份与恢复
 
-备份扩展名 `.yidie`，是 iOS 可导入/导出的文稿包，包含 `manifest.json`、SQLite 一致性快照和应用拥有的 `originals/`、`stickers/`、`previews/`、`cutouts/`、`photo-previews/`。manifest 包含 formatVersion、schemaVersion、appVersion、exportedAt、条目数、每个文件的相对路径、大小和 SHA-256。文件不压缩，备份空间大致等于该应用库；不备份 SQLite 正在写入的裸文件，也不读取 Apple Photos 中未被用户导入的照片。
+备份扩展名 `.yidie`，是 iOS 可导入/导出的文稿包，包含 `manifest.json`、SQLite 一致性快照和应用拥有的 `originals/`、`stickers/`、`previews/`、`cutouts/`、`photo-previews/`。manifest 包含 formatVersion、schemaVersion、appVersion、exportedAt、条目数、每个文件的相对路径、大小和 SHA-256。文件不压缩，备份空间大致等于该应用库；不备份 SQLite 正在写入的裸文件，也不读取 Apple Photos 中未被用户导入的照片。恢复支持 schema v5 到当前 v6，替换后由正常启动迁移补齐贴纸效果字段；未来版本仍拒绝导入。
 
 创建快照时通过 SQLite backup API 读取一致数据库，并等待当前图片任务完成后再复制文件。文稿包默认不加密；导出到 Files 后由用户选择保存位置。UI 明示包内含原图副本，用户应保存在可信位置。
 

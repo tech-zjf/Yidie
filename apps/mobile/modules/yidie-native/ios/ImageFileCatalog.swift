@@ -9,7 +9,7 @@ struct ImageFileCatalog {
     guard file.pathExtension == ext else { return nil }
     let stem = file.deletingPathExtension().lastPathComponent
     if UUID(uuidString: stem)?.uuidString == stem { return stem }
-    guard directory == "stickers" || directory == "previews",
+    guard directory == "stickers" || directory == "previews" || directory == "cutouts",
           let range = stem.range(of: #"^([0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12})-v([0-9]+)$"#, options: .regularExpression) else { return nil }
     let versionStem = String(stem[range])
     guard let marker = versionStem.range(of: "-v", options: .backwards) else { return nil }
@@ -33,10 +33,27 @@ struct ImageFileCatalog {
         try FileManager.default.removeItem(at: file)
       }
     }
+    for file in try FileManager.default.contentsOfDirectory(
+      at: folder("drafts"), includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]
+    ) where file.lastPathComponent.range(
+      of: "^\(NSRegularExpression.escapedPattern(for: id))-[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}-subject-[1-9][0-9]*\\.png$",
+      options: .regularExpression
+    ) != nil {
+      let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+      guard values.isRegularFile == true, values.isSymbolicLink != true else {
+        throw YidieError(code: "INVALID_RESOURCE")
+      }
+      try FileManager.default.removeItem(at: file)
+    }
   }
 
-  func pruneStickerStyles(_ id: String, keeping revision: Int) throws {
-    guard UUID(uuidString: id)?.uuidString == id, revision >= 0 else {
+  func pruneStickerStyles(_ id: String, keeping revision: Int, cutoutPath: String) throws {
+    let validCutoutPath = cutoutPath == "cutouts/\(id).png"
+      || cutoutPath.range(
+        of: "^cutouts/\(NSRegularExpression.escapedPattern(for: id))-v[1-9][0-9]*\\.png$",
+        options: .regularExpression
+      ) != nil
+    guard UUID(uuidString: id)?.uuidString == id, revision >= 0, validCutoutPath else {
       throw YidieError(code: "INVALID_RESOURCE")
     }
     let retained = "\(id)-v\(revision)"
@@ -47,6 +64,17 @@ struct ImageFileCatalog {
         guard values.isRegularFile == true, values.isSymbolicLink != true else { throw YidieError(code: "INVALID_RESOURCE") }
         try FileManager.default.removeItem(at: file)
       }
+    }
+    for file in try FileManager.default.contentsOfDirectory(
+      at: folder("cutouts"), includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey]
+    ) where entryID(file, directory: "cutouts", ext: "png") == id {
+      let path = "cutouts/\(file.lastPathComponent)"
+      if path == cutoutPath { continue }
+      let values = try file.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
+      guard values.isRegularFile == true, values.isSymbolicLink != true else {
+        throw YidieError(code: "INVALID_RESOURCE")
+      }
+      try FileManager.default.removeItem(at: file)
     }
   }
 

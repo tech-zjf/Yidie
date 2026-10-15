@@ -1,43 +1,25 @@
-# Release readiness
+# Current review and release gates
 
-Updated 2026-10-15. Yidie is an offline-first iOS development build, not a release candidate. The [delivery board](../TODO.md) is the single source for feature acceptance and remaining work; this page summarizes the current evidence and release boundary.
+Review date: 2026-10-16. Yidie is a development build. Implementation, automated checks, Simulator behavior, and physical-device acceptance are distinct gates. This is not release approval.
 
-## Implemented
+## Current state
 
-- An Expo/React Native calendar with same-day sticker stacks, count badges, month navigation, animated sheets, record browsing, English copy, and a centered Add action.
-- On-device photo processing and transparent sticker editing with Original, Outline, Comic, 3D, and Shimmer presets. Core Image effects are local visual approximations; they are not Apple Photos' private pipeline. No remote API, account, analytics, or cloud image processing is used.
-- Photo-library access states, a persistent local processing queue, date editing, local sticker/month exports, and optional default-off export signature.
-- A portable `.yidie` backup with integrity checks, staged restore, recovery behavior, and native validation tests.
-- A single-owner SQLite connection and FIFO operation lane that serialize reads, writes, transactions, and close.
-- A Simulator-only preview launcher that validates a Simulator UDID and fails closed if the Simulator service is unavailable.
-
-## Verification
-
-- `npm run check`: TypeScript, ESLint, Prettier, and all 71 JavaScript tests, including a file-backed SQLite WAL close/reopen case.
-- `npm run export:ios`: production JavaScript bundle; preview fixtures are excluded from the release export.
-- `sh scripts/check_native.sh`: Swift safety tests and iOS core typecheck.
-- `python3 scripts/check_packet.py`: documentation links, publication hygiene, SQLite schema/migrations, and repository contracts.
-- A dedicated iOS 27 Simulator preview used synthetic data to inspect the calendar, same-day stacks, outline preview/save, All Records, and import states. An iOS 26.1 Simulator completed an empty-backup save/restore through Files and reopened the calendar. An empty-month PNG was saved and opened in Preview.
-- The latest iOS 27 unsigned Release app builds and launches on the dedicated empty QA Simulator; its database migrates to schema 6. Core Image pixel fixtures cover the five output styles. The new on-screen effect-picker flow and any real-photo rendering quality remain unaccepted.
-- The [GitHub Actions workflow](https://github.com/tech-zjf/Yidie/actions/workflows/ci.yml) runs the JavaScript suite, production iOS export, documentation/native contracts, Swift safety tests, Expo prebuild, CocoaPods, and an unsigned Simulator Release build on Xcode 26.6. CI verifies reproducible compilation; it does not close the runtime and device acceptance gates below.
-
-These checks did not use a physical iPhone, personal Photos library, Developer Mode, signing identity, certificate, or keychain. Synthetic previews do not prove Apple Vision cutout quality or real-photo import behavior.
-
-## Remaining release gates
-
-The release is not complete until the open P0/P1 items on the [delivery board](../TODO.md) have evidence. They include native SQLite close/WAL stress, touch-driven month/day paging and sheet dismissal, corrupt-backup UI and date-picker interaction, populated share/export rendering, accessibility and supported-size checks, and one physical-device photo test using only an image the user deliberately selects. Capture a public demo only from verified flows. Do not publish launch posts without an explicit request.
-
-The repository snapshot removes the four retired HTML prototypes from its current tree and checks that they are not reintroduced. GitHub's language chart follows the default branch, so its HTML percentage changes only after the cleanup PR is merged; the existing public history is not rewritten.
-
-## Known dependency advisories
-
-The lockfile resolves two high-severity advisories in the local toolchain (reviewed 2026-10-15):
-
-| Package | Lockfile version and dependency path | Advisory status |
+| Area | Implemented | Evidence and boundary |
 | --- | --- | --- |
-| `node-forge@1.4.0` | Expo CLI → `@expo/code-signing-certificates` → `node-forge` | [GHSA-86w9-cpqp-85rv / CVE-2026-85393](https://github.com/advisories/GHSA-86w9-cpqp-85rv) affects versions through 1.4.0; no patched version is listed. |
-| `braces@3.0.3` | Expo Metro → `metro-file-map` → `micromatch` → `braces` | [GHSA-vfj7-8cjw-p6xm / CVE-2026-93687](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm) affects versions through 3.0.3; no patched version is listed. |
+| Calendar and records | English calendar, custom display typography, same-day sticker stacks/count badge, All Records, date editing, bottom sheets, centered Add action | Calendar routes, arrows, empty sheets, and synthetic populated layouts were inspected on iOS Simulators. Horizontal touch paging, month swipe, exact sheet exit motion, smallest-screen and accessibility behavior are not accepted. |
+| Photo import and queue | Explicit PhotoKit selection, date review, duplicate handling, local persistent queue, retry, and failure recovery | An Apple-provided Simulator sample was imported under Limited access. Vision was unavailable; Yidie retained the original and showed a retryable failure. Real subject extraction and recovery from device conditions remain open. |
+| Sticker extraction and styles | VisionKit subject lift with Vision segmentation fallback; tight alpha crop; user-selectable subject candidates; revisioned cutouts; local Original, Outline, Comic, 3D, and Shimmer rendering | An earlier renderer snapshot passed synthetic pixel assertions on an isolated iOS 26.1 Simulator. The current tree's pixel check is unverified: this host cannot render even a 1×1 Core Image and the Simulator app/runtime is unavailable. No successful Vision cutout has been produced in this work, and Photos' private effect pipeline is not publicly exposed; exact 1:1 parity is not a valid claim. |
+| Local data and recovery | SQLite records, app-owned image copies, revision-safe edits, staged `.yidie` backups, checksums and rollback | Automated migration, queue, file-boundary, backup, and crash-recovery tests pass. An empty backup round trip passed in Simulator. Corrupt-package UI and a deliberate native SQLite close/WAL stress run remain open. |
+| Sharing | Transparent sticker PNG and high-resolution month image; optional default-off signature | Empty-month export was saved and opened in Simulator Files/Preview. Populated export, signature-on output, and sticker payload still need acceptance. |
+| Privacy and safety | No app backend/account/analytics; photos selected explicitly; originals kept; simulator-only launch helpers reject phone IDs | Static and unit checks cover boundaries. No physical device or personal photo has been touched in this work. A user-selected real photo test needs the user's explicit go-ahead. |
+| Build and open source | Expo/React Native, focused Swift module, English docs, contributor/security guidance, CI workflow, and public-packet cleanup | Current JS/native static checks and production JS export pass. A clean prebuild and CocoaPods install completed; Xcode then refused the generated workspace while CoreSimulatorService and `Simulator.app` were unavailable. The current tree has no accepted full build or runtime launch. An earlier source snapshot launched on Simulator. The current diff has not yet passed CI. |
 
-These packages are reached through Expo/Metro development and build tooling, not through Yidie's app imports; they were not found in the exported application bundle. Treat them as toolchain exposure, not as evidence of an app-runtime vulnerability. The advisory databases still show no fixed release. The full npm registry audit remains open until registry access is available; do not suppress these findings with an unreviewed override or downgrade Expo to unrelated versions.
+## Required before a public release
 
-For local development and build reproduction, see the [mobile build guide](../apps/mobile/README.md). Keep machine-specific signing, device, and keychain notes outside the public repository.
+1. Restore a complete Xcode Simulator installation (the runtime is imported, but the Simulator app and service are still missing) and repeat the current unsigned build; run the checked-in sticker renderer fixture and exercise the current editor, sheet gestures, date picker, populated export/share, corrupt-backup rejection, accessibility, and reduced-motion flows.
+2. Resolve the SQLite lifecycle concern with a deliberate native Simulator test that holds a read, queues a write, closes/reopens, and checks data integrity.
+3. Only after the owner explicitly opts in, test one user-selected real photo on a physical iPhone. Check subject grouping, alpha edges, image orientation, offline behavior, fallback, memory, and latency. Never use that image in public materials without separate permission.
+4. Reconcile all docs with the accepted behavior, run clean installation and hosted CI against the reviewed diff, preserve existing Git history, and update the draft PR.
+5. Capture a public demo only from verified app behavior, with an owner-approved real-photo screen recording. Do not use the retired browser prototypes or generated people. X launch notes are drafts only; no external post has been made.
+
+The live checklist, including lower-priority dependency and launch work, is [TODO.md](../TODO.md). Build evidence and reproducible commands are in [the build record](09-build-log.md); device-test boundaries are in [the safety guide](15-device-test-safety-runbook.md).

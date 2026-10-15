@@ -29,3 +29,11 @@ test('at most three layers; empty days have no sticker', () => {
     3,
   );
 });
+
+test('calendar sticker scale depends on the cropped subject shape, not source resolution', () => {
+  const cell = { width: 48, height: 62 };
+  const smallExport = stickerLayout([{ width: 40, height: 200 }], cell);
+  const largeExport = stickerLayout([{ width: 400, height: 2000 }], cell);
+
+  assert.deepEqual(largeExport, smallExport);
+});

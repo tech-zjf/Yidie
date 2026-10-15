@@ -13,13 +13,9 @@ enum StickerGeometry {
   }
 
   static func renderingPadding(subjectLength: Double) -> Int {
-    guard subjectLength > 0, subjectLength.isFinite else { return 12 }
-    let maximumRadius = outlineRadius(
-      controlValue: maximumOutlineControlValue,
-      subjectLength: subjectLength
-    )
-    // Keep the transparent canvas identical for every style and reserve room
-    // for the widest outline, its shadow, and antialiasing.
-    return max(12, Int(ceil(maximumRadius * 2.4)) + 8)
+    guard subjectLength > 0, subjectLength.isFinite else { return 8 }
+    // Keep the margin proportional to the cropped subject. A fixed pixel
+    // allowance makes small subjects occupy less of the final sticker canvas.
+    return max(8, Int(ceil(subjectLength * 0.1)))
   }
 }

@@ -19,20 +19,18 @@ The engineering patterns that fit this repository are feature-local code, a narr
 
 ## Open-source presentation checklist
 
-1. The first screen of the repository should explain the app in one sentence, show a verified demo, state the project stage, and offer a working local setup path.
+1. The first screen of the repository should explain the app in one sentence, state the project stage, and offer a working local setup path. Add a verified demo only after the owner supplies or explicitly approves a real-photo app capture.
 2. Keep only current decision documents linked from the README. Preserve useful product and engineering evidence, but keep personal device-state records, credentials, and machine-specific paths out of the repository and its public history. Do not leave superseded stage reviews looking like active specifications.
 3. CI should run the lockfile-based JavaScript, SQLite and documentation checks on every pull request. Native build checks belong on a supported macOS/Xcode runner and must identify their exact toolchain.
 4. A contributor should be able to build without credentials, private photos, cloud services or undocumented manual state. Clearly call out Xcode signing if installing on a personal iPhone.
-5. Screenshots and video must come from the app build being described. Public product media uses real app captures made by the user with a user-selected test photo. Do not publish generated people, geometric preview fixtures, or private Photos content. Keep screenshots out of the repository until the user supplies and approves the captures.
-
-GitHub's language chart reflects the repository's default branch. The current publication branch removes four historical HTML-only design prototypes; the chart will change only after that cleanup reaches the default branch. Do not use Linguist overrides to hide source files or commit those prototypes again.
+5. Public screenshots and video must come from the app build being described and use a real photo captured from the owner’s phone only after explicit approval. Do not publish generated people, synthetic outfit stand-ins, or old browser prototypes as product evidence.
 
 ## Demo recording
 
-Create two artifacts after the simulator acceptance pass:
+Create two artifacts after the simulator acceptance pass and only after the owner supplies or approves the real-photo capture:
 
-- A short, silent README loop (roughly 15–20 seconds) showing the calendar stack, opening a day, paging through same-day photos, and previewing/saving a sticker effect. Capture it on the user's iPhone with a real test photo the user selected. Keep it small and readable at repository width; provide a reduced-motion still screenshot as a fallback.
-- A 12–15 second, captioned portrait cut for X. Show one complete user job rather than a tour of menus: a quick calendar view, open a day, swipe once, save an outline. Capture on the user's iPhone with a user-selected test photo, hide system controls where possible, and exclude personal data.
+- A short, silent README loop (roughly 15–20 seconds) showing the calendar stack, opening a day, paging through same-day photos, and previewing/saving a style. Keep it small and readable at repository width; provide a still screenshot as a fallback.
+- A 12–15 second, captioned portrait cut for X. Show one complete user job rather than a tour of menus: a quick calendar view, open a day, swipe once, save a style. Use only the approved phone capture, hide controls and unrelated personal data, and verify the exported media before publishing.
 
 Before recording, verify that every shown interaction works in the current simulator build. Do not depict backup, export, or device Vision success until those flows pass. Add the capture date and build identifier to the release notes, not to the visible UI.
 
@@ -40,7 +38,7 @@ Before recording, verify that every shown interaction works in the current simul
 
 Do not publish a generic “I built an app” announcement before there is a verified demo. A small sequence can invite useful feedback without promising reach:
 
-1. **Problem + demo (draft; publish only after the shown interactions pass and the user provides an approved capture):** “I wanted to remember what I wore without building a digital closet. Yidie turns outfit photos into a calendar of outfit stickers. It is an iPhone app, keeps its library on-device, and has no account or backend.” Pair it with the user's approved real-photo capture, link the repository, and ask one specific question about whether the same-day stack is easy to understand.
+1. **Problem + demo (draft; publish only after the shown interactions pass and the owner approves the real-photo capture):** “I wanted to remember what I wore without building a digital closet. Yidie turns outfit photos into a calendar of outfit stickers. It is an iPhone app, keeps its library on-device, and has no account or backend.” Link the repository and ask one specific question about whether the same-day stack is easy to understand.
 2. **Engineering note:** Show one concrete decision, such as retaining the transparent cutout so users can change an outline without rerunning segmentation. Explain the trade-off and link the source/tests.
 3. **Open test request:** State the exact tested iOS/build requirements, what has and has not been verified, and invite a few testers to try a chosen-photo workflow. Ask them not to send private photos; accept written feedback or synthetic reproductions. Do not describe a Simulator build as a signed public download or claim real-device Vision quality before it has been tested.
 
@@ -50,13 +48,13 @@ Keep the first post short and demonstrate one complete action. Do not publish un
 
 > I wanted to remember what I wore without building another digital closet. Yidie turns outfit photos into a calendar of little cutout stickers. It is iPhone-first, works locally, and has no account or backend.
 >
-> This clip was captured from Yidie on iPhone using a test photo selected by me. The photo stays on-device. I’m opening the source for feedback: [GitHub repository]
+> This clip uses a real outfit photo captured in Yidie, shared with the owner's approval. I’m opening the source for feedback: [GitHub repository]
 >
 > Does the stack of multiple outfits on one day make sense at a glance?
 
 Follow up only when each claim is verified: a short engineering post about re-rendering an outline from the saved transparent cutout, then a small tester invitation that names the tested iOS version and clearly says physical-device photo quality is still being evaluated. Avoid asking people to upload personal wardrobe photos.
 
-For the README, prefer a silent 15–20 second loop under roughly 8 MB, with a still screenshot and reduced-motion fallback. For X, the short cut is an editorial choice, not a reach guarantee: X's official creative guidance is written for ads and recommends mobile-first framing, movement early, captions for sound-off viewing, and a concise video. Apply those as production heuristics only; do not imply that ad guidance predicts organic distribution. Use only the user's approved real-photo capture and label the tested iOS/build conditions. Avoid a broad feature tour, simulated Vision success, system panels that are not yet accepted, and claims about reach. After an explicitly requested post, track profile/repository visits, README-to-build completions, useful issues, and tester follow-through for a few weeks; treat stars as one weak signal.
+For the README, prefer a silent 15–20 second loop under roughly 8 MB, with a still screenshot and reduced-motion fallback. For X, the short cut is an editorial choice, not a reach guarantee: X's official creative guidance is written for ads and recommends mobile-first framing, movement early, captions for sound-off viewing, and a concise video. Apply those as production heuristics only; do not imply that ad guidance predicts organic distribution. Do not use synthetic people as public product evidence or show a Vision result that has not been verified on-device. Avoid a broad feature tour, system panels that are not yet accepted, and claims about reach. Before posting, verify the current video download control and strip unrelated personal information. After an explicitly requested post, track profile/repository visits, README-to-build completions, useful issues, and tester follow-through for a few weeks; treat stars as one weak signal.
 
 ## Sources
 
