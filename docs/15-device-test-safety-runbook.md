@@ -86,3 +86,9 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 - 经用户先前授权，通过 Device Hub 的 Restart 重启专用 iPhone 17 Pro / iOS 26.1 QA 模拟器；未选择 Reset Content and Settings。Yidie 仍已安装，Spotlight 启动后显示空的 2026 年 10 月日历，月份箭头往返正常。
 - 重启后 `xcrun simctl list devices booted` 仍因 CoreSimulatorService / `simdiskimaged` 断连失败；尝试用 `launchctl kickstart` 重启 system `simdiskimaged` 被 macOS 拒绝，未改变 launchd 配置或服务权限。Device Hub 拖动仍未切换月份，触控手势验收保持未通过。
 - 本次仅重启专用空数据模拟器；没有连接实体 iPhone、打开照片库、改 Developer Mode、签名、证书或钥匙串，也没有重置/擦除模拟器内容。
+
+## 2026-10-15 本地月份图片导出验收
+
+- 在专用 iPhone 17 Pro / iOS 26.1 QA 模拟器中，从设置导出空的 2026 年 10 月日历；系统分享面板识别为 PNG，预览显示约 98 KB。
+- 将图片保存到模拟器“我的 iPhone”文件位置，并在系统 Preview 中打开；月标题、星期行、完整日期网格和当天强调色均可见。只使用空日历合成数据，没有选择消息、社交或云端分享目标，也没有写入实体设备的照片库。
+- 这只验证空月份导出的系统交付和基本视觉内容；非空日历布局、签名选项和单张贴纸导出内容仍待验收。此处产生的图片只在专用 QA 模拟器 Files 中。
