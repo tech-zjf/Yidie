@@ -45,6 +45,20 @@ export function createProcessingQueue(
       if (version === readVersion) publish({ error: errorCode(error) });
     }
   }
+  async function resumeAfterSuspension(shouldResume: boolean) {
+    if (!shouldResume || !foreground || snapshot.requiresRestart) return;
+    try {
+      await serial(() => repository.resumePaused('background'));
+      requested = true;
+      publish({});
+      await refresh();
+      await kick();
+    } catch (error) {
+      requested = false;
+      publish({ error: errorCode(error) });
+      await refresh();
+    }
+  }
   function kick(): Promise<void> {
     if (pump) return pump;
     if (!requested || !foreground) return Promise.resolve();
@@ -147,24 +161,18 @@ export function createProcessingQueue(
       const shouldResume = requested;
       requested = false;
       publish({});
-      await serial(() => repository.pauseQueued('background'));
-      await refresh();
+      try {
+        await serial(() => repository.pauseQueued('background'));
+        await refresh();
+      } catch (error) {
+        await resumeAfterSuspension(shouldResume);
+        throw error;
+      }
       let resumed = false;
       return async () => {
         if (resumed) return;
         resumed = true;
-        if (!shouldResume || !foreground || snapshot.requiresRestart) return;
-        try {
-          await serial(() => repository.resumePaused('background'));
-          requested = true;
-          publish({});
-          await refresh();
-          await kick();
-        } catch (error) {
-          requested = false;
-          publish({ error: errorCode(error) });
-          await refresh();
-        }
+        await resumeAfterSuspension(shouldResume);
       };
     },
     async setForeground(active: boolean) {

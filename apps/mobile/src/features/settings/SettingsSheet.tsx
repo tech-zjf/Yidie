@@ -45,7 +45,20 @@ export function SettingsSheet({
   const [message, setMessage] = useState('');
   const [includeSignature, setIncludeSignature] = useState(false);
   const closing = useRef(false);
+  const operation = useRef(false);
   const reduceMotion = useReducedMotion();
+
+  const beginOperation = useCallback(() => {
+    if (operation.current) return false;
+    operation.current = true;
+    setBusy(true);
+    return true;
+  }, []);
+
+  const endOperation = useCallback(() => {
+    operation.current = false;
+    setBusy(false);
+  }, []);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -65,7 +78,7 @@ export function SettingsSheet({
   }, [progress, reduceMotion]);
 
   const close = useCallback(() => {
-    if (closing.current || busy) return;
+    if (closing.current || operation.current) return;
     closing.current = true;
     if (reduceMotion) {
       onClose();
@@ -80,11 +93,10 @@ export function SettingsSheet({
       if (finished) onClose();
       else closing.current = false;
     });
-  }, [busy, onClose, progress, reduceMotion]);
+  }, [onClose, progress, reduceMotion]);
 
   async function exportBackup() {
-    if (busy) return;
-    setBusy(true);
+    if (!beginOperation()) return;
     setMessage('');
     let resume: (() => Promise<void>) | undefined;
     try {
@@ -94,14 +106,18 @@ export function SettingsSheet({
     } catch (cause) {
       setMessage(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
     } finally {
-      await resume?.();
-      setBusy(false);
+      try {
+        await resume?.();
+      } catch (cause) {
+        setMessage(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
+      } finally {
+        endOperation();
+      }
     }
   }
 
   async function exportMonth() {
-    if (busy) return;
-    setBusy(true);
+    if (!beginOperation()) return;
     setMessage('');
     try {
       const shared = await services.photos.shareMonth({ ...monthExport, includeSignature });
@@ -109,13 +125,12 @@ export function SettingsSheet({
     } catch (cause) {
       setMessage(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
     } finally {
-      setBusy(false);
+      endOperation();
     }
   }
 
   async function prepareRestore() {
-    if (busy) return;
-    setBusy(true);
+    if (!beginOperation()) return;
     setMessage('');
     try {
       const summary = await services.photos.prepareRestore();
@@ -140,13 +155,12 @@ export function SettingsSheet({
     } catch (cause) {
       setMessage(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
     } finally {
-      setBusy(false);
+      endOperation();
     }
   }
 
   async function activateRestore() {
-    if (busy) return;
-    setBusy(true);
+    if (!beginOperation()) return;
     let resume: (() => Promise<void>) | undefined;
     let databaseClosed = false;
     try {
@@ -169,7 +183,7 @@ export function SettingsSheet({
         setMessage(copy.errors[errorCode(cause)] ?? copy.errors.PROCESSING_FAILED);
       }
     } finally {
-      setBusy(false);
+      endOperation();
     }
   }
 

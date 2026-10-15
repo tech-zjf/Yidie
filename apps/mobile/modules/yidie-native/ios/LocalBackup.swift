@@ -64,6 +64,7 @@ enum LocalBackup {
       let sourceDB = root.appendingPathComponent("database/yidie.sqlite")
       let snapshotDB = dbDirectory.appendingPathComponent("yidie.sqlite")
       try copySQLiteSnapshot(from: sourceDB, to: snapshotDB)
+      try removeSQLiteSidecars(for: snapshotDB)
 
       for name in assetDirectories {
         let source = root.appendingPathComponent(name, isDirectory: true)
@@ -109,7 +110,9 @@ enum LocalBackup {
   static func stageRestore(from selected: URL, support: URL) throws -> LocalBackupSummary {
     let stage = support.appendingPathComponent("Yidie.restore-staging", isDirectory: true)
     try removeOwnedDirectory(stage)
-    guard selected.hasDirectoryPath else { throw YidieError(code: "INVALID_BACKUP") }
+    // Document providers may return a package URL without a trailing slash,
+    // making URL.hasDirectoryPath false even when the filesystem item is a
+    // directory. validatePackage performs the authoritative type check.
     let summary = try validatePackage(selected)
     let freeBytes = try FileManager.default.attributesOfFileSystem(forPath: support.path)[.systemFreeSize] as? NSNumber
     guard let freeBytes else { throw YidieError(code: "INSUFFICIENT_STORAGE") }
@@ -222,10 +225,15 @@ enum LocalBackup {
     let manifestSize = try manifestURL.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
     guard Int64(manifestSize) <= maxManifestBytes else { throw YidieError(code: "INVALID_BACKUP") }
     let manifest = try JSONDecoder().decode(Manifest.self, from: Data(contentsOf: manifestURL))
-    guard manifest.formatVersion == formatVersion, manifest.schemaVersion == schemaVersion,
-          manifest.entryCount >= 0, manifest.assetCount >= 0,
-          manifest.files.count <= maxFiles, manifest.totalBytes >= 0,
-          manifest.totalBytes <= maxTotalBytes else { throw YidieError(code: "BACKUP_VERSION_UNSUPPORTED") }
+    guard manifest.formatVersion == formatVersion, manifest.schemaVersion == schemaVersion else {
+      throw YidieError(code: "BACKUP_VERSION_UNSUPPORTED")
+    }
+    guard manifest.entryCount >= 0, manifest.assetCount >= 0, manifest.totalBytes >= 0 else {
+      throw YidieError(code: "INVALID_BACKUP")
+    }
+    guard manifest.files.count <= maxFiles, manifest.totalBytes <= maxTotalBytes else {
+      throw YidieError(code: "BACKUP_TOO_LARGE")
+    }
     let actual = try fileRecords(in: package)
     guard actual.count == manifest.files.count,
           actual.sorted(by: { $0.path < $1.path }).elementsEqual(manifest.files.sorted(by: { $0.path < $1.path }), by: {
@@ -250,13 +258,16 @@ enum LocalBackup {
           try rowCount(db, "PRAGMA foreign_key_check") == 0 else { throw YidieError(code: "INVALID_BACKUP") }
     let statement = try prepare(db, "SELECT original_path,sticker_path,thumbnail_path,cutout_path,photo_preview_path FROM entries")
     defer { sqlite3_finalize(statement) }
-    while sqlite3_step(statement) == SQLITE_ROW {
+    var result = sqlite3_step(statement)
+    while result == SQLITE_ROW {
       for index in 0..<5 {
         guard let raw = sqlite3_column_text(statement, Int32(index)) else { continue }
         let path = String(cString: raw)
         guard isAllowedResourcePath(path), allowedPaths.contains(path) else { throw YidieError(code: "INVALID_BACKUP") }
       }
+      result = sqlite3_step(statement)
     }
+    guard result == SQLITE_DONE else { throw YidieError(code: "INVALID_BACKUP") }
   }
 
   private static func fileRecords(in package: URL) throws -> [FileRecord] {
@@ -367,6 +378,31 @@ enum LocalBackup {
     let result = sqlite3_backup_step(backup, -1)
     let finished = sqlite3_backup_finish(backup)
     guard result == SQLITE_DONE, finished == SQLITE_OK else { throw YidieError(code: "BACKUP_READ_FAILED") }
+    try useRollbackJournal(destination)
+  }
+
+  /// A SQLite backup copies the source header, including its WAL journal mode.
+  /// The portable package contains only the main database file, so normalize
+  /// the snapshot after copying while leaving the live database untouched.
+  private static func useRollbackJournal(_ db: OpaquePointer) throws {
+    var statement: OpaquePointer?
+    guard sqlite3_prepare_v2(db, "PRAGMA journal_mode=DELETE", -1, &statement, nil) == SQLITE_OK,
+          let statement else { throw YidieError(code: "BACKUP_READ_FAILED") }
+    defer { sqlite3_finalize(statement) }
+    guard sqlite3_step(statement) == SQLITE_ROW,
+          let mode = sqlite3_column_text(statement, 0),
+          String(cString: mode).lowercased() == "delete" else {
+      throw YidieError(code: "BACKUP_READ_FAILED")
+    }
+  }
+
+  private static func removeSQLiteSidecars(for database: URL) throws {
+    for suffix in ["-wal", "-shm", "-journal"] {
+      let sidecar = URL(fileURLWithPath: database.path + suffix)
+      if FileManager.default.fileExists(atPath: sidecar.path) {
+        try FileManager.default.removeItem(at: sidecar)
+      }
+    }
   }
 
   private static func openSQLite(_ url: URL, flags: Int32) throws -> OpaquePointer {
@@ -406,7 +442,12 @@ enum LocalBackup {
     let statement = try prepare(db, sql)
     defer { sqlite3_finalize(statement) }
     var count = 0
-    while sqlite3_step(statement) == SQLITE_ROW { count += 1 }
+    var result = sqlite3_step(statement)
+    while result == SQLITE_ROW {
+      count += 1
+      result = sqlite3_step(statement)
+    }
+    guard result == SQLITE_DONE else { throw YidieError(code: "INVALID_BACKUP") }
     return count
   }
 

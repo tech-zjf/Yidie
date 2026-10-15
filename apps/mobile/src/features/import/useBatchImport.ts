@@ -108,6 +108,7 @@ export function useBatchImport(
     if (photo) void services.actions.discardDrafts([photo]);
   };
   function changeDates(ids: string[], value: string): boolean {
+    if (lock.current) return false;
     try {
       setDrafts(changeDraftDates(drafts, ids, value));
       setError('');
@@ -169,11 +170,13 @@ export function useBatchImport(
     remove,
     changeDates,
     confirm,
-    toggleDuplicate: (id: string) =>
-      setDrafts(
-        drafts.map((draft) =>
+    toggleDuplicate: (id: string) => {
+      if (lock.current) return;
+      setDrafts((current) =>
+        current.map((draft) =>
           draft.photo.id === id ? { ...draft, include: !draft.include } : draft,
         ),
-      ),
+      );
+    },
   };
 }

@@ -15,10 +15,11 @@ The last recorded local build used macOS 26.7.1, Xcode 27.0, Expo SDK 57, React 
 ```sh
 npm ci
 npm run check
-npm run ios
+npm run ios:sim -- --list
+npm run ios:sim -- <simulator-udid>
 ```
 
-`npm run ios:release` builds a local Release configuration with its embedded JavaScript bundle. Installing on a physical iPhone requires signing with your own Apple development identity and accepting the device-side development trust prompt. The project does not store or distribute signing credentials.
+The `ios:sim` helper accepts only an exact UDID from `simctl`'s available iOS Simulator inventory. If CoreSimulator is unavailable or the UDID is not a Simulator, it stops before invoking Expo. This avoids accidentally selecting a connected physical iPhone. `npm run ios` and `npm run ios:release` call Expo directly; use `ios:sim` for Simulator-only checks. Installing on a physical iPhone is a separate, deliberate workflow that requires signing with your own Apple development identity and accepting the device-side development trust prompt. The project does not store or distribute signing credentials.
 
 ## UI preview
 

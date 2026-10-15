@@ -44,12 +44,14 @@ export const copy = {
   weekdays: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
   months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
   empty: 'Layer today into your calendar.',
-  emptyHelp: 'Choose an outfit photo to make your first sticker.',
   local: 'Your photos and stickers stay on this iPhone.',
-  permission: 'Choose a few photos to get started.',
-  permissionHelp: 'Allow access to the photos you select.',
+  permissionHelp:
+    'Choose the photos you want to add. Yidie copies only the photos you import; originals stay in Apple Photos.',
   permissionButton: 'Choose photos',
-  noPhotos: 'No photos are available. You can change Yidie’s photo access in Settings.',
+  permissionDenied: 'Photo access is off. Turn it on in iPhone Settings to choose photos.',
+  permissionRestricted: 'Photo access is restricted by this iPhone’s settings.',
+  openSettings: 'Open Settings',
+  noPhotos: 'No photos are available in the library you selected.',
   morePhotos: 'Show more photos',
   managePhotoAccess: 'Manage selected photos',
   moreRecords: 'Load more records',
@@ -93,6 +95,7 @@ export const copy = {
   outlineWidth: 'Thickness',
   edit: 'Edit',
   outfitPhoto: 'Outfit photo',
+  captureDateUnavailable: 'capture date unavailable',
   saveDate: 'Save date',
   dateSaved: 'Date saved and calendar updated.',
   setCover: 'Set as day cover',
@@ -191,5 +194,8 @@ export const copy = {
     SKIPPED_STORAGE: 'This photo was skipped because storage is low. Free space and retry.',
     READ_CANCELLED: 'Reading stopped. You can retry when you’re ready.',
   } as Record<string, string>,
-  dayLabel: (date: string, count: number) => `${date}, ${count} outfit${count === 1 ? '' : 's'}`,
+  dayLabel: (date: string, count: number) => {
+    const outfitCount = count === 0 ? 'no outfits' : `${count} outfit${count === 1 ? '' : 's'}`;
+    return `${copy.dayTitle(date)}, ${date.slice(0, 4)}, ${outfitCount}`;
+  },
 };

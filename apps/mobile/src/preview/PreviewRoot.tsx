@@ -13,9 +13,10 @@ import { scenarios, calendarFixture, importFixture } from './fixtures';
 import { previewServices } from './services';
 
 export default function PreviewRoot() {
+  const sceneControlsEnabled = process.env.EXPO_PUBLIC_YIDIE_PREVIEW_CONTROLS === '1';
   const [scene, setScene] = useState(0),
     [showImport, setShowImport] = useState(false),
-    [controls, setControls] = useState(true);
+    [controls, setControls] = useState(sceneControlsEnabled);
   const [loaded, setLoaded] = useState<{ scene: number; services: AppServices } | null>(null);
   const services = loaded?.scene === scene ? loaded.services : null;
   const [drafts, setDrafts] = useState(importFixture);
@@ -110,9 +111,11 @@ export default function PreviewRoot() {
               onReloadServices={() => {}}
             />
           ))}
-        <View style={{ position: 'absolute', top: 90, right: 8 }}>
-          <Button label="Preview scenes" onPress={() => setControls(true)} />
-        </View>
+        {sceneControlsEnabled && !showImport && (
+          <View style={{ position: 'absolute', top: 90, right: 8 }}>
+            <Button label="Preview scenes" onPress={() => setControls(true)} />
+          </View>
+        )}
       </View>
     </SafeAreaProvider>
   );

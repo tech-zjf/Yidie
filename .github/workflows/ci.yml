@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile:
+    name: Type, lint, test, and export iOS JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: npm ci
+        working-directory: apps/mobile
+      - run: npm run check
+        working-directory: apps/mobile
+      - run: npm run export:ios
+        working-directory: apps/mobile
+      - name: Validate repository docs and native contracts
+        run: python3 scripts/check_packet.py
+
+  native:
+    name: Native safety tests and unsigned iOS build
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select and verify Xcode 26.6
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          xcodebuild -version | grep -Fx 'Xcode 26.6'
+      - name: Run native file, backup, and iOS core checks
+        run: sh scripts/check_native.sh
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Generate the iOS project
+        run: |
+          npm ci
+          npm run prebuild:ios
+        working-directory: apps/mobile
+      - name: Install CocoaPods
+        run: pod install
+        working-directory: apps/mobile/ios
+      - name: Build unsigned iOS Simulator Release app
+        run: >-
+          xcodebuild -workspace Yidie.xcworkspace -scheme Yidie
+          -configuration Release -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$RUNNER_TEMP/yidie-derived-data"
+          CODE_SIGNING_ALLOWED=NO build
+        working-directory: apps/mobile/ios

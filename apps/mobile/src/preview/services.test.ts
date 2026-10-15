@@ -10,6 +10,11 @@ test('preview sticker edits stay in memory and never open real app storage', asy
   assert.ok(entry);
 
   const style = await services.photos.renderStickerStyle(entry.id, 1, 6, '#242424');
+  const beforeSave = await services.repository.get(entry.id);
+  assert.equal(beforeSave?.styleRevision, entry.styleRevision);
+  assert.equal(style.cutoutPath, entry.cutoutPath);
+  assert.equal(style.instanceCount, 1);
+
   await services.repository.updateStickerStyle(entry.id, entry.revision, style);
 
   const updated = await services.repository.get(entry.id);
@@ -17,6 +22,8 @@ test('preview sticker edits stay in memory and never open real app storage', asy
   assert.equal(updated?.borderColor, '#242424');
   assert.equal(updated?.styleRevision, 1);
   assert.equal(updated?.revision, 1);
+  assert.equal(updated?.originalPath, entry.originalPath);
+  assert.equal(updated?.cutoutPath, entry.cutoutPath);
   await assert.rejects(services.photos.prepareStorage(), /PREVIEW_READ_ONLY/);
 });
 

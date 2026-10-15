@@ -1,4 +1,5 @@
 import type { Entry, EntryRepository } from '../domain/records';
+import { createSerialWork } from '../domain/serialWork';
 import { createEntryMutations } from './entryMutations';
 import { createImageRepository } from './imageRepository';
 import { createQueueRepository } from './queueRepository';
@@ -20,14 +21,8 @@ export function createEntryRepository(
   db: SqlDatabase,
   transaction: WriteTransaction,
 ): EntryRepository {
-  // All mutations use the same queue; rejected writes cannot poison later work.
-  let tail: Promise<unknown> = Promise.resolve();
-  const write: WriteTransaction = (action) => {
-    const pending = tail.then(() => transaction(action));
-    tail = pending.catch(() => {});
-    return pending;
-  };
-  return {
+  const write = transaction;
+  const repository: EntryRepository = {
     async close() {
       await db.closeAsync?.();
     },
@@ -97,5 +92,51 @@ export function createEntryRepository(
       write(async (tx) => {
         await tx.runAsync('DELETE FROM file_deletions WHERE entry_id=?', id);
       }),
+  };
+  return serializeRepositoryOperations(repository);
+}
+
+/**
+ * Expo SQLite dispatches native calls on a concurrent queue. Keep reads, writes, and shutdown on
+ * one lane and one repository-owned connection so statement work cannot race a connection close.
+ */
+function serializeRepositoryOperations(repository: EntryRepository): EntryRepository {
+  const enqueue = createSerialWork();
+  let closing = false;
+  let closePromise: Promise<void> | undefined;
+
+  function run<T>(operation: () => Promise<T>): Promise<T> {
+    if (closing) return Promise.reject(new Error('DATABASE_CLOSED'));
+    return enqueue(operation);
+  }
+
+  return {
+    begin: (...args) => run(() => repository.begin(...args)),
+    retry: (...args) => run(() => repository.retry(...args)),
+    finish: (...args) => run(() => repository.finish(...args)),
+    fail: (...args) => run(() => repository.fail(...args)),
+    list: (...args) => run(() => repository.list(...args)),
+    get: (...args) => run(() => repository.get(...args)),
+    getMany: (...args) => run(() => repository.getMany(...args)),
+    changeDate: (...args) => run(() => repository.changeDate(...args)),
+    updateStickerStyle: (...args) => run(() => repository.updateStickerStyle(...args)),
+    setCover: (...args) => run(() => repository.setCover(...args)),
+    remove: (...args) => run(() => repository.remove(...args)),
+    pendingDeletions: () => run(() => repository.pendingDeletions()),
+    acknowledgeDeletion: (...args) => run(() => repository.acknowledgeDeletion(...args)),
+    stageOrphanDeletions: (...args) => run(() => repository.stageOrphanDeletions(...args)),
+    savePhotoPreview: (...args) => run(() => repository.savePhotoPreview(...args)),
+    findDuplicate: (...args) => run(() => repository.findDuplicate(...args)),
+    queueBatch: (...args) => run(() => repository.queueBatch(...args)),
+    claimNext: () => run(() => repository.claimNext()),
+    pauseQueued: (...args) => run(() => repository.pauseQueued(...args)),
+    resumePaused: (...args) => run(() => repository.resumePaused(...args)),
+    queueCounts: () => run(() => repository.queueCounts()),
+    close() {
+      if (closePromise) return closePromise;
+      closing = true;
+      closePromise = enqueue(() => repository.close());
+      return closePromise;
+    },
   };
 }

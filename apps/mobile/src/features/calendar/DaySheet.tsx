@@ -75,7 +75,6 @@ export function DaySheet({
         setEditing(null);
         onClose();
         afterClose();
-        onDismiss();
         setClosing(false);
         return;
       }
@@ -92,11 +91,10 @@ export function DaySheet({
         setEditing(null);
         onClose();
         afterClose();
-        onDismiss();
         setClosing(false);
       });
     },
-    [closing, onClose, onDismiss, progress, reduceMotion],
+    [closing, onClose, progress, reduceMotion],
   );
 
   const sheetHeight = editing || fontScale > 1.4 ? height - insets.top - 12 : height * 0.72;
@@ -123,6 +121,7 @@ export function DaySheet({
       transparent
       animationType="none"
       onRequestClose={() => closeAfterAnimation()}
+      onDismiss={onDismiss}
     >
       <View style={styles.overlay}>
         <Animated.View
@@ -195,7 +194,11 @@ function DayContents({
     <>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text accessibilityRole="header" accessibilityLabel={date ?? ''} style={styles.title}>
+          <Text
+            accessibilityRole="header"
+            accessibilityLabel={date ? `${copy.dayTitle(date)}, ${date.slice(0, 4)}` : ''}
+            style={styles.title}
+          >
             {date ? copy.dayTitle(date) : ''}
           </Text>
           <Text style={styles.help}>
@@ -206,6 +209,7 @@ function DayContents({
       </View>
       <FlatList
         horizontal
+        accessibilityHint={copy.swipe}
         data={entries}
         keyExtractor={(entry) => entry.id}
         showsHorizontalScrollIndicator={false}
@@ -221,6 +225,7 @@ function DayContents({
               entry={item}
               services={services}
               variant="detail"
+              accessibilityLabel={`${copy.outfitPhoto}, ${copy.dayPosition(index + 1, entries.length)}`}
               style={{ width: '100%', height: Math.min(300, height * 0.3) }}
             />
             <View style={styles.itemMeta}>

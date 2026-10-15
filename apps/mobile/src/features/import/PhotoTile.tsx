@@ -7,6 +7,11 @@ import { Text } from '../../ui/Text';
 import { colors } from '../../ui/tokens';
 import { copy } from '../../ui/copy';
 
+const photoDateFormat = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+});
+
 export function PhotoTile({
   asset,
   services,
@@ -21,6 +26,9 @@ export function PhotoTile({
   selected: boolean;
 }) {
   const [uri, setUri] = useState<string | null>(null);
+  const accessibilityLabel = asset.createdAt
+    ? `${copy.outfitPhoto}, ${photoDateFormat.format(new Date(asset.createdAt))}`
+    : `${copy.outfitPhoto}, ${copy.captureDateUnavailable}`;
   useEffect(() => {
     let active = true;
     async function loadPreview() {
@@ -41,7 +49,7 @@ export function PhotoTile({
       disabled={disabled}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: selected, disabled }}
-      accessibilityLabel={asset.createdAt ?? copy.choose}
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       style={[styles.tile, selected && styles.selected]}
     >

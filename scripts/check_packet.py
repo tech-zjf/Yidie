@@ -65,12 +65,20 @@ with tempfile.TemporaryDirectory() as folder:
     second.execute('BEGIN IMMEDIATE')
     try:
         second.execute('INSERT INTO child VALUES(999)')
-        raise AssertionError('Dedicated write connection must enforce foreign keys')
+        raise AssertionError('SQLite transaction must enforce foreign keys')
     except sqlite3.IntegrityError:
         second.rollback()
     second.close()
     first.close()
-print('PASS SQLite dedicated write connection enforces foreign keys')
+print('PASS SQLite transactions enforce foreign keys')
+
+repository_source = (root / 'apps/mobile/src/data/openEntryRepository.ts').read_text()
+transaction_source = (root / 'apps/mobile/src/data/writeTransaction.ts').read_text()
+assert 'useNewConnection: true' in repository_source
+assert 'createWriteTransaction(db)' in repository_source
+assert 'openDatabaseAsync' not in transaction_source
+assert "BEGIN IMMEDIATE" in transaction_source and "COMMIT" in transaction_source and "ROLLBACK" in transaction_source
+print('PASS repository owns one SQLite connection for reads, writes, and shutdown')
 
 generated = root / 'apps/mobile/src/data/schema.generated.ts'
 if generated.exists():

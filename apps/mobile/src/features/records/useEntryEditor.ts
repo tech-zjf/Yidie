@@ -125,12 +125,14 @@ export function useEntryEditor(
       }, true),
     borderWidth,
     setBorderWidth: (value: number) => {
+      if (lock.current) return;
       setBorderWidth(value);
       setStylePreview(null);
       styleCommitted.current = false;
     },
     borderColor,
     setBorderColor: (value: StickerBorderColor) => {
+      if (lock.current) return;
       setBorderColor(value);
       setStylePreview(null);
       styleCommitted.current = false;

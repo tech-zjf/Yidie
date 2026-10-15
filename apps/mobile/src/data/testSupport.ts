@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { createEntryRepository } from './entryRepository';
 import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
+import { createWriteTransaction } from './writeTransaction';
 import type { ImportedPhoto, Sticker } from '../domain/records';
 export function fixture() {
   const sqlite = new DatabaseSync(':memory:');
@@ -18,17 +19,7 @@ export function fixture() {
     getAllAsync: async <T>(sql: string, ...params: (string | number | null)[]) =>
       sqlite.prepare(sql).all(...params) as T[],
   };
-  const write: WriteTransaction = async (action) => {
-    sqlite.exec('BEGIN IMMEDIATE');
-    try {
-      const result = await action(db);
-      sqlite.exec('COMMIT');
-      return result;
-    } catch (error) {
-      sqlite.exec('ROLLBACK');
-      throw error;
-    }
-  };
+  const write: WriteTransaction = createWriteTransaction(db);
   return { sqlite, db, write, repository: createEntryRepository(db, write) };
 }
 export function photo(id: string): ImportedPhoto {
