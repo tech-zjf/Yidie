@@ -37,7 +37,8 @@ This is the single working checklist for the first public, installable release. 
 
 - [x] Replace stale/duplicated status prose with one README, one live delivery board, one current release-gate document, and a short chronological changelog.
 - [x] Document local setup, architecture, privacy/data boundaries, known limitations, test commands, signing, and troubleshooting in concise English; link Chinese project notes where useful.
-- [ ] Publish the prepared `.github/workflows/ci.yml` and confirm it runs green for lockfile install, static checks, tests, and JS export. GitHub currently rejects workflow writes because the connected OAuth app lacks the `workflow` scope; do not change that authorization until the owner approves. Add native build checks only on a pinned supported macOS/Xcode runner.
+- [x] Add a native CI job on the stable `macos-26` image, explicitly select Xcode 26.6, and run the existing Swift safety/backup tests plus iOS core typecheck. The same script passes locally; the hosted job still needs a pushed workflow run.
+- [ ] Publish `.github/workflows/ci.yml` and confirm both the lockfile-based JavaScript job and pinned native job run green. GitHub currently rejects workflow writes because the connected OAuth app lacks the `workflow` scope; do not change that authorization until the owner approves.
 - [x] Add issue templates, security contact/reporting guidance, and contribution instructions that protect personal data.
 - [ ] Capture a populated app-screen demo for the README and X after the simulator walkthrough is visually verified; include captions and use synthetic or explicitly consented imagery. A clearly labeled empty-calendar screenshot is available meanwhile.
 - [x] Prepare an honest X launch sequence and measurement plan: product problem, demo copy, local-only architecture, one engineering lesson, and a bounded tester invitation. Actual external posts wait for a verified recording and an explicit posting request.

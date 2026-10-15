@@ -33,3 +33,16 @@ jobs:
         working-directory: apps/mobile
       - name: Validate repository docs and native contracts
         run: python3 scripts/check_packet.py
+
+  native:
+    name: Swift safety tests and iOS core typecheck
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select and verify Xcode 26.6
+        run: |
+          sudo xcode-select --switch /Applications/Xcode_26.6.app/Contents/Developer
+          xcodebuild -version | grep -Fx 'Xcode 26.6'
+      - name: Run native file, backup, and iOS core checks
+        run: sh scripts/check_native.sh
