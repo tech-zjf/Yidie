@@ -1,5 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { initializeDatabase } from './initializeDatabase';
 import { schema } from './schema.generated';
 import type { PhotoProcessor } from '../domain/records';
@@ -8,6 +12,7 @@ import { createEntryActions } from '../domain/entryActions';
 import { importPhoto } from '../domain/importPhoto';
 import { createEntryRepository } from './entryRepository';
 import type { SqlDatabase } from './sqlDatabase';
+import { createWriteTransaction } from './writeTransaction';
 
 test('fresh schema and v1 migration preserve records and recover interrupted jobs', async (t) => {
   const r = fixture();
@@ -91,6 +96,88 @@ test('repository serializes SQLite work and close fences queued and later calls'
   await close;
   assert.equal(closed, true);
   await repository.close();
+});
+
+test('a held SQLite read drains queued writes before close and WAL reopen', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'yidie-repository-close-'));
+  const filename = join(directory, 'library.sqlite');
+  const r = fixture(filename);
+  let closed = false;
+  let holdNextRead = false;
+  let pending: Promise<unknown>[] = [];
+  let releaseRead!: () => void;
+  let markReadStarted!: () => void;
+  const readStarted = new Promise<void>((resolve) => {
+    markReadStarted = resolve;
+  });
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  t.after(async () => {
+    releaseRead();
+    await Promise.allSettled(pending);
+    if (!closed) r.sqlite.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+
+  const db: SqlDatabase = {
+    ...r.db,
+    async getAllAsync<T>(sql: string, ...params: (string | number | null)[]) {
+      if (!holdNextRead) return r.db.getAllAsync<T>(sql, ...params);
+      holdNextRead = false;
+      r.sqlite.exec('BEGIN DEFERRED');
+      const rows = r.sqlite.prepare(sql).all(...params) as T[];
+      markReadStarted();
+      try {
+        await readGate;
+        return rows;
+      } finally {
+        r.sqlite.exec('COMMIT');
+      }
+    },
+    async closeAsync() {
+      r.sqlite.close();
+      closed = true;
+    },
+  };
+  const write = createWriteTransaction(db);
+  const repository = createEntryRepository(db, write);
+  await initializeDatabase(db, write);
+  const ticket = await repository.begin(photo('held-read'), {
+    date: '2026-06-12',
+    source: 'user',
+  });
+  await repository.finish(ticket, sticker('held-read'));
+
+  holdNextRead = true;
+  const read = repository.list();
+  pending.push(read);
+  await readStarted;
+  const update = repository.changeDate('held-read', 0, '2026-06-14');
+  pending.push(update);
+  const close = repository.close();
+  pending.push(close);
+  await assert.rejects(repository.get('held-read'), /DATABASE_CLOSED/);
+  assert.equal(closed, false, 'close must wait for the open read transaction and queued write');
+
+  releaseRead();
+  const [rows] = await Promise.all([read, update, close]);
+  assert.equal(rows[0]?.date, '2026-06-12', 'the held read returns its consistent snapshot');
+  assert.equal(closed, true, 'the connection closes after the queued write commits');
+
+  const reopened = new DatabaseSync(filename);
+  try {
+    const entry = reopened
+      .prepare('SELECT record_date FROM entries WHERE id=?')
+      .get('held-read') as { record_date: string } | undefined;
+    assert.equal(entry?.record_date, '2026-06-14', 'the queued write survives close and reopen');
+    assert.equal(reopened.prepare('PRAGMA integrity_check').get()?.integrity_check, 'ok');
+    const checkpoint = reopened.prepare('PRAGMA wal_checkpoint(TRUNCATE)').get() as
+      { busy: number } | undefined;
+    assert.equal(checkpoint?.busy, 0, 'WAL checkpoint is not blocked after connection drain');
+  } finally {
+    reopened.close();
+  }
 });
 
 test('a rejected repository operation does not poison the SQLite lane', async (t) => {
