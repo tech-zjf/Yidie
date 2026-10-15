@@ -12,6 +12,11 @@ This page records current, bounded evidence. The active checklist is [TODO.md](.
 - An earlier unsigned Release build produced a universal arm64/x86_64 Simulator app bundle but emitted `SwiftCompile ... failed with exit code 0 but produced no further output` diagnostics while compiling Expo modules. That artifact is not accepted as a clean build. Generated Pods and build products are ignored local outputs.
 - An earlier complete unsigned build and launch succeeded on an isolated iOS Simulator. That historical runtime evidence does not accept the current tree.
 
+## Hosted verification for the current source
+
+- GitHub Actions [run 38804212797](https://github.com/tech-zjf/Yidie/actions/runs/38804212797) passed on commit `93b5d3a`: 76 JavaScript tests, type/lint/format checks, iOS bundle export, documentation/native contracts, Swift file and backup tests, Core Image pixel assertions, Expo prebuild, CocoaPods installation, and unsigned iOS Simulator Release compilation with Xcode 26.6.
+- The hosted build compiled the app for Simulator but did not launch the product app. CI now includes a follow-up step that boots an isolated iPhone Simulator and launches the dedicated sticker pixel harness; that new step remains unverified until the next hosted run. It launches the temporary test fixture, not Yidie. The editor, gestures, date-picker, backup-error and real-photo Vision flows remain open for interactive acceptance.
+
 ## Sticker evidence and limits
 
 - A deterministic synthetic RGBA harness passed on an isolated iOS Simulator for source color/alpha, visible white outline, translucent shadow, stable effect canvas, zero-width identity, and distinct Comic/3D/Shimmer pixels. It validates Core Image composition only; it does not validate Vision segmentation, realistic edges, or resemblance to Photos. The temporary harness used for that pass was removed.

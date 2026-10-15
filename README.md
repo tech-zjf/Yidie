@@ -7,7 +7,7 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** The current JavaScript suite, native safety tests, and production bundle export pass. A fresh Expo prebuild and CocoaPods install completed, but this Mac's Xcode cannot open the generated workspace and has no `Simulator.app` or available runtime, so the current tree has no accepted full build or launch. Real-photo cutout quality, editor interaction, touch gestures, some share and backup paths, accessibility, and performance also remain unaccepted. See the live [delivery board](TODO.md).
+> **Development build.** GitHub Actions passed the current unsigned iOS Simulator Release build, native safety and Core Image pixel tests, 76 JavaScript tests, and production bundle export. This Mac still cannot launch Simulator; the app's interactive flows and Vision quality from a real photo remain unaccepted. See the live [delivery board](TODO.md).
 
 ## What makes it different
 
@@ -24,7 +24,7 @@ The editor prefers Apple's public VisionKit subject-lifting API, then falls back
 | ---------------------------------------------------------------- | ---------------------------------------------------------------- |
 | Calendar, date browsing, same-day stacks and count badges        | Populated/empty simulator scenes and month arrows checked; touch swipes remain due |
 | Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted   |
-| Sticker style preview and editing                                | Current renderer compiles and geometry/file tests pass; current-tree Core Image pixel checks, Vision cutouts, real-photo edge quality, editor interaction, and physical-device behavior remain unaccepted |
+| Sticker style preview and editing                                | Native Core Image pixels pass in CI; the dedicated iOS Simulator harness, Vision cutouts, real-photo edge quality, editor interaction, and physical-device behavior remain unaccepted |
 | Backup/restore and native date picker                            | Empty backup save/restore passes in Simulator; invalid-package UI and date-picker acceptance due |
 | Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; payload delivery acceptance due |
 | Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                 |
