@@ -14,7 +14,7 @@ func makeDirectory(_ url: URL) throws {
   try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
 }
 
-func makeFixtureLibrary(at support: URL) throws -> URL {
+func makeFixtureLibrary(at support: URL) throws -> (root: URL, database: OpaquePointer) {
   let root = support.appendingPathComponent("Yidie", isDirectory: true)
   try makeDirectory(root.appendingPathComponent("database", isDirectory: true))
   for name in LocalBackup.assetDirectories {
@@ -26,8 +26,8 @@ func makeFixtureLibrary(at support: URL) throws -> URL {
   guard sqlite3_open(database.path, &connection) == SQLITE_OK, let connection else {
     throw BackupTestFailure.assertion("Could not create SQLite fixture")
   }
-  defer { sqlite3_close(connection) }
   let sql = """
+  PRAGMA journal_mode=WAL;
   CREATE TABLE entries (
     original_path TEXT, sticker_path TEXT, thumbnail_path TEXT,
     cutout_path TEXT, photo_preview_path TEXT
@@ -35,9 +35,10 @@ func makeFixtureLibrary(at support: URL) throws -> URL {
   PRAGMA user_version=\(LocalBackup.schemaVersion);
   """
   guard sqlite3_exec(connection, sql, nil, nil, nil) == SQLITE_OK else {
+    sqlite3_close(connection)
     throw BackupTestFailure.assertion("Could not initialize SQLite fixture")
   }
-  return root
+  return (root, connection)
 }
 
 func rewriteManifest(_ package: URL, _ update: (inout [String: Any]) -> Void) throws {
@@ -51,6 +52,40 @@ func rewriteManifest(_ package: URL, _ update: (inout [String: Any]) -> Void) th
 func sha256(_ url: URL) throws -> String {
   let digest = SHA256.hash(data: try Data(contentsOf: url))
   return digest.map { String(format: "%02x", $0) }.joined()
+}
+
+func journalMode(at url: URL) throws -> String {
+  var database: OpaquePointer?
+  guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY, nil) == SQLITE_OK,
+        let database else {
+    throw BackupTestFailure.assertion("Could not open the packaged SQLite snapshot")
+  }
+  defer { sqlite3_close(database) }
+  var statement: OpaquePointer?
+  guard sqlite3_prepare_v2(database, "PRAGMA journal_mode", -1, &statement, nil) == SQLITE_OK,
+        let statement else {
+    throw BackupTestFailure.assertion("Could not inspect the packaged SQLite journal mode")
+  }
+  defer { sqlite3_finalize(statement) }
+  guard sqlite3_step(statement) == SQLITE_ROW,
+        let value = sqlite3_column_text(statement, 0) else {
+    throw BackupTestFailure.assertion("Packaged SQLite journal mode was unavailable")
+  }
+  return String(cString: value).lowercased()
+}
+
+func journalMode(_ database: OpaquePointer) throws -> String {
+  var statement: OpaquePointer?
+  guard sqlite3_prepare_v2(database, "PRAGMA journal_mode", -1, &statement, nil) == SQLITE_OK,
+        let statement else {
+    throw BackupTestFailure.assertion("Could not inspect the source SQLite journal mode")
+  }
+  defer { sqlite3_finalize(statement) }
+  guard sqlite3_step(statement) == SQLITE_ROW,
+        let value = sqlite3_column_text(statement, 0) else {
+    throw BackupTestFailure.assertion("Source SQLite journal mode was unavailable")
+  }
+  return String(cString: value).lowercased()
 }
 
 func expectBackupError(_ expected: String, operation: () throws -> Void) throws {
@@ -70,10 +105,16 @@ func runBackupTests() throws {
 
   let support = temporary.appendingPathComponent("Application Support", isDirectory: true)
   try makeDirectory(support)
-  let root = try makeFixtureLibrary(at: support)
+  let fixture = try makeFixtureLibrary(at: support)
+  let root = fixture.root
   let package = try LocalBackup.createPackage(root: root, support: support)
+  let sourceJournalMode = try journalMode(fixture.database)
+  try check(sourceJournalMode == "wal", "Creating a backup changed the live SQLite journal mode")
+  sqlite3_close(fixture.database)
   let summary = try LocalBackup.stageRestore(from: package, support: support)
   try check(summary.entryCount == 0 && summary.assetCount == 0, "Empty library summary is incorrect")
+  let snapshotJournalMode = try journalMode(at: package.appendingPathComponent("database/yidie.sqlite"))
+  try check(snapshotJournalMode == "delete", "Portable snapshot retained WAL mode without its sidecars")
   try LocalBackup.requireAvailableStorage(required: 100, available: 100)
   try expectBackupError("INSUFFICIENT_STORAGE") {
     try LocalBackup.requireAvailableStorage(required: 101, available: 100)

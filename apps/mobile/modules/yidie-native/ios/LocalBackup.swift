@@ -64,6 +64,7 @@ enum LocalBackup {
       let sourceDB = root.appendingPathComponent("database/yidie.sqlite")
       let snapshotDB = dbDirectory.appendingPathComponent("yidie.sqlite")
       try copySQLiteSnapshot(from: sourceDB, to: snapshotDB)
+      try removeSQLiteSidecars(for: snapshotDB)
 
       for name in assetDirectories {
         let source = root.appendingPathComponent(name, isDirectory: true)
@@ -367,6 +368,31 @@ enum LocalBackup {
     let result = sqlite3_backup_step(backup, -1)
     let finished = sqlite3_backup_finish(backup)
     guard result == SQLITE_DONE, finished == SQLITE_OK else { throw YidieError(code: "BACKUP_READ_FAILED") }
+    try useRollbackJournal(destination)
+  }
+
+  /// A SQLite backup copies the source header, including its WAL journal mode.
+  /// The portable package contains only the main database file, so normalize
+  /// the snapshot after copying while leaving the live database untouched.
+  private static func useRollbackJournal(_ db: OpaquePointer) throws {
+    var statement: OpaquePointer?
+    guard sqlite3_prepare_v2(db, "PRAGMA journal_mode=DELETE", -1, &statement, nil) == SQLITE_OK,
+          let statement else { throw YidieError(code: "BACKUP_READ_FAILED") }
+    defer { sqlite3_finalize(statement) }
+    guard sqlite3_step(statement) == SQLITE_ROW,
+          let mode = sqlite3_column_text(statement, 0),
+          String(cString: mode).lowercased() == "delete" else {
+      throw YidieError(code: "BACKUP_READ_FAILED")
+    }
+  }
+
+  private static func removeSQLiteSidecars(for database: URL) throws {
+    for suffix in ["-wal", "-shm", "-journal"] {
+      let sidecar = URL(fileURLWithPath: database.path + suffix)
+      if FileManager.default.fileExists(atPath: sidecar.path) {
+        try FileManager.default.removeItem(at: sidecar)
+      }
+    }
   }
 
   private static func openSQLite(_ url: URL, flags: Int32) throws -> OpaquePointer {
