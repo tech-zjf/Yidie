@@ -39,6 +39,7 @@
 ## 工程与字体补充来源
 
 - [Apple Xcode 系统要求](https://developer.apple.com/xcode/system-requirements)
+- [GitHub Actions macOS 26 runner image: installed Xcode versions](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md)
 - [Expo SDK57 SQLite](https://docs.expo.dev/versions/v57.0.0/sdk/sqlite/)
 - [Expo SDK57 Font](https://docs.expo.dev/versions/v57.0.0/sdk/font/)
 - [Bluesky 功能模块](https://github.com/bluesky-social/social-app/tree/main/src/features)
