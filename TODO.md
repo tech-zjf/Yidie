@@ -8,6 +8,7 @@ This is the single working checklist for the first public, installable release. 
 - [x] Calendar-first interaction: sticker stacks, count badges, month-arrow navigation, month/day swipe handlers, animated sheets, centered Add action, English UI, and local identity. Touch-driven paging remains unaccepted until it works on a Simulator touch surface.
 - [x] Local sticker outline editing: preserve the transparent cutout, preview and save color/width variants without rerunning Vision.
 - [x] Distinguish not-yet-requested, authorized, limited, denied, and restricted Photos access; load an already-authorized library automatically and direct denied users to Settings.
+- [x] Fence Settings export/restore/share actions synchronously against rapid duplicate taps; keep the sheet open while an operation or its queue cleanup is active.
 - [x] Automated domain/SQLite, TypeScript, lint, formatting, native file-catalog, and documentation-contract checks.
 - [x] Add a Simulator-only Expo launch command that validates an exact available iOS Simulator UDID and stops before Expo when CoreSimulator is unavailable; test selection fail-closed behavior without launching a device.
 
