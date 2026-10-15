@@ -1,0 +1,60 @@
+import Foundation
+import CoreImage
+import CoreGraphics
+
+func expect(_ condition: @autoclosure () -> Bool, _ message: String) {
+  guard condition() else {
+    fputs("FAIL: \(message)\n", stderr)
+    exit(1)
+  }
+}
+
+expect(StickerGeometry.outlineRadius(controlValue: 0, subjectLength: 200) == 0,
+       "zero outline control must stay disabled")
+expect(StickerGeometry.outlineRadius(controlValue: 4, subjectLength: 200) == 4,
+       "reference-size outline must preserve the selected design scale")
+expect(StickerGeometry.outlineRadius(controlValue: 4, subjectLength: 2_000) == 40,
+       "large cutouts must scale the radius with the subject")
+expect(StickerGeometry.outlineRadius(controlValue: .infinity, subjectLength: 200) == 0,
+       "non-finite style values must not enter image rendering")
+expect(StickerGeometry.renderingPadding(outlineRadius: 40) >= 104,
+       "large outlines need enough transparent room for the soft shadow")
+expect(StickerGeometry.renderingPadding(outlineRadius: 0) == 12,
+       "unstyled cutouts keep a small antialiasing margin")
+
+let sourceExtent = CGRect(x: 30, y: 20, width: 80, height: 160)
+let subject = CIImage(color: CIColor(red: 0.8, green: 0.2, blue: 0.1, alpha: 1)).cropped(to: sourceExtent)
+let rendered = try StickerRenderer.render(cutout: subject, outlineRadius: 6, colorHex: "#FFFFFF")
+expect(rendered.extent.width > sourceExtent.width && rendered.extent.height > sourceExtent.height,
+       "styled output must reserve room around the subject")
+let context = CIContext(options: [.cacheIntermediates: false])
+guard let image = context.createCGImage(rendered.image, from: rendered.extent,
+                                        format: .RGBA8, colorSpace: CGColorSpaceCreateDeviceRGB()),
+      let pixels = image.dataProvider?.data as Data? else {
+  fatalError("FAIL: rendered image must be readable")
+}
+func pixel(x: Int, y: Int) -> (red: UInt8, green: UInt8, blue: UInt8, alpha: UInt8) {
+  let offset = y * image.bytesPerRow + x * 4
+  return (pixels[offset], pixels[offset + 1], pixels[offset + 2], pixels[offset + 3])
+}
+let padding = StickerGeometry.renderingPadding(outlineRadius: 6)
+let subjectPixel = pixel(x: padding + 40, y: padding + 80)
+let outlinePixel = pixel(x: padding - 1, y: padding + 80)
+let shadowPixel = pixel(x: padding - 10, y: padding + 80)
+expect(subjectPixel.red > subjectPixel.green && subjectPixel.alpha > 240,
+       "rendering must retain the source subject color")
+expect(outlinePixel.red > 230 && outlinePixel.green > 230 && outlinePixel.blue > 230,
+       "white outline must be clearly composited outside the subject")
+expect(shadowPixel.alpha > 0 && shadowPixel.alpha < 255,
+       "outline style must include a soft translucent shadow")
+let unstyled = try StickerRenderer.render(cutout: subject, outlineRadius: 0, colorHex: "#FFFFFF")
+expect(unstyled.extent.width < rendered.extent.width,
+       "original style must not expand to the outlined bounds")
+do {
+  _ = try StickerRenderer.render(cutout: subject, outlineRadius: 6, colorHex: "#FF0000")
+  fatalError("FAIL: unknown outline colors must be rejected")
+} catch StickerRendererError.invalidColor {
+  // Expected: the renderer only accepts the documented palette.
+}
+
+print("PASS sticker geometry and local outline rendering")
