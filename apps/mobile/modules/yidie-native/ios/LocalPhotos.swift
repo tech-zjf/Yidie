@@ -55,13 +55,9 @@ enum LocalPhotos {
         NativeFileStore.queue.async {
           do {
             // Transient cache, never a large base64 image on the JS bridge.
-            var cache = FileManager.default.temporaryDirectory.appendingPathComponent("YidieThumbnails", isDirectory: true)
-            try FileManager.default.createDirectory(at: cache, withIntermediateDirectories: true)
-            var values = URLResourceValues(); values.isExcludedFromBackup = true
-            try cache.setResourceValues(values)
             let hash = SHA256.hash(data: Data(id.utf8)).map { String(format: "%02x", $0) }.joined()
-            let file = cache.appendingPathComponent(hash + ".jpg")
-            try data.write(to: file, options: .atomic)
+            let cache = FileManager.default.temporaryDirectory.appendingPathComponent("YidieThumbnails", isDirectory: true)
+            let file = try PhotoThumbnailCache.store(data, key: hash, in: cache)
             completion(.success(file.absoluteString))
           } catch { completion(.failure(error)) }
         }
