@@ -49,6 +49,7 @@ This is the single working checklist for the first public, installable release. 
 - [x] Add issue templates, security contact/reporting guidance, and contribution instructions that protect personal data.
 - [ ] Capture a populated app-screen demo for the README and X after the simulator walkthrough is visually verified; include captions and use synthetic or explicitly consented imagery. A clearly labeled empty-calendar screenshot is available meanwhile.
 - [x] Prepare an honest X launch sequence and measurement plan: product problem, demo copy, local-only architecture, one engineering lesson, and a bounded tester invitation. Actual external posts wait for a verified recording and an explicit posting request.
+- [ ] Revisit ESLint 10 after the Expo React lint plugin officially supports it. ESLint 9.39.5 is currently past upstream support, but upgrading to ESLint 10.12.0 makes `react/display-name` crash under Expo's pinned `eslint-plugin-react` 7.37.5; keep the working lint stack until the upstream compatibility fix is released.
 
 ## Definition of done
 
