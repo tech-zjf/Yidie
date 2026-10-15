@@ -6,6 +6,7 @@ import sqlite3
 import subprocess
 import tempfile
 import json
+import shlex
 
 root = Path(__file__).resolve().parents[1]
 tracked = subprocess.check_output(['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], cwd=root).decode().split('\0')
@@ -19,6 +20,41 @@ assert not obsolete_design_prototypes, (
     + ', '.join(obsolete_design_prototypes)
 )
 print('PASS publication hygiene: no retired HTML design prototypes')
+
+mobile_root = root / 'apps/mobile'
+package = json.loads((mobile_root / 'package.json').read_text())
+test_command = shlex.split(package['scripts']['test'])
+assert '--test' in test_command, 'The mobile test command must invoke Node test runner'
+patterns = test_command[test_command.index('--test') + 1:]
+declared_tests = {
+    path.relative_to(mobile_root).as_posix()
+    for pattern in patterns
+    for path in mobile_root.glob(pattern)
+}
+tracked_mobile_tests = {
+    Path(name).relative_to('apps/mobile').as_posix()
+    for name in tracked
+    if name.startswith('apps/mobile/') and name.endswith(('.test.ts', '.test.js', '.test.mjs'))
+}
+assert declared_tests == tracked_mobile_tests, (
+    'Every tracked mobile test must be covered by package.json scripts.test; '
+    f'missing={sorted(tracked_mobile_tests - declared_tests)}, '
+    f'not tracked as tests={sorted(declared_tests - tracked_mobile_tests)}'
+)
+native_test_entrypoints = {
+    name for name in tracked
+    if name.startswith('scripts/native-tests/') and name.endswith('.swift')
+    and (Path(name).name == 'main.swift')
+}
+native_check = (root / 'scripts/check_native.sh').read_text()
+assert native_test_entrypoints and all(name in native_check for name in native_test_entrypoints), (
+    'Every native test entry point must be compiled by scripts/check_native.sh'
+)
+workflow = (root / '.github/workflows/ci.yml').read_text()
+assert 'npm run check' in workflow and 'sh scripts/check_native.sh' in workflow, (
+    'CI must run the mobile and native test entry points'
+)
+print('PASS test inventory: every tracked JS and Swift test entry point runs in CI')
 
 for name in tracked:
     file = root / name
