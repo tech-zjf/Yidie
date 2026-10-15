@@ -35,7 +35,7 @@ jobs:
         run: python3 scripts/check_packet.py
 
   native:
-    name: Swift safety tests and iOS core typecheck
+    name: Native safety tests and unsigned iOS build
     runs-on: macos-26
     timeout-minutes: 20
     steps:
@@ -46,3 +46,23 @@ jobs:
           xcodebuild -version | grep -Fx 'Xcode 26.6'
       - name: Run native file, backup, and iOS core checks
         run: sh scripts/check_native.sh
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+      - name: Generate the iOS project
+        run: |
+          npm ci
+          npm run prebuild:ios
+        working-directory: apps/mobile
+      - name: Install CocoaPods
+        run: pod install
+        working-directory: apps/mobile/ios
+      - name: Build unsigned iOS Simulator Release app
+        run: >-
+          xcodebuild -workspace Yidie.xcworkspace -scheme Yidie
+          -configuration Release -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath "$RUNNER_TEMP/yidie-derived-data"
+          CODE_SIGNING_ALLOWED=NO build
+        working-directory: apps/mobile/ios
