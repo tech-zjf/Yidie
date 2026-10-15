@@ -5,7 +5,7 @@ Yidie is an iOS-only Expo / React Native app with a local Swift module for Photo
 ## Requirements
 
 - macOS and Xcode compatible with the Expo SDK pinned in `package-lock.json`
-- Node.js 22 or newer
+- Node.js 22.13.0 or newer (`.nvmrc` pins 22.21.0)
 - CocoaPods for the generated iOS project
 
 The last recorded local build used macOS 26.7.1, Xcode 27.0, Expo SDK 57, React Native 0.86, and iOS 27 Simulator. Check current Expo and Apple compatibility requirements before upgrading the toolchain.

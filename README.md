@@ -32,7 +32,7 @@
 
 Yidie uses Expo, React Native, TypeScript, SQLite, and a small Swift Expo module for PhotoKit and Vision. It targets iOS only.
 
-Requirements: macOS, a compatible Xcode installation, and Node.js 22 or newer. Expo Go is not sufficient because the app includes a local native module.
+Requirements: macOS, a compatible Xcode installation, and Node.js 22.13.0 or newer (`apps/mobile/.nvmrc` pins 22.21.0). Expo Go is not sufficient because the app includes a local native module.
 
 ```sh
 cd apps/mobile
