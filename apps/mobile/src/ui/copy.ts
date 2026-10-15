@@ -46,7 +46,8 @@ export const copy = {
   empty: 'Layer today into your calendar.',
   emptyHelp: 'Choose an outfit photo to make your first sticker.',
   local: 'Your photos and stickers stay on this iPhone.',
-  permissionHelp: 'Yidie only reads photos you select. Your originals stay in Apple Photos.',
+  permissionHelp:
+    'Choose the photos you want to add. Yidie copies only the photos you import; originals stay in Apple Photos.',
   permissionButton: 'Choose photos',
   permissionDenied: 'Photo access is off. Turn it on in iPhone Settings to choose photos.',
   permissionRestricted: 'Photo access is restricted by this iPhone’s settings.',
