@@ -74,11 +74,9 @@ export function PhotoImportSheet({
       );
     }
     content = (
-      <View style={styles.permissionState}>
-        <View style={styles.permissionAction}>
-          <Text style={styles.permissionHelp}>{permissionMessage}</Text>
-          {permissionButton}
-        </View>
+      <View style={styles.permissionAction}>
+        <Text style={styles.permissionHelp}>{permissionMessage}</Text>
+        {permissionButton}
       </View>
     );
   } else {
@@ -176,7 +174,6 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   heading: { fontFamily: fonts.heading, fontSize: 22, lineHeight: 30, flexShrink: 1 },
   muted: { color: colors.muted, fontSize: 13 },
-  permissionState: { flex: 1, justifyContent: 'center' },
   permissionAction: { gap: 18, width: '100%' },
   permissionHelp: { textAlign: 'center', color: colors.ink, fontSize: 15, lineHeight: 22 },
   loading: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
