@@ -10,7 +10,7 @@ Updated 2026-10-15. This page records the latest reproducible checks. Feature ac
 - `python3 scripts/check_packet.py` validates local document links, absence of retired HTML prototypes, SQLite schema and migrations, transaction behavior, and generated schema consistency.
 - GitHub Actions builds the unsigned Simulator Release app with the pinned Xcode 26.6 toolchain. This build does not sign or install an app on a physical iPhone.
 
-The full workflow passed for the publication-hygiene revision [`938a44f`](https://github.com/tech-zjf/Yidie/commit/938a44f8b14593cf52e55a5f55bf7a08dbd6ddde) in [run 38723085427](https://github.com/tech-zjf/Yidie/actions/runs/38723085427).
+The full workflow passed for the published development snapshot [`82999b3`](https://github.com/tech-zjf/Yidie/commit/82999b324f16c9602fee30e74e5be89120899ad9) in [run 38724907099](https://github.com/tech-zjf/Yidie/actions/runs/38724907099). This includes the reduced-motion preference in every system sheet and the current documentation checks.
 
 ## Runtime evidence
 

@@ -18,7 +18,7 @@ Updated 2026-10-15. Yidie is an offline-first iOS development build, not a relea
 - `sh scripts/check_native.sh`: Swift safety tests and iOS core typecheck.
 - `python3 scripts/check_packet.py`: documentation links, publication hygiene, SQLite schema/migrations, and repository contracts.
 - A dedicated iOS 27 Simulator preview used synthetic data to inspect the calendar, same-day stacks, outline preview/save, All Records, and import states. An iOS 26.1 Simulator completed an empty-backup save/restore through Files and reopened the calendar. An empty-month PNG was saved and opened in Preview.
-- The latest completed hosted build at this review, [GitHub Actions run 38723085427](https://github.com/tech-zjf/Yidie/actions/runs/38723085427), passed JavaScript checks, tests, iOS export, native safety tests, Expo prebuild, CocoaPods, and an unsigned Simulator Release build on Xcode 26.6. Later runs are linked from the [build log](09-build-log.md).
+- [GitHub Actions run 38724907099](https://github.com/tech-zjf/Yidie/actions/runs/38724907099) passed for the current app source, including JavaScript checks, tests, iOS export, native safety tests, Expo prebuild, CocoaPods, and an unsigned Simulator Release build on Xcode 26.6. See the [build log](09-build-log.md) for reproducible local commands.
 
 These checks did not use a physical iPhone, personal Photos library, Developer Mode, signing identity, certificate, or keychain. Synthetic previews do not prove Apple Vision cutout quality or real-photo import behavior.
 
