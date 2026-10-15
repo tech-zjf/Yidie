@@ -55,6 +55,8 @@ Installing on a personal iPhone requires building and signing with your own Appl
 
 Yidie copies only photos the user selects. PhotoKit requests disable network access; the app does not fetch iCloud originals on its own. Deleting a Yidie record never deletes the source from Apple Photos. The app's own database and copies are local and excluded from system backup. A `.yidie` backup package contains unencrypted copies of those records and images; choose its destination yourself and keep it private. Until a backup has been created and verified, uninstalling Yidie can remove local records and imported copies. Do not use this development build as the only archive of important photos.
 
+Photo browsing creates a capped, temporary thumbnail cache that can be rebuilt from the local library; it is not included in `.yidie` export packages.
+
 Never attach personal outfit photos, databases, signing files, provisioning profiles, or device identifiers to issues. Use synthetic or explicitly consented test material.
 
 ## Project map
