@@ -45,7 +45,12 @@ export function CalendarScreen({
   return (
     <SafeAreaView style={styles.page}>
       <View style={styles.top}>
-        <View style={styles.wordmark} accessibilityLabel={copy.name}>
+        <View
+          style={styles.wordmark}
+          accessible
+          accessibilityRole="header"
+          accessibilityLabel={copy.name}
+        >
           <BrandMark />
           <Text style={styles.brand}>{copy.name}</Text>
         </View>

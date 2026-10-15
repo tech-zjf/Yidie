@@ -194,7 +194,11 @@ function DayContents({
     <>
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text accessibilityRole="header" accessibilityLabel={date ?? ''} style={styles.title}>
+          <Text
+            accessibilityRole="header"
+            accessibilityLabel={date ? `${copy.dayTitle(date)}, ${date.slice(0, 4)}` : ''}
+            style={styles.title}
+          >
             {date ? copy.dayTitle(date) : ''}
           </Text>
           <Text style={styles.help}>

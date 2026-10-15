@@ -194,5 +194,8 @@ export const copy = {
     SKIPPED_STORAGE: 'This photo was skipped because storage is low. Free space and retry.',
     READ_CANCELLED: 'Reading stopped. You can retry when you’re ready.',
   } as Record<string, string>,
-  dayLabel: (date: string, count: number) => `${date}, ${count} outfit${count === 1 ? '' : 's'}`,
+  dayLabel: (date: string, count: number) => {
+    const outfitCount = count === 0 ? 'no outfits' : `${count} outfit${count === 1 ? '' : 's'}`;
+    return `${copy.dayTitle(date)}, ${date.slice(0, 4)}, ${outfitCount}`;
+  },
 };
