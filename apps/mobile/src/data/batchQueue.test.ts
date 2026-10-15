@@ -190,6 +190,44 @@ test('backup suspension waits for the active photo and resumes only work it susp
   assert.equal((await r.repository.get('b'))?.status, 'ready');
   assert.equal((await r.repository.get('old'))?.status, 'paused');
 });
+test('failed backup suspension restores a queue that was already running', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+  await r.repository.queueBatch([item('a'), item('b')]);
+
+  const pauseQueued = r.repository.pauseQueued.bind(r.repository);
+  let failBackgroundPause = true;
+  r.repository.pauseQueued = async (reason) => {
+    if (reason === 'background' && failBackgroundPause) {
+      failBackgroundPause = false;
+      throw new Error('PAUSE_FAILED');
+    }
+    return pauseQueued(reason);
+  };
+
+  const entered = latch();
+  const release = latch();
+  const actions = createEntryActions(r.repository, {
+    ...processor,
+    createSticker: async (id) => {
+      if (id === 'a') {
+        entered.resolve();
+        await release.promise;
+      }
+      return sticker(id);
+    },
+  });
+  const run = actions.queue.start();
+  await entered.promise;
+  const suspension = actions.queue.suspend();
+  release.resolve();
+
+  await assert.rejects(suspension, /PAUSE_FAILED/);
+  await run;
+  assert.ok((await r.repository.list()).every((entry) => entry.status === 'ready'));
+  assert.equal(actions.queue.getSnapshot().completed, 2);
+});
 test('restart pauses persisted jobs and requires explicit resume; old results are rejected', async (t) => {
   const r = fixture();
   t.after(() => r.sqlite.close());
