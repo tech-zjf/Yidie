@@ -72,3 +72,11 @@ Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods �
 - 另完成 iOS Simulator Release 全量编译（Xcodebuild 退出码 0，`CODE_SIGNING_ALLOWED=NO`，产物在 `/private/tmp/YidieFinalRelease`）。没有安装到实体 iPhone。
 - Device Hub 能够传递点击，但拖动没有触发可观察的月份/照片页变化。因此横向手势仍待在模拟器触摸界面或用户真机验收。此项不改变设备安全状态。
 - 所有以上操作未触碰 iPhone、照片图库、Developer Mode、Apple 账号、证书、描述文件或钥匙串。临时构建数据保留在 `/private/tmp`，可在确认不再需要后清理。
+
+## 2026-10-15 模拟器组件恢复与隔离复验
+
+- 用户授权安装 iOS Simulator 组件。Xcode 27 报告 iOS 27.0 runtime 已下载；使用 Xcode 的 `-exportPath` 和 `-importPlatform` 将 runtime 注册到 CoreSimulator。组件位于 Mac 的 CoreSimulator 管理目录，不涉及 iPhone。
+- CoreSimulator 服务恢复后，`simctl list runtimes` 能看到 iOS 26.1 与 27.0，并能创建、启动一个干净的 iPhone 17 Pro / iOS 26.1 模拟器。无签名 Release app 在该隔离模拟器安装、启动并截图成功；截图只检查应用界面。
+- iOS 27.0 runtime 当前仍无法挂载，启动时报 `Cryptex Mount Preferred`；专用 iPhone 18 Pro / iOS 27 Simulator 未能启动。Xcode 安装路径下也未发现 `Simulator.app`。后续需在 Mac 解锁后从 Xcode Settings > Components 修复/安装 Simulator app 与 runtime，再重试；在成功之前不要把本次 iOS 26.1 检查描述为 iOS 27 验收。
+- 为减少临时副本占用，已删除 `/private/tmp/yidie-ios27-platform` 中导出的 7.5 GB runtime bundle；已注册的 Simulator runtime 留在系统 CoreSimulator 目录。无须删除证书、描述文件或钥匙串授权。
+- 本轮没有连接或操作实体 iPhone，没有改变 Developer Mode、iOS、照片、签名身份或钥匙串；仅在模拟器安装 app，并在本机注册 iOS 27 runtime。
