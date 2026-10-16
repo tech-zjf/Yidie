@@ -1,38 +1,25 @@
 # Build and verification
 
-This page records current, bounded evidence. The active checklist is [TODO.md](../TODO.md); product-level risks and release gates are in the [readiness review](16-readiness-review.md). Older implementation chronology remains in Git history.
+This page records the latest bounded evidence. The [delivery board](../TODO.md) is the source of truth for open acceptance work; implementation rationale lives in the [architecture](03-architecture.md).
 
-## Current checks
+## Current source
 
-- On 2026-10-16, `cd apps/mobile && npm run check` passed strict TypeScript, ESLint, Prettier, and all 77 JavaScript tests.
-- `sh scripts/check_native.sh` passes native file-catalog, staged sticker-asset ownership, alpha-crop/geometry, thumbnail-cache, backup/restore tests, and the iOS SDK core typecheck. Its Core Image pixel stage reports `SKIP` because the current local environment cannot render a 1×1 `CIContext` probe; the alpha cropper's transparent-margin and visible-pixel assertions run before that skip.
-- `python3 scripts/check_packet.py` passes documentation links, SQL contracts, native-module inventory, and public-packet checks. `git diff --check` passes.
-- `npm run export:ios` bundles the iOS JavaScript entry and font assets.
-- A clean Expo prebuild and CocoaPods dependency installation completed for the current source. The subsequent Xcode command stopped before compiling: this local Xcode reports the generated `Yidie.xcworkspace` is not a workspace and cannot connect to CoreSimulatorService. The install lacks `Simulator.app` and an iOS runtime, so this is not accepted as a successful current-tree build or launch. A separate project-only build is invalid because it omits the CocoaPods dependency graph.
-- An earlier unsigned Release build produced a universal arm64/x86_64 Simulator app bundle but emitted `SwiftCompile ... failed with exit code 0 but produced no further output` diagnostics while compiling Expo modules. That artifact is not accepted as a clean build. Generated Pods and build products are ignored local outputs.
-- An earlier complete unsigned build and launch succeeded on an isolated iOS Simulator. That historical runtime evidence does not accept the current tree.
+GitHub Actions [run 38836727288](https://github.com/tech-zjf/Yidie/actions/runs/38836727288) passed on PR head `248abe0`:
 
-## Hosted verification for the current source
+- TypeScript, ESLint, Prettier, all 77 JavaScript tests, and iOS bundle export.
+- Documentation, database, and native-module contracts; native file ownership and backup tests; iOS SDK typecheck.
+- Expo prebuild, CocoaPods installation, and unsigned iOS Simulator Release build with Xcode 26.6.
+- Sticker/Core Image pixel assertions, current-app install and launch, and first-screen OCR for the Yidie wordmark.
 
-- GitHub Actions [run 38835296885](https://github.com/tech-zjf/Yidie/actions/runs/38835296885) passed on current head `f77e779`: TypeScript, lint, formatting, 77 JavaScript tests, iOS bundle export, docs/native contract checks, native safety tests, Expo prebuild/CocoaPods, unsigned iOS Simulator Release build with Xcode 26.6, deterministic sticker/Core Image pixel checks, current-app installation/launch, and OCR of the Yidie wordmark. It verifies compilation, renderer composition, and first-screen rendering only; interactive flows and Vision quality from a real photograph remain unaccepted.
-- GitHub Actions [run 38830000548](https://github.com/tech-zjf/Yidie/actions/runs/38830000548) passed on commit `0a762aa`: type, lint, formatting, all 77 JavaScript tests, iOS bundle export, documentation/native contracts, native safety tests, unsigned Simulator Release compilation with Xcode 26.6, deterministic sticker/Core Image pixel checks, and installation/launch of the current app with OCR confirming the Yidie wordmark. It verifies build and first render only; interactive flows and Vision quality from a real photograph remain unaccepted.
-- GitHub Actions [run 38833057549](https://github.com/tech-zjf/Yidie/actions/runs/38833057549) passed on the PR merge containing current source commit `f23928b`: type, lint, formatting, all 77 JavaScript tests, iOS bundle export, documentation/native contracts, native safety tests, unsigned Simulator Release compilation with Xcode 26.6, deterministic sticker/Core Image pixel checks, and installation/launch of the app with OCR confirming the Yidie wordmark. It verifies build, raster composition, and first render only; interactive flows and Vision quality from a real photograph remain unaccepted.
-- GitHub Actions [run 38828782894](https://github.com/tech-zjf/Yidie/actions/runs/38828782894) passed on commit `d49cce7`: type, lint, formatting, all 77 JavaScript tests, iOS bundle export, documentation/native contracts, native safety tests, unsigned Simulator Release compilation with Xcode 26.6, and synthetic sticker pixel checks on an iOS Simulator. It did not launch the full app or test Vision against a real photograph.
-- GitHub Actions [run 38804212797](https://github.com/tech-zjf/Yidie/actions/runs/38804212797) passed on commit `93b5d3a`: 76 JavaScript tests, type/lint/format checks, iOS bundle export, documentation/native contracts, Swift file and backup tests, Core Image pixel assertions, Expo prebuild, CocoaPods installation, and unsigned iOS Simulator Release compilation with Xcode 26.6.
-- GitHub Actions [run 38809374999](https://github.com/tech-zjf/Yidie/actions/runs/38809374999) passed on commit `3268fcd`: the checks above plus the dedicated fixture launched in a hosted iPhone Simulator. It verified renderer geometry and actual Core Image pixels for the white outline, shadow, zero-outline identity, stable canvas, and distinct effects.
-- GitHub Actions [run 38812014157](https://github.com/tech-zjf/Yidie/actions/runs/38812014157) passed on commit `9377601`: it installed and launched the current Release app in an isolated iPhone Simulator and used Vision OCR to confirm the Yidie wordmark rendered. The same run passed all native safety checks, the unsigned build, synthetic sticker pixels, 76 JavaScript tests, and iOS bundle export.
-- This is a launch smoke check, not a screen-by-screen walkthrough. The sticker fixture still uses synthetic transparent pixels and does not exercise Vision segmentation or real-photo appearance. The editor, gestures, date-picker, backup-error and real-photo Vision flows remain open for interactive acceptance.
+The sticker fixture uses deterministic synthetic pixels. It verifies alpha cropping, stable canvas geometry, source color, white outline and shadow, zero-width identity, and distinct style output. It does not measure Vision segmentation quality or resemblance to Apple Photos. The app smoke check verifies launch and first render, not user flows.
 
-## Sticker evidence and limits
+## Local checks and limits
 
-- A deterministic synthetic RGBA harness passed on an isolated iOS Simulator for source color/alpha, visible white outline, translucent shadow, stable effect canvas, zero-width identity, and distinct Comic/3D/Shimmer pixels. It validates Core Image composition only; it does not validate Vision segmentation, realistic edges, or resemblance to Photos. The temporary harness used for that pass was removed.
-- A reusable `npm run test:sticker:sim -- <booted-simulator-udid>` command compiles and links the same fixture for Simulator and refuses non-Simulator or unbooted IDs. It passed in hosted CI run 38809374999. This Mac still lacks a usable Simulator app and CoreSimulatorService, so local launch remains unavailable.
-- A Simulator sample was imported under Limited Photos Access. Vision was unavailable in that Simulator; the original was preserved and the UI offered retry. No cutout was produced in that session.
-- VisionKit's public subject-lifting API can return transparent foreground subjects. Apple's public API does not expose Photos' effect renderer; Yidie's styles are separate local approximations and cannot claim 1:1 parity. See the [PRD](02-prd.md) and [sticker acceptance gates](../TODO.md).
+On 2026-10-16, `npm run check` passed strict TypeScript, ESLint, Prettier, and all 77 JavaScript tests. `npm run export:ios`, `sh scripts/check_native.sh`, and `python3 scripts/check_packet.py` also passed. The local native script skipped only Core Image pixel rendering because the host could not render a 1×1 `CIContext` probe; hosted CI treats this condition as a failure and ran the full pixel fixture.
 
-## SQLite crash-report follow-up
+The current Mac has Xcode 27.0 but no installed `Simulator.app` or iOS Simulator runtime, and CoreSimulatorService refuses connections. The local Xcode project build is therefore not accepted as a build or launch result. No physical iPhone, personal photo library, signing identity, keychain, or unrelated application was accessed for these checks.
 
-An observed crash report showed a SQLite statement reset overlapping database close and a WAL checkpoint. It did not identify the initiating app action or prove which source revision was installed. The repository now owns one connection for reads and writes, serializes work and shutdown on one FIFO lane, and drains/fences work before closing. Controlled JS regressions pass. A deliberate native Simulator stress run remains open; the earlier backup restore/relaunch is lifecycle smoke coverage, not a concurrency stress test.
+Interactive calendar and sheet flows, native subject selection, real-photo appearance and performance, accessibility behavior, and physical-device acceptance remain open. See [TODO.md](../TODO.md) and the [device safety guide](15-device-test-safety-runbook.md).
 
 ## Reproduce
 
@@ -45,11 +32,11 @@ npm run export:ios
 npm run test:sticker:sim -- <booted-simulator-udid>
 ```
 
-The last command runs only on an already booted Simulator, removes its own temporary test app, and never boots or resets a device. From the repository root:
+The sticker command requires an already booted Simulator UDID, refuses physical-device identifiers, and removes its temporary test app on exit. From the repository root:
 
 ```sh
 sh scripts/check_native.sh
 python3 scripts/check_packet.py
 ```
 
-The full unsigned build procedure and signing boundaries are in the [mobile build guide](../apps/mobile/README.md). Device-test limits and the explicit real-photo consent boundary are in the [device safety guide](15-device-test-safety-runbook.md). Verification was limited to the project workspace and isolated Simulator test data; it did not access a physical iPhone, personal photo library, signing identity, keychain, or unrelated app.
+The native file and database checks do not replace a complete Xcode build or an interactive app walkthrough.

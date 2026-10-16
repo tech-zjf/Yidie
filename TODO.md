@@ -50,7 +50,7 @@ This is the single working checklist for the first public, installable release. 
 - [ ] Finish corrupt-package UI rejection and native date-picker acceptance on a supported Simulator. Backup UI save/restore passed on an isolated Simulator: save an empty `.yidie` package, select it from Files, confirm the explicit empty-library replacement warning, restore, and relaunch to the calendar. The flow exposed and fixed a document-picker URL type-hint bug; a regression test covers package URLs without `hasDirectoryPath`. Empty-month export also opened in Preview with its complete date grid visible; populated content and the optional signature remain to be visually accepted. No physical iPhone, Photos picker, or private library was used.
 - [ ] Validate VoiceOver labels/focus, large text, reduced motion, smallest supported screen, and six-week months. The brand is a heading; calendar dates use readable month/day/year labels; day-sheet photos announce their outfit and position with a swipe hint; import thumbnails announce “outfit photo” and a localized capture date when available. Focus/order and spoken behavior still require runtime verification.
 - [ ] Run a physical-device acceptance with only a user-selected test photo; verify orientation, Vision success/failure, outline quality, offline use, responsiveness, and memory. Never use or upload private photos without direct consent.
-- [ ] Record and publish only verified measurements and supported iOS/build requirements.
+- [x] Document the iOS 17 app deployment target, Expo SDK 57 minimum toolchain, pinned Node version, and CI-tested Xcode version in the mobile build guide, linked to the versioned Expo and Apple requirements.
 
 ## P2 — make the public project easy to trust and contribute to
 
