@@ -7,7 +7,7 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** Current-source GitHub Actions [run 38828782894](https://github.com/tech-zjf/Yidie/actions/runs/38828782894) passed the unsigned iOS Simulator Release build, isolated sticker pixel checks, and 77 JavaScript tests. A separate earlier Simulator launch smoke check recognized the Yidie wordmark, but these checks do not accept interactive flows or Vision quality from a real photo. This Mac currently has no working CoreSimulatorService or installed Simulator runtime. See the live [delivery board](TODO.md).
+> **Development build.** Current-source GitHub Actions [run 38830000548](https://github.com/tech-zjf/Yidie/actions/runs/38830000548) passed the unsigned iOS Simulator Release build, isolated sticker pixel checks, the current app launch/wordmark smoke check, and 77 JavaScript tests. These checks do not accept interactive flows or Vision quality from a real photo. This Mac currently has no working CoreSimulatorService or installed Simulator runtime. See the live [delivery board](TODO.md).
 
 ## What makes it different
 
