@@ -75,12 +75,20 @@ xcrun swiftc \
 codesign --force --sign - "$app_dir" >/dev/null
 xcrun simctl install "$simulator_udid" "$app_dir"
 installed=1
-output=$(xcrun simctl launch --console --terminate-running-process "$simulator_udid" "$bundle_id" 2>&1) || {
-  printf '%s\n' "$output" >&2
-  exit 1
-}
-printf '%s\n' "$output"
-printf '%s\n' "$output" | grep -Fq 'PASS sticker geometry and Core Image pixel checks' || {
-  printf '%s\n' 'Simulator process exited without the expected renderer-test success marker.' >&2
-  exit 1
-}
+launch_output=$(xcrun simctl launch --terminate-running-process "$simulator_udid" "$bundle_id")
+printf 'Launched sticker renderer fixture: %s\n' "$launch_output"
+container_path=$(xcrun simctl get_app_container "$simulator_udid" "$bundle_id" data)
+result_path="$container_path/Documents/renderer-test-result.txt"
+attempt=0
+while [ "$attempt" -lt 30 ]; do
+  if [ -f "$result_path" ]; then
+    result=$(cat "$result_path")
+    printf '%s\n' "$result"
+    [ "$result" = 'PASS sticker geometry and Core Image pixel checks' ] || exit 1
+    exit 0
+  fi
+  attempt=$((attempt + 1))
+  sleep 1
+done
+printf '%s\n' 'Simulator fixture did not write a renderer-test result within 30 seconds.' >&2
+exit 1

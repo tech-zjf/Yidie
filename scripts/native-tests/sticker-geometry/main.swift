@@ -2,9 +2,22 @@ import CoreGraphics
 import CoreImage
 import Foundation
 
+let resultURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+  .appendingPathComponent("renderer-test-result.txt")
+
+func writeResult(_ result: String) {
+  do {
+    try result.write(to: resultURL, atomically: true, encoding: .utf8)
+  } catch {
+    fputs("FAIL: couldn't persist the Simulator test result: \(error)\n", stderr)
+  }
+}
+
 func expect(_ condition: @autoclosure () -> Bool, _ message: String) {
   guard condition() else {
-    fputs("FAIL: \(message)\n", stderr)
+    let result = "FAIL: \(message)"
+    fputs("\(result)\n", stderr)
+    writeResult(result)
     exit(1)
   }
 }
@@ -198,3 +211,4 @@ for effect in [StickerEffect.comic, .dimensional, .shimmer] {
 }
 
 print("PASS sticker geometry and Core Image pixel checks")
+writeResult("PASS sticker geometry and Core Image pixel checks")
