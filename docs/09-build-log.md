@@ -4,7 +4,7 @@ This page records current, bounded evidence. The active checklist is [TODO.md](.
 
 ## Current checks
 
-- `cd apps/mobile && npm run check` passes strict TypeScript, ESLint, Prettier, and all 76 JavaScript tests.
+- On 2026-10-16, `cd apps/mobile && npm run check` passed strict TypeScript, ESLint, Prettier, and all 77 JavaScript tests.
 - `sh scripts/check_native.sh` passes native file-catalog, staged sticker-asset ownership, alpha-crop/geometry, thumbnail-cache, backup/restore tests, and the iOS SDK core typecheck. Its Core Image pixel stage reports `SKIP` because the current local environment cannot render a 1×1 `CIContext` probe; the alpha cropper's transparent-margin and visible-pixel assertions run before that skip.
 - `python3 scripts/check_packet.py` passes documentation links, SQL contracts, native-module inventory, and public-packet checks. `git diff --check` passes.
 - `npm run export:ios` bundles the iOS JavaScript entry and font assets.
@@ -14,6 +14,7 @@ This page records current, bounded evidence. The active checklist is [TODO.md](.
 
 ## Hosted verification for the current source
 
+- GitHub Actions [run 38825393330](https://github.com/tech-zjf/Yidie/actions/runs/38825393330) passed on commit `e0edb3c`: type, lint, formatting, all 77 JavaScript tests, iOS bundle export, documentation/native contracts, native safety tests, unsigned Simulator Release compilation with Xcode 26.6, and synthetic sticker pixel checks on an iOS Simulator. It did not launch the full app or test Vision against a real photograph.
 - GitHub Actions [run 38804212797](https://github.com/tech-zjf/Yidie/actions/runs/38804212797) passed on commit `93b5d3a`: 76 JavaScript tests, type/lint/format checks, iOS bundle export, documentation/native contracts, Swift file and backup tests, Core Image pixel assertions, Expo prebuild, CocoaPods installation, and unsigned iOS Simulator Release compilation with Xcode 26.6.
 - GitHub Actions [run 38809374999](https://github.com/tech-zjf/Yidie/actions/runs/38809374999) passed on commit `3268fcd`: the checks above plus the dedicated fixture launched in a hosted iPhone Simulator. It verified renderer geometry and actual Core Image pixels for the white outline, shadow, zero-outline identity, stable canvas, and distinct effects.
 - GitHub Actions [run 38812014157](https://github.com/tech-zjf/Yidie/actions/runs/38812014157) passed on commit `9377601`: it installed and launched the current Release app in an isolated iPhone Simulator and used Vision OCR to confirm the Yidie wordmark rendered. The same run passed all native safety checks, the unsigned build, synthetic sticker pixels, 76 JavaScript tests, and iOS bundle export.
