@@ -78,6 +78,7 @@ The project is licensed under [MIT](LICENSE). Bundled fonts have their own notic
 ## Project links
 
 - [Live TODO and acceptance gates](TODO.md)
+- [Changelog](CHANGELOG.md)
 - [Market research and differentiation](docs/01-research.md)
 - [Local device testing and safety guide](docs/15-device-test-safety-runbook.md)
 - [Open-source launch notes](docs/17-open-source-launch.md)
