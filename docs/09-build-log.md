@@ -15,7 +15,7 @@ The sticker fixture uses deterministic synthetic pixels. It verifies alpha cropp
 
 ## Local checks and limits
 
-On 2026-10-16, `npm run check` passed strict TypeScript, ESLint, Prettier, and all 80 JavaScript tests. `npm run export:ios`, `sh scripts/check_native.sh`, and `python3 scripts/check_packet.py` also passed. The local native script skipped only Core Image pixel rendering because the host could not render a 1×1 `CIContext` probe; hosted CI treats this condition as a failure and ran the full pixel fixture.
+On 2026-10-16, the current local tree passed `npm run check` with strict TypeScript, ESLint, Prettier, and all 81 JavaScript tests, including a multi-subject, mixed-aspect-ratio resolution-invariance check for same-day sticker stacks. `npm run export:ios`, `sh scripts/check_native.sh`, and `python3 scripts/check_packet.py` also passed. The local native script skipped only Core Image pixel rendering because the host could not render a 1×1 `CIContext` probe; hosted CI treats this condition as a failure and ran the full pixel fixture on the verified source snapshot above.
 
 The current Mac has Xcode 27.0 but no installed `Simulator.app` or iOS Simulator runtime, and CoreSimulatorService refuses connections. The local Xcode project build is therefore not accepted as a build or launch result. No physical iPhone, personal photo library, signing identity, keychain, or unrelated application was accessed for these checks.
 

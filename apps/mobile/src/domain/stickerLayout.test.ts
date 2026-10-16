@@ -37,3 +37,18 @@ test('calendar sticker scale depends on the cropped subject shape, not source re
 
   assert.deepEqual(largeExport, smallExport);
 });
+
+test('same-day stack geometry is invariant when every cropped cutout uses a different resolution', () => {
+  const cell = { width: 48, height: 58 };
+  const subjects = [
+    { width: 120, height: 500 },
+    { width: 400, height: 210 },
+    { width: 300, height: 310 },
+  ];
+  const highResolutionSubjects = subjects.map(({ width, height }) => ({
+    width: width * 8,
+    height: height * 8,
+  }));
+
+  assert.deepEqual(stickerLayout(highResolutionSubjects, cell), stickerLayout(subjects, cell));
+});
