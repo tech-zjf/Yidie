@@ -15,6 +15,7 @@ function entry(id: string, date: string, index: number, ready = true): Entry {
     stickerPath: ready ? `stickers/${id}-v0.png` : null,
     cutoutPath: null,
     thumbnailPath: ready ? `previews/${id}-v0.png` : null,
+    effect: 'outline',
     borderWidth: 4,
     borderColor: '#FFFFFF',
     styleRevision: 0,

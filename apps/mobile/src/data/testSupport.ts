@@ -4,8 +4,8 @@ import { createEntryRepository } from './entryRepository';
 import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
 import { createWriteTransaction } from './writeTransaction';
 import type { ImportedPhoto, Sticker } from '../domain/records';
-export function fixture() {
-  const sqlite = new DatabaseSync(':memory:');
+export function fixture(filename = ':memory:') {
+  const sqlite = new DatabaseSync(filename);
   sqlite.exec('PRAGMA foreign_keys=ON');
   const db: SqlDatabase = {
     execAsync: async (sql) => {
@@ -42,6 +42,7 @@ export function sticker(id: string): Sticker {
     width: 100,
     height: 200,
     instanceCount: 1,
+    effect: 'outline',
     borderWidth: 4,
     borderColor: '#FFFFFF',
     styleRevision: 0,

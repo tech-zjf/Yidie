@@ -1,7 +1,7 @@
 import { Alert, KeyboardAvoidingView, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { RecordImage } from './RecordImage';
-import type { Entry, StickerBorderColor } from '../../domain/records';
+import type { Entry, StickerBorderColor, StickerEffect } from '../../domain/records';
 import type { AppServices } from '../../services';
 import { Button } from '../../ui/Button';
 import { NativeDateField } from '../../ui/NativeDateField';
@@ -44,7 +44,7 @@ export function EntryEditor({
               <Image
                 source={{
                   uri: services.rootUri + model.stylePreview.thumbnailPath,
-                  cacheKey: model.stylePreview.thumbnailPath,
+                  cacheKey: `${model.stylePreview.thumbnailPath}:${model.stylePreviewToken}`,
                 }}
                 contentFit="contain"
                 style={styles.image}
@@ -60,7 +60,11 @@ export function EntryEditor({
               />
             )}
             <Text style={styles.muted}>
-              {model.stylePreview ? copy.previewNotSaved : copy.recordState[current.status]}
+              {model.stylePreview
+                ? copy.previewNotSaved
+                : model.busy && current.status === 'ready'
+                  ? copy.updatingSticker
+                  : copy.recordState[current.status]}
             </Text>
             {!!model.error && (
               <Text accessibilityRole="alert" style={{ color: colors.danger }}>
@@ -72,7 +76,7 @@ export function EntryEditor({
               <View style={styles.styleSection}>
                 <Button
                   label={copy.shareSticker}
-                  disabled={model.busy || !!model.stylePreview}
+                  disabled={model.busy || model.styleChanged || !!model.stylePreview}
                   onPress={() =>
                     void services.photos
                       .shareSticker(current.id, current.styleRevision)
@@ -87,75 +91,153 @@ export function EntryEditor({
                 <Text accessibilityRole="header" style={styles.sectionTitle}>
                   {copy.stickerStyle}
                 </Text>
-                <Text style={styles.muted}>{copy.outlineWidth}</Text>
-                <View style={styles.options}>
-                  {[0, 2, 4, 6, 8].map((width) => (
+                <Button
+                  label={model.subjectsVisible ? copy.cancel : copy.chooseSubject}
+                  disabled={model.busy}
+                  onPress={model.toggleSubjectPicker}
+                />
+                {model.subjectsVisible && model.subjectCandidates && (
+                  <View style={styles.subjectPicker}>
+                    <Text style={styles.muted}>{copy.subjectHelp}</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.subjectCandidates}
+                    >
+                      {model.subjectCandidates.map((candidate, index) => (
+                        <Pressable
+                          key={candidate.path}
+                          disabled={model.busy}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: model.selectedSubjectCandidatePath === candidate.path,
+                            disabled: model.busy,
+                          }}
+                          accessibilityLabel={copy.subjectCandidate(index)}
+                          onPress={() => model.chooseSubject(candidate)}
+                          style={[
+                            styles.subjectOption,
+                            model.selectedSubjectCandidatePath === candidate.path &&
+                              styles.selectedSubject,
+                            model.busy && styles.disabledOption,
+                          ]}
+                        >
+                          <Image
+                            source={{
+                              uri: services.rootUri + candidate.path,
+                              cacheKey: candidate.path,
+                            }}
+                            contentFit="contain"
+                            style={styles.subjectImage}
+                            accessible={false}
+                          />
+                          <Text numberOfLines={1} style={styles.subjectLabel}>
+                            {copy.subjectCandidate(index)}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.effects}
+                >
+                  {(
+                    ['original', 'outline', 'comic', 'dimensional', 'shimmer'] as StickerEffect[]
+                  ).map((effect) => (
                     <Pressable
-                      key={width}
+                      key={effect}
                       disabled={model.busy}
                       accessibilityRole="button"
                       accessibilityState={{
-                        selected: model.borderWidth === width,
+                        selected: model.effect === effect,
                         disabled: model.busy,
                       }}
-                      accessibilityLabel={copy.outlineWidthOption(width)}
-                      onPress={() => model.setBorderWidth(width)}
+                      accessibilityLabel={copy.stickerEffects[effect]}
+                      onPress={() => model.setEffect(effect)}
                       style={[
-                        styles.widthOption,
-                        model.borderWidth === width && styles.selectedOption,
+                        styles.effectOption,
+                        model.effect === effect && styles.selectedEffect,
                         model.busy && styles.disabledOption,
                       ]}
                     >
-                      <Text style={model.borderWidth === width ? styles.selectedText : undefined}>
-                        {width === 0 ? copy.none : width}
+                      <Text
+                        numberOfLines={1}
+                        style={model.effect === effect ? styles.selectedText : undefined}
+                      >
+                        {copy.stickerEffects[effect]}
                       </Text>
                     </Pressable>
                   ))}
-                </View>
-                <Text style={styles.muted}>{copy.outlineColor}</Text>
-                <View style={styles.options}>
-                  {(
-                    [
-                      ['#FFFFFF', copy.white],
-                      ['#242424', copy.inkColor],
-                      ['#0786A8', copy.blue],
-                    ] as [StickerBorderColor, string][]
-                  ).map(([color, label]) => (
-                    <Pressable
-                      key={color}
-                      disabled={model.busy}
-                      accessibilityRole="button"
-                      accessibilityState={{
-                        selected: model.borderColor === color,
-                        disabled: model.busy,
-                      }}
-                      accessibilityLabel={label}
-                      onPress={() => model.setBorderColor(color)}
-                      style={[
-                        styles.colorOption,
-                        { backgroundColor: color },
-                        model.borderColor === color && styles.selectedColor,
-                        model.busy && styles.disabledOption,
-                      ]}
-                    />
-                  ))}
-                </View>
+                </ScrollView>
+                {model.effect === 'outline' && (
+                  <>
+                    <Text style={styles.muted}>{copy.outlineWidth}</Text>
+                    <View style={styles.options}>
+                      {[2, 4, 6, 8].map((width) => (
+                        <Pressable
+                          key={width}
+                          disabled={model.busy}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: model.borderWidth === width,
+                            disabled: model.busy,
+                          }}
+                          accessibilityLabel={copy.outlineWidthOption(width)}
+                          onPress={() => model.setBorderWidth(width)}
+                          style={[
+                            styles.widthOption,
+                            model.borderWidth === width && styles.selectedOption,
+                            model.busy && styles.disabledOption,
+                          ]}
+                        >
+                          <Text
+                            style={model.borderWidth === width ? styles.selectedText : undefined}
+                          >
+                            {width}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                    <Text style={styles.muted}>{copy.outlineColor}</Text>
+                    <View style={styles.options}>
+                      {(
+                        [
+                          ['#FFFFFF', copy.white],
+                          ['#242424', copy.inkColor],
+                          ['#0786A8', copy.blue],
+                        ] as [StickerBorderColor, string][]
+                      ).map(([color, label]) => (
+                        <Pressable
+                          key={color}
+                          disabled={model.busy}
+                          accessibilityRole="button"
+                          accessibilityState={{
+                            selected: model.borderColor === color,
+                            disabled: model.busy,
+                          }}
+                          accessibilityLabel={label}
+                          onPress={() => model.setBorderColor(color)}
+                          style={[
+                            styles.colorOption,
+                            { backgroundColor: color },
+                            model.borderColor === color && styles.selectedColor,
+                            model.busy && styles.disabledOption,
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  </>
+                )}
                 <Text style={styles.muted}>{copy.styleHelp}</Text>
-                <Button
-                  label={model.busy ? copy.processing : copy.previewStyle}
-                  onPress={model.previewStyle}
-                  disabled={
-                    disabled ||
-                    (model.borderWidth === current.borderWidth &&
-                      model.borderColor === current.borderColor)
-                  }
-                />
                 {!!model.stylePreview && (
                   <Button
                     primary
                     label={copy.saveStyle}
                     onPress={model.saveStickerStyle}
-                    disabled={disabled}
+                    disabled={disabled || !model.styleChanged}
                   />
                 )}
               </View>
@@ -223,6 +305,32 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: 260 },
   field: { gap: 12 },
   styleSection: { gap: 10, paddingTop: 8 },
+  subjectPicker: { gap: 10 },
+  subjectCandidates: { gap: 10, paddingVertical: 4 },
+  subjectOption: {
+    width: 88,
+    minHeight: 126,
+    padding: 7,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.line,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  selectedSubject: { borderColor: colors.action, borderWidth: 2 },
+  subjectImage: { width: 72, height: 92 },
+  subjectLabel: { width: '100%', textAlign: 'center', fontSize: 12 },
+  effects: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingRight: 8 },
+  effectOption: {
+    minWidth: 88,
+    minHeight: 40,
+    paddingHorizontal: 8,
+    borderRadius: 20,
+    backgroundColor: colors.wash,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedEffect: { backgroundColor: colors.action },
   sectionTitle: { fontFamily: fonts.heading, fontSize: 20, lineHeight: 28 },
   options: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   widthOption: {

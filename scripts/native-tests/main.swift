@@ -7,6 +7,7 @@ try fm.createDirectory(at: sandbox, withIntermediateDirectories: true)
 defer { try? fm.removeItem(at: sandbox) }
 let root = sandbox.appendingPathComponent("owned", isDirectory: true)
 for folder in ImageFileCatalog.extensions.keys { try fm.createDirectory(at: root.appendingPathComponent(folder), withIntermediateDirectories: true) }
+try fm.createDirectory(at: root.appendingPathComponent("drafts"), withIntermediateDirectories: true)
 try fm.createDirectory(at: root.appendingPathComponent("database"), withIntermediateDirectories: true)
 let id = "AAAAAAAA-0000-4000-8000-000000000001"
 let second = "BBBBBBBB-0000-4000-8000-000000000002"
@@ -22,6 +23,11 @@ for (folder, ext) in [("stickers", "png"), ("previews", "png")] {
   try content.write(to: root.appendingPathComponent("\(folder)/\(id)-v2.\(ext)"))
 }
 try content.write(to: root.appendingPathComponent("previews/\(second).png"))
+try content.write(to: root.appendingPathComponent("cutouts/\(id)-v2.png"))
+let subjectDraft = root.appendingPathComponent("drafts/\(id)-DDDDDDDD-0000-4000-8000-000000000004-subject-1.png")
+try content.write(to: subjectDraft)
+let unknownDraft = root.appendingPathComponent("drafts/notes.png")
+try content.write(to: unknownDraft)
 let unknown = root.appendingPathComponent("originals/notes.txt")
 let database = root.appendingPathComponent("database/yidie.sqlite")
 let outside = sandbox.appendingPathComponent("outside.jpg")
@@ -29,7 +35,7 @@ for file in [unknown, database, outside] { try content.write(to: file) }
 try fm.createSymbolicLink(at: root.appendingPathComponent("photo-previews/\(linked).jpg"), withDestinationURL: outside)
 let catalog = ImageFileCatalog(root: root)
 check(try catalog.importIDs() == [id, second])
-try catalog.pruneStickerStyles(id, keeping: 2)
+try catalog.pruneStickerStyles(id, keeping: 2, cutoutPath: "cutouts/\(id)-v2.png")
 for (folder, ext) in [("stickers", "png"), ("previews", "png")] {
   check(!fm.fileExists(atPath: root.appendingPathComponent("\(folder)/\(id).\(ext)").path))
   for revision in [0, 1] {
@@ -37,6 +43,8 @@ for (folder, ext) in [("stickers", "png"), ("previews", "png")] {
   }
   check(try Data(contentsOf: root.appendingPathComponent("\(folder)/\(id)-v2.\(ext)")) == content)
 }
+check(try Data(contentsOf: root.appendingPathComponent("cutouts/\(id)-v2.png")) == content)
+mustReject { try catalog.pruneStickerStyles(id, keeping: 2, cutoutPath: "cutouts/\(second)-v2.png") }
 try catalog.remove(id)
 try catalog.remove(id) // Repeated deletion is safe after an interruption.
 check(try catalog.importIDs() == [second])
@@ -44,12 +52,16 @@ for revision in [0, 1] {
   check(!fm.fileExists(atPath: root.appendingPathComponent("stickers/\(id)-v\(revision).png").path))
   check(!fm.fileExists(atPath: root.appendingPathComponent("previews/\(id)-v\(revision).png").path))
 }
+check(!fm.fileExists(atPath: root.appendingPathComponent("cutouts/\(id)-v2.png").path))
+check(!fm.fileExists(atPath: subjectDraft.path))
+check(try Data(contentsOf: unknownDraft) == content)
 for file in [unknown, database, outside] { check(try Data(contentsOf: file) == content) }
 func mustReject(_ action: () throws -> Void) {
   do { try action(); fatalError("Expected rejection") } catch { }
 }
 mustReject { try catalog.remove("../outside") }
 mustReject { try catalog.remove(linked) }
+mustReject { _ = try NativeFileStore.cutoutFile("../outside", relativePath: "cutouts/../outside.png") }
 let previews = root.appendingPathComponent("previews")
 try fm.removeItem(at: previews)
 try fm.createSymbolicLink(at: previews, withDestinationURL: sandbox)

@@ -1,7 +1,7 @@
 import { schema, migrations } from './schema.generated';
 import type { SqlDatabase, WriteTransaction } from './sqlDatabase';
 
-const currentVersion = 5;
+const currentVersion = 6;
 
 export async function initializeDatabase(db: SqlDatabase, write: WriteTransaction) {
   await db.execAsync(

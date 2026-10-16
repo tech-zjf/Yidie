@@ -66,3 +66,47 @@ jobs:
           -derivedDataPath "$RUNNER_TEMP/yidie-derived-data"
           CODE_SIGNING_ALLOWED=NO build
         working-directory: apps/mobile/ios
+      - name: Run sticker pixel checks in an iOS Simulator
+        shell: bash
+        run: |
+          selection=$(xcrun simctl list devices available --json | node -e '
+            let input = "";
+            process.stdin.setEncoding("utf8");
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const devices = Object.values(JSON.parse(input).devices ?? {}).flat()
+                .filter(device => device.isAvailable !== false
+                  && device.deviceTypeIdentifier?.startsWith("com.apple.CoreSimulator.SimDeviceType.iPhone"));
+              const device = devices.find(item => item.state === "Booted") ?? devices[0];
+              if (!device) process.exit(1);
+              process.stdout.write(`${device.udid}\t${device.state}`);
+            });
+          ')
+          simulator_udid=${selection%%$'\t'*}
+          simulator_state=${selection#*$'\t'}
+          if [ -z "$simulator_udid" ]; then
+            printf '%s\n' 'No available iPhone Simulator is installed.' >&2
+            exit 1
+          fi
+          if [ "$simulator_state" != 'Booted' ]; then
+            xcrun simctl boot "$simulator_udid"
+          fi
+          shutdown_simulator() {
+            xcrun simctl shutdown "$simulator_udid" >/dev/null 2>&1 || true
+          }
+          trap shutdown_simulator EXIT
+          xcrun simctl bootstatus "$simulator_udid" -b
+          npm run test:sticker:sim -- "$simulator_udid"
+          app_path="$RUNNER_TEMP/yidie-derived-data/Build/Products/Release-iphonesimulator/Yidie.app"
+          if [ ! -d "$app_path" ]; then
+            printf 'Built app not found: %s\n' "$app_path" >&2
+            exit 1
+          fi
+          xcrun simctl install "$simulator_udid" "$app_path"
+          launch_output=$(xcrun simctl launch --terminate-running-process "$simulator_udid" com.techzjf.yidie)
+          printf 'Launched current Yidie build: %s\n' "$launch_output"
+          sleep 5
+          screenshot_path="$RUNNER_TEMP/yidie-simulator-launch.png"
+          xcrun simctl io "$simulator_udid" screenshot "$screenshot_path" >/dev/null
+          swift "$GITHUB_WORKSPACE/scripts/assert_simulator_launch.swift" "$screenshot_path"
+        working-directory: apps/mobile

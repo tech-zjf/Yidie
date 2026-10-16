@@ -1,104 +1,36 @@
-# 真机开发者测试与安全回退记录
+# 本地设备测试与安全回退指南
 
-记录日期：2026-10-15
-适用项目：衣叠（`com.techzjf.yidie`）
-范围：个人 Apple 账号免费签名、Xcode 本地构建与本人 iPhone 测试。此记录不包含手机序列号或 UDID。
+本文是适用于贡献者的通用检查清单，不记录任何人的 Apple 账号、设备型号或系统状态、设备标识、证书信息、钥匙串权限或本机路径。设备专属的操作记录应保存在仓库之外，并避免提交到 Git。
 
-> 状态边界：下方 10 月 14 日的证书、开发者模式和衣叠安装信息是当时的最后一次详细核验，不代表手机从恢复模式更新后的当前状态。用户于 10 月 15 日提供的 Finder 截图显示 iPhone 13 Pro 已连接、运行 iOS 27.0.1、显示 47.21 GB 可用空间且同步步骤为 3/3；这只能证明 Finder 当时识别到设备和系统信息，不能证明衣叠是否已恢复、衣叠本地记录是否保留，也不能确认 Developer Mode 或开发者信任状态。恢复后这些状态尚未重新核验。任何后续真机操作前，应先由用户在手机上确认衣叠和记录；不要根据旧状态切换开发者模式、重新信任、重装、卸载或抹除。
+## 开始前
 
-## 当前状态
+- 优先使用无签名 iOS Simulator 和合成数据验证界面、日历布局与本地图片流程。
+- 真机测试前，确认照片和应用数据已有可用备份，并确认目标设备与本次操作范围。
+- 仅在测试确实需要时才连接设备、授予照片访问权限或启用开发者功能；说明可能影响后再操作。
+- 不要为测试选择“恢复设备”“抹掉内容和设置”、卸载应用或删除钥匙串身份。需要这些动作时，先停止并单独评估影响。
+- 不要把个人照片、数据库、备份包、签名身份、私钥、描述文件、Team ID、设备标识或账户截图提交到仓库、Issue 或 CI。
 
-- Apple 账号已在 Xcode 登录，使用免费 Personal Team；没有加入每年收费的 Apple Developer Program，也没有发生付费。
-- Xcode 为衣叠启用了自动签名，并在本机登录钥匙串创建/使用 Apple Development 签名身份及 Xcode 管理的开发描述文件；该描述文件将本人 iPhone 注册为开发测试设备。
-- 截至 2026-10-14，iPhone 的 Developer Mode 已由用户开启，用户也信任了衣叠的开发者签名；恢复模式和系统更新之后的状态未知。
-- 截至 2026-10-14，bundle ID `com.techzjf.yidie`、版本 `0.1.0` 的衣叠修复版已安装并启动。2026-10-15 的 Finder 截图不能确认恢复后的衣叠安装状态或本地记录是否保留。
-- 用户在 macOS 钥匙串弹窗中选择了“始终允许”，授权 `codesign` 使用本机 Apple Development 私钥。这个授权保存在 Mac 登录钥匙串中，仍可撤销。
-- 在系统允许的只读检查中，Mac 找到 1 个有效的 Apple Development 签名身份，且 Debug app 签名验证通过。先前受限命令环境报告的“未受信任”是沙箱读取钥匙串导致的误报，不是证书故障。
-- 2026-10-14 已在 `/private/tmp/yidie-scene-device/Build/Products/Release-iphoneos/app.app` 构建修复后的签名 Release 包。签名身份为本机已有的 Apple Development；描述文件包含这台已授权测试设备，至 2026-10-21 17:42 CST 到期。安装包含 `main.jsbundle`，并已确认 `UIApplicationSceneManifest` 指向 `EXExpoAppSceneDelegate`。
-- 修复版已用相同 bundle ID 覆盖安装到 iPhone，并通过 `devicectl` 成功启动。安装前后 iOS 返回的衣叠数据容器路径 UUID 不同；仅凭容器标识无法确认此前 app 内数据是否迁移/保留。停止进一步设备操作，不卸载、不清除、不恢复；需在手机上由用户检查衣叠本地记录是否仍在。
-- Release 描述文件到期时间为 2026-10-21 09:42 UTC；Personal Team 免费测试签名有 7 天有效期。Xcode 构建过程另打印了一条未解释的账号凭据警告，但构建、签名核验和描述文件核验均成功；本轮没有重置或修改 Xcode 账号凭据。
-- 已通过用户提供的衣叠单 app 崩溃报告定位到启动故障。报告显示 iOS 27.0.1 在 UIKit 创建首个场景时，因为 app 未采用 Scene 生命周期而触发 `EXC_BREAKPOINT (SIGTRAP)`；故障栈位于 `UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption`，发生在 React Native/JavaScript 界面启动之前。不是照片、数据库、签名信任或用户操作导致，也没有证据表明 app 数据损坏。没有查看其他 app 的报告内容。
+## 签名与安装
 
-## 已确认的问题与判断边界
+- 在自己的 Mac 上使用 Xcode 管理的开发签名；仓库不保存证书、私钥、描述文件或团队标识。
+- 安装前核对 bundle identifier、构建配置、目标设备和签名身份。不要用生产或他人身份签名。
+- 免费个人开发签名只用于个人开发测试，存在设备和有效期限制，不等同于面向公众的分发方案。以 Apple 当前说明为准：[About your developer account](https://developer.apple.com/help/account/basics/about-your-developer-account)。
+- 分享构建产物前，确认其中不含个人数据、签名材料、调试密钥或本机路径。
 
-这次已安装的签名 Release 包含有效的 `main.jsbundle`，但它是使用 Xcode 27 / iOS 27 SDK 构建的 Expo SDK 57 应用，仍保留旧的 application-based 生命周期，因此会在 JS 运行前被 iOS 27 主动终止。
+## 测试中
 
-源码修复：在 `apps/mobile/app.json` 的 `expo-build-properties` 中启用 `ios.enableSceneSupport`。Expo 官方回移插件会让 AppDelegate 提供 React Native factory，并在 Info.plist 声明 `EXExpoAppSceneDelegate`，将窗口创建与 React Native 启动交给 Scene 生命周期。该选项要求 Expo 57.0.23 或更新版本；本项目安装的是 Expo 57.0.28，满足要求。生成后的本地 Info.plist 与 AppDelegate 已确认包含 Scene 配置。
+- 导入明确选定的照片；不要扫描整个图库。验证删除应用内记录不会删除 Apple Photos 原图。
+- 使用合成数据测试备份、恢复、导出、分享、失败与重复点击等流程；涉及真实数据时先做独立备份。
+- 记录测试结论时只写可复现的产品行为和环境类别。不要记录序列号、UDID、Apple ID、个人目录、配置文件到期时间或钥匙串授权细节。
+- 如出现系统恢复界面、数据状态不明确、签名提示反复出现或设备行为异常，立即停止测试，不要连续尝试更新、恢复、卸载或重装。
 
-Prebuild 清理并重新生成了被 Git 忽略的 `ios/` 原生目录；Pods 已安装。iOS 27 模拟器 Release 构建和启动通过，日历主界面可见。修复版真机 Release 构建、签名和启动也成功，尚未验证真实照片处理、贴纸生成或日历上的现有记录。
+## 测试结束与清理
 
-### 本轮 Mac 构建工具变更
+- 先确认应用数据和原始照片状态，再清理临时构建产物或模拟器测试数据。
+- 不要删除可能被其他项目共用的证书、私钥、Apple 账号、工具链或系统服务。
+- 如要撤销某项授权，只撤销本次明确创建且确认未被其他项目使用的权限；保留回退步骤和检查结果，但将设备专属记录存放在 Git 仓库之外。
+- 关闭开发者功能或移除测试 app 前，确认不会影响用户仍在使用的调试任务或本地数据。
 
-- 用户授权安装免费 CMake 与 CocoaPods 构建依赖。已安装 CMake 4.4.4；`pod install --no-repo-update` 成功，没有更新 CocoaPods spec repo，也没有从 GitHub 下载 Hermes 源码（使用本地缓存的预构建产物）。
-- Homebrew 安装 CMake 时自动执行清理，意外移除了原有 `python@3.13` 和 `ripgrep`，并自动更新 Homebrew taps。随后已关闭自动更新/清理并恢复这两个工具；恢复时 Homebrew 将 Python 从 3.13.11 更新至 3.13.16、ripgrep 从 15.1.0 更新至 15.2.0，并更新 ca-certificates、OpenSSL、readline、SQLite、xz、pcre2。没有运行 `brew cleanup`。
-- 如开发结束后确认不再需要 CMake，可运行 `HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew uninstall cmake`。这不会自动回退上面 Homebrew 依赖的版本变更；不建议为了回退这些共享工具而强制降级，先检查其他项目是否使用它们。
-- 真机签名构建需要在这次命令中指定 `CODE_SIGN_IDENTITY='Apple Development'`、`DEVELOPMENT_TEAM` 和自动签名；没有改写 Xcode 项目签名设置、证书或钥匙串访问控制。
+## 贡献者检查
 
-## 下次测试步骤
-
-1. 修复版已安装并启动。用户先在手机上检查衣叠原有本地记录是否存在；若记录缺失或不确定，先停，不卸载或清理。
-2. 确认本地记录情况后，再由用户选择是否继续真机交互验收；在授权之前不要打开系统照片选择器或授予额外权限。
-3. 任何需要更改安全设置、移除证书、清除 app 数据或接受新条款的操作都先停下并明确说明。
-
-免费 Personal Team 适合个人设备测试，不等于可长期分发给他人：Apple 说明其测试描述文件 7 天到期；届时需重新签名并安装。免费方案的 App ID、设备和设备安装 app 数量也有限制。见 [Apple Developer 账号说明](https://developer.apple.com/help/account/basics/about-your-developer-account)。
-
-## 安全变更与回退
-
-| 项目 | 当前状态 | 回退方法与注意事项 |
-| --- | --- | --- |
-| iPhone Developer Mode | 2026-10-14 最后确认已开启；系统恢复/更新后未知 | 先在手机“设置 → 隐私与安全性 → 开发者模式”只读查看。未经用户明确同意，不要切换或重启。关闭时按系统提示重启即可，不需要恢复系统。 |
-| iPhone 对开发者的信任 | 2026-10-14 最后确认用户已信任；系统恢复/更新后未知 | 先在“设置 → 通用 → VPN 与设备管理”只读查看。不要为确认状态删除配置或点击会影响同一开发者其他 app 的批量撤销。 |
-| 衣叠安装与记录 | 修复版曾安装并启动；恢复后的 app 和本地记录状态未知 | 由用户先在手机上确认衣叠是否存在、记录是否可见。未确认前不卸载、不重装、不清除数据或恢复；卸载可能删除衣叠沙盒数据库、导入副本和贴纸，但不会删除 Apple Photos 中的原图。 |
-| iOS 27 Scene 生命周期项目配置 | `apps/mobile/app.json` 已设置 `ios.enableSceneSupport: true`；生成的 `ios/` 目录被 Git 忽略。修复版已在模拟器和 iPhone 上构建、安装并启动 | 如需回退，删除 `enableSceneSupport` 属性或设为 `false`，再重新运行 Expo prebuild。回退会恢复旧的无 Scene 生命周期配置，在 iOS 27 SDK 下会再次无法启动；不要为解决本问题回退。 |
-| Mac CMake | Homebrew CMake 4.4.4 已安装，本轮用于本地 iOS 构建 | 如确认其他本地项目不依赖，可用 `HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 brew uninstall cmake` 移除。恢复原先 Python/ripgrep 版本及 Homebrew 依赖版本不是自动回退的一部分。 |
-| Apple Development 证书与私钥 | Xcode Personal Team 在 Mac 登录钥匙串中使用 | 目前无需删除。删除私钥会使此 Mac 不能继续用该身份签名，也可能影响其他项目；如将来确定停止开发，再核对 Xcode 是否有其他 app 共用后处理。 |
-| `codesign` 钥匙串“始终允许” | 已授权 | 若要撤销：打开“钥匙串访问”→“登录”→“我的证书”，展开 Apple Development 证书，查看其私钥的“显示简介/访问控制”，移除 `codesign` 的持续访问或改为每次询问并保存。不要删除证书/私钥，也不要重置钥匙串。Apple 说明“始终允许”会免去后续授权提示，访问控制可在钥匙串访问中调整：[Apple 钥匙串访问说明](https://support.apple.com/en-gb/guide/mac-help/kychn002/26/mac/26)。 |
-| Xcode Apple 账号 | 仍登录 | 不需要为回退测试关闭账号。若未来从 Xcode 移除账号，会影响该 Mac 的签名/下载能力；不会替代移除设备上的 app 或关闭 Developer Mode。 |
-| Xcode 本地描述文件 | 自动管理，留在本机 | 由 Xcode 管理即可；不需要手动删除。过期时 Xcode 会重新生成。仓库不保存证书、私钥、Team ID 或描述文件。 |
-
-### 本轮执行边界
-
-- 模拟器和签名 Release 包均输出到 `/private/tmp` 下的临时构建目录，不在 Git 仓库提交证书、描述文件或构建产物。
-- 2026-10-14 的真机步骤只安装/启动了衣叠。随后用户报告 iPhone 进入恢复流程并由 Finder 更新；当前文档不对恢复后的 app 安装和数据保留作推断。仍须用户先确认衣叠记录，再考虑任何后续真机测试。
-- 本轮没有读取照片、通讯录、消息或其他 app 数据。尚未完成真实照片的贴纸处理验收。
-
-## 2026-10-15 后续本地构建记录
-
-- Xcode 27 对当前源码完成了一次完整的 iOS Simulator Release 编译与链接，使用 `CODE_SIGNING_ALLOWED=NO`，构建产物位于 `/private/tmp/YidieDerivedData`。这次只编译通用模拟器目标，没有启动或安装到实体 iPhone。
-- 当前 Mac 已解锁，Xcode Settings 显示 iOS 27.0 Simulator runtime 已安装；但本会话无法发现 Simulator.app，CoreSimulatorService 连接失败，因此没有进行模拟器交互、导入照片或访问设备数据。
-- 本轮没有改变 Developer Mode、Apple 账号、签名身份、证书、描述文件或钥匙串授权，也没有连接或操作 iPhone。验证完成后已清理本轮生成的 2 GB 临时 DerivedData、Swift module cache 与类型检查 stub。
-
-## 2026-10-15 后续隔离模拟器验收
-
-- 在独立的 iPhone 18 Pro / iOS 27 Simulator 上运行无签名 Debug 构建，使用 app 内合成场景。可见地检查了多人同日叠图及数量角标、打开十条记录的日期、选择深色 4 px 描边、预览并保存、返回后看到更新后的贴纸，以及空月份和月份箭头。没有授权照片访问，预览服务不连接真实数据库或照片存储。
-- 另完成 iOS Simulator Release 全量编译（Xcodebuild 退出码 0，`CODE_SIGNING_ALLOWED=NO`，产物在 `/private/tmp/YidieFinalRelease`）。没有安装到实体 iPhone。
-- Device Hub 能够传递点击，但拖动没有触发可观察的月份/照片页变化。因此横向手势仍待在模拟器触摸界面或用户真机验收。此项不改变设备安全状态。
-- 所有以上操作未触碰 iPhone、照片图库、Developer Mode、Apple 账号、证书、描述文件或钥匙串。临时构建数据保留在 `/private/tmp`，可在确认不再需要后清理。
-
-## 2026-10-15 模拟器组件恢复与隔离复验
-
-- 用户授权安装 iOS Simulator 组件。Xcode 27 报告 iOS 27.0 runtime 已下载；使用 Xcode 的 `-exportPath` 和 `-importPlatform` 将 runtime 注册到 CoreSimulator。组件位于 Mac 的 CoreSimulator 管理目录，不涉及 iPhone。
-- CoreSimulator 服务恢复后，`simctl list runtimes` 能看到 iOS 26.1 与 27.0，并能创建、启动一个干净的 iPhone 17 Pro / iOS 26.1 模拟器。无签名 Release app 在该隔离模拟器安装、启动并截图成功；截图只检查应用界面。
-- iOS 27.0 runtime 当前仍无法挂载，启动时报 `Cryptex Mount Preferred`；专用 iPhone 18 Pro / iOS 27 Simulator 未能启动。Xcode 安装路径下也未发现 `Simulator.app`。后续需在 Mac 解锁后从 Xcode Settings > Components 修复/安装 Simulator app 与 runtime，再重试；在成功之前不要把本次 iOS 26.1 检查描述为 iOS 27 验收。
-- 为减少临时副本占用，已删除 `/private/tmp/yidie-ios27-platform` 中导出的 7.5 GB runtime bundle；已注册的 Simulator runtime 留在系统 CoreSimulator 目录。无须删除证书、描述文件或钥匙串授权。
-- 本轮没有连接或操作实体 iPhone，没有改变 Developer Mode、iOS、照片、签名身份或钥匙串；仅在模拟器安装 app，并在本机注册 iOS 27 runtime。
-
-## 2026-10-15 CoreSimulator 服务故障排查
-
-- 经用户先前授权，通过 Device Hub 的 Restart 重启专用 iPhone 17 Pro / iOS 26.1 QA 模拟器；未选择 Reset Content and Settings。Yidie 仍已安装，Spotlight 启动后显示空的 2026 年 10 月日历，月份箭头往返正常。
-- 重启后 `xcrun simctl list devices booted` 仍因 CoreSimulatorService / `simdiskimaged` 断连失败；尝试用 `launchctl kickstart` 重启 system `simdiskimaged` 被 macOS 拒绝，未改变 launchd 配置或服务权限。Device Hub 拖动仍未切换月份，触控手势验收保持未通过。
-- 15:20 再次只读执行 `xcrun simctl list devices available`，CoreSimulatorService 仍返回 `Connection refused`，且报告无法发现 Simulator runtimes；`xcodebuild -version` 正常返回 Xcode 27.0（27A266a）。本次没有启动/安装 app、重启系统服务或改变模拟器数据。
-- 本次仅重启专用空数据模拟器；没有连接实体 iPhone、打开照片库、改 Developer Mode、签名、证书或钥匙串，也没有重置/擦除模拟器内容。
-
-## 2026-10-15 ExpoSQLite 构建配置复验
-
-- 为修复 ExpoSQLite Swift 模块未找到 vendored `exsqlite3_*` 声明的问题，新增了 tracked Expo config plugin；它只给 `ExpoSQLite` CocoaPods target 增加本地头文件搜索目录。插件用单元测试验证幂等和 Podfile 模板变化时快速失败；Expo prebuild 已生成该 Podfile 片段，Ruby 语法检查通过。
-- 为应用插件，Expo prebuild 清理并重新生成了 Git 忽略的 `apps/mobile/ios/` 原生工程。物理 iPhone 上已安装的衣叠和设备数据不受此操作影响。当前生成的 Xcode 工程没有 `DEVELOPMENT_TEAM` 或描述文件设置；后续如需真机签名，可能要在 Xcode 中重新选择 Personal Team。尚未签名或安装任何新包。
-- CocoaPods 安装因 DNS 无法解析 `github.com` 与 `cdn.cocoapods.org` 未完成，当前不能做干净的本地 Xcode 重建。先前一次性全局头文件路径覆盖可完成无签名编译，但它不是插件实际生成的 Pod target 配置，不能替代后续标准构建验收。
-- 本轮未启动模拟器，遵循用户选择先完成代码和文档；未连接 iPhone、访问照片或改动 Developer Mode、Apple 账号、签名身份、证书、私钥、钥匙串授权或描述文件。
-
-## 2026-10-15 本地月份图片导出验收
-
-- 在专用 iPhone 17 Pro / iOS 26.1 QA 模拟器中，从设置导出空的 2026 年 10 月日历；系统分享面板识别为 PNG，预览显示约 98 KB。
-- 将图片保存到模拟器“我的 iPhone”文件位置，并在系统 Preview 中打开；月标题、星期行、完整日期网格和当天强调色均可见。只使用空日历合成数据，没有选择消息、社交或云端分享目标，也没有写入实体设备的照片库。
-- 这只验证空月份导出的系统交付和基本视觉内容；非空日历布局、签名选项和单张贴纸导出内容仍待验收。此处产生的图片只在专用 QA 模拟器 Files 中。
+提交前检查暂存内容和整个变更，确认没有个人设备状态、账号信息、密钥、个人照片、数据库、构建输出或机器专属路径。任何不确定的材料都应从公开仓库中移除，并在本地私密位置另行保存。

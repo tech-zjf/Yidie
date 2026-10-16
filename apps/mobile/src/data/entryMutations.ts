@@ -57,13 +57,16 @@ export function createEntryMutations(
         if (entry.processing_state !== 'ready') throw new Error('STICKER_NOT_READY');
         if (
           sticker.stickerPath !== `stickers/${id}-v${sticker.styleRevision}.png` ||
-          sticker.cutoutPath !== `cutouts/${id}.png` ||
+          (sticker.cutoutPath !== `cutouts/${id}.png` &&
+            !new RegExp(`^cutouts/${id}-v[1-9][0-9]*\\.png$`).test(sticker.cutoutPath)) ||
           sticker.thumbnailPath !== `previews/${id}-v${sticker.styleRevision}.png` ||
           !Number.isInteger(sticker.styleRevision) ||
           sticker.styleRevision !== entry.style_revision + 1 ||
+          !['original', 'outline', 'comic', 'dimensional', 'shimmer'].includes(sticker.effect) ||
           !Number.isFinite(sticker.borderWidth) ||
           sticker.borderWidth < 0 ||
           sticker.borderWidth > 8 ||
+          (sticker.effect === 'original' && sticker.borderWidth !== 0) ||
           !['#FFFFFF', '#242424', '#0786A8'].includes(sticker.borderColor) ||
           !Number.isInteger(sticker.width) ||
           !Number.isInteger(sticker.height) ||
@@ -73,13 +76,14 @@ export function createEntryMutations(
           throw new Error('INVALID_STICKER_STYLE');
         const result = await tx.runAsync(
           `UPDATE entries SET sticker_path=?,cutout_path=?,thumbnail_path=?,sticker_width=?,sticker_height=?,
-            border_width=?,border_color=?,style_revision=?,revision=revision+1,updated_at=?
+          sticker_effect=?,border_width=?,border_color=?,style_revision=?,revision=revision+1,updated_at=?
            WHERE id=? AND revision=? AND processing_state='ready'`,
           sticker.stickerPath,
           sticker.cutoutPath,
           sticker.thumbnailPath,
           sticker.width,
           sticker.height,
+          sticker.effect,
           sticker.borderWidth,
           sticker.borderColor,
           sticker.styleRevision,

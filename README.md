@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="design/assets/brand/yidie-app-icon.svg" width="132" alt="Yidie app icon" />
+  <img src="assets/branding/yidie-app-icon.svg" width="132" alt="Yidie app icon" />
 </p>
 
 <h1 align="center">Yidie · 衣叠</h1>
@@ -7,31 +7,28 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** The populated calendar and local sticker-outline preview/save have been exercised in an isolated Simulator with synthetic data. Empty-library backup save/restore now also passes through the iOS Files UI. Touch gestures, share delivery, corrupt-package UI handling, date-picker interaction, physical-device Vision quality, accessibility and performance acceptance remain open; this is not a finished or generally installable release. See the live [delivery board](TODO.md).
-
-<p align="center">
-  <img src="design/screenshots/app-populated-calendar.png" width="300" alt="Yidie synthetic populated calendar with a ten-outfit day stack" />
-</p>
-<p align="center"><sub>UI preview · iPhone 18 Pro / iOS 27 Simulator · synthetic artwork only; Preview scenes is development-only and the silhouette figures are layout stand-ins, not Vision results.</sub></p>
+> **Development build.** Current PR commit [`daafa1a`](https://github.com/tech-zjf/Yidie/commit/daafa1accba62c547b58988a68fa7e184eff23a1) passed the full GitHub Actions suite in [run 38870774669](https://github.com/tech-zjf/Yidie/actions/runs/38870774669) and [run 38870780374](https://github.com/tech-zjf/Yidie/actions/runs/38870780374), including JavaScript checks, iOS export, native safety tests, unsigned iOS Simulator Release build, and sticker pixel fixtures. Hosted CI verifies deterministic rendering and startup; it does not accept interactive flows or Vision quality on real photos. See the live [delivery board](TODO.md).
 
 ## What makes it different
 
 - **Calendar first.** A worn outfit becomes a sticker on its day. Multiple looks stack, then open into a horizontal photo viewer.
 - **Private by design.** Photo selection, date records, foreground cutouts, and sticker styles stay on the device. No account, backend, analytics, cloud inference, or photo upload.
 - **A small tool, not a digital closet.** No garment catalog, social feed, recommendations, or shopping layer. Keep a visual record of what you actually wore.
-- **Built with native iOS image processing.** Apple Vision creates the transparent cutout; Core Image redraws editable outlines locally.
+- **Built with native iOS image processing.** Apple's VisionKit subject-lifting API creates a tightly cropped transparent cutout when available; Vision segmentation is the local fallback. Core Image renders editable sticker styles locally.
+
+The editor prefers Apple's public VisionKit subject-lifting API, then falls back to Vision segmentation. VisionKit provides the same public subject-lifting capability Apple demonstrates for system-like interactions ([WWDC23](https://developer.apple.com/videos/play/wwdc2023/10176/)), but subject grouping may differ by image. Original, Outline, Comic, 3D, and Shimmer are local Core Image treatments with no paid service. Apple doesn't expose Photos' specific sticker-effect renderer to third-party apps, so Yidie's effects are independent implementations, not 1:1 copies. Subject selection, real-photo edge quality, rendering performance, and physical-device acceptance still need on-device acceptance.
 
 ## Product status
 
-| Area                                                             | Status                                                           |
-| ---------------------------------------------------------------- | ---------------------------------------------------------------- |
-| Calendar, date browsing, same-day stacks and count badges        | Populated/empty simulator scenes and month arrows checked; touch swipes remain due |
-| Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted   |
-| Sticker outline preview and editing                              | Preview/save checked with synthetic simulator data; verify quality with an opt-in test photo |
-| Backup/restore and native date picker                            | Empty backup save/restore passes in Simulator; invalid-package UI and date-picker acceptance due |
-| Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; payload delivery acceptance due |
-| Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                 |
-| Public App Store or general device distribution                  | Not available                                                    |
+| Area                                                             | Status                                                                                                                                                                     |
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Calendar, date browsing, same-day stacks and count badges        | Current app launch is verified in hosted Simulator CI; earlier populated/empty scenes and month arrows checked; touch swipes remain due                                    |
+| Batch photo import, date confirmation and local processing queue | Implemented; physical-device edge cases are not fully accepted                                                                                                             |
+| Sticker style preview and editing                                | Synthetic Core Image pixel checks pass on iOS Simulator in CI; Vision cutouts, real-photo edge quality, editor interaction, and physical-device behavior remain unaccepted |
+| Backup/restore and native date picker                            | Empty backup save/restore passes in Simulator; invalid-package UI and date-picker acceptance due                                                                           |
+| Transparent sticker and month image sharing                      | Implemented locally, with optional default-off Yidie signature; payload delivery acceptance due                                                                            |
+| Physical-device Vision quality, accessibility and performance    | Not accepted yet                                                                                                                                                           |
+| Public App Store or general device distribution                  | Not available                                                                                                                                                              |
 
 ## Run from source
 
@@ -47,7 +44,7 @@ npm run ios:sim -- --list
 npm run ios:sim -- <simulator-udid>
 ```
 
-The Simulator helper validates the UDID against `simctl` before invoking Expo and fails closed when the Simulator service is unavailable; it will not target a physical phone. To run the native UI preview with fixed sample data, use `npm run preview:ios`. The preview does not access Photos or the real database. Details are in the [mobile build guide](apps/mobile/README.md).
+The `ios`, `ios:sim`, and `ios:release` launch scripts validate an exact available Simulator UDID before invoking Expo and fail closed when Simulator services are unavailable; they will not target a physical phone. To run the native UI preview with fixed sample data, use `npm run preview:ios`. The preview does not access Photos or the real database. Details are in the [mobile build guide](apps/mobile/README.md).
 
 Installing on a personal iPhone requires building and signing with your own Apple development identity. This repository does not provide a signed public download. A free personal development profile is for testing on your own registered device and expires; broader iOS distribution has separate Apple requirements.
 
@@ -57,13 +54,14 @@ Yidie copies only photos the user selects. PhotoKit requests disable network acc
 
 Photo browsing creates a capped, temporary thumbnail cache that can be rebuilt from the local library; it is not included in `.yidie` export packages.
 
-Never attach personal outfit photos, databases, signing files, provisioning profiles, or device identifiers to issues. Use synthetic or explicitly consented test material.
+Never attach personal outfit photos, databases, signing files, provisioning profiles, or device identifiers to issues. Use synthetic or explicitly consented material for private bug reproduction; public product screenshots must use an owner-approved real-photo capture.
 
 ## Project map
 
 ```text
 apps/mobile/       Expo app, feature UI, local data layer, Swift native module
-design/            Brand assets and clearly labeled design prototypes
+assets/branding/   App icon and brand mark source artwork
+assets/fonts/      Licensed font sources and notices
 docs/              Product decisions, architecture, verification and device-safety notes
 specs/             Database and native contracts/migrations
 scripts/           Reproducible checks and design asset builders
@@ -75,11 +73,12 @@ Start with [architecture](docs/03-architecture.md), [engineering conventions](do
 
 Bug reports, design feedback, and focused code contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first. Keep date/layout rules in the domain layer, SQL in data repositories, UI in feature modules, and iOS APIs in `modules/yidie-native`. Changes that touch persistence or file ownership need failure-path tests.
 
-The project is licensed under [MIT](LICENSE). The bundled fonts and sample artwork have their own notices; see [asset provenance](design/assets/PROVENANCE.md).
+The project is licensed under [MIT](LICENSE). Bundled fonts have their own notices; see [font provenance](assets/fonts/README.md).
 
 ## Project links
 
 - [Live TODO and acceptance gates](TODO.md)
+- [Changelog](CHANGELOG.md)
 - [Market research and differentiation](docs/01-research.md)
-- [Privacy and device testing runbook](docs/15-device-test-safety-runbook.md)
+- [Local device testing and safety guide](docs/15-device-test-safety-runbook.md)
 - [Open-source launch notes](docs/17-open-source-launch.md)

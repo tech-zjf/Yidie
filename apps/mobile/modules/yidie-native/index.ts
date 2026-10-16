@@ -4,6 +4,8 @@ import type {
   ImportedPhoto,
   Sticker,
   StickerBorderColor,
+  StickerEffect,
+  StickerSubjectCandidate,
   ImageFileStore,
 } from '../../src/domain/records';
 import type { MonthExportPayload } from '../../src/domain/monthLayout';
@@ -19,14 +21,23 @@ export interface LocalModule extends ImageFileStore {
   thumbnail(assetId: string): Promise<string | null>;
   importPhoto(assetId: string): Promise<ImportedPhoto>;
   createSticker(id: string): Promise<Sticker>;
+  listStickerSubjects(id: string): Promise<StickerSubjectCandidate[]>;
+  stageStickerSubject(id: string, candidatePath: string, styleRevision: number): Promise<string>;
+  discardStickerSubjectDrafts(id: string): Promise<void>;
   renderStickerStyle(
     id: string,
     styleRevision: number,
+    cutoutPath: string | null,
+    effect: StickerEffect,
     borderWidth: number,
     borderColor: StickerBorderColor,
   ): Promise<Sticker>;
-  discardStickerStyleVersion(id: string, styleRevision: number): Promise<void>;
-  pruneStickerStyles(id: string, keepingRevision: number): Promise<void>;
+  discardStickerStyleVersion(
+    id: string,
+    styleRevision: number,
+    cutoutPath?: string | null,
+  ): Promise<void>;
+  pruneStickerStyles(id: string, keepingRevision: number, cutoutPath: string): Promise<void>;
   discardImport(id: string): Promise<void>;
   exportBackup(): Promise<boolean>;
   prepareRestore(): Promise<{ entryCount: number; assetCount: number; totalBytes: number } | null>;

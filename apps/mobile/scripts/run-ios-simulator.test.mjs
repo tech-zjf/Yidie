@@ -43,8 +43,8 @@ function createHarness(t, { failInventory = false } = {}) {
 
   return {
     invokedPath,
-    run(selection) {
-      return spawnSync(process.execPath, [resolve('scripts/run-ios-simulator.mjs'), selection], {
+    run(...args) {
+      return spawnSync(process.execPath, [resolve('scripts/run-ios-simulator.mjs'), ...args], {
         cwd: resolve('.'),
         encoding: 'utf8',
         env: {
@@ -64,8 +64,25 @@ test('Simulator launcher forwards only the validated simulator UDID to Expo', (t
   assert.equal(result.status, 0, result.stderr);
   assert.equal(
     readFileSync(harness.invokedPath, 'utf8'),
-    `expo\nrun:ios\n--device\n${simulatorId}\n`,
+    `expo\nrun:ios\n--device\n${simulatorId}\n--configuration\nDebug\n`,
   );
+});
+
+test('Release launcher validates the Simulator before forwarding its configuration', (t) => {
+  const harness = createHarness(t);
+  const result = harness.run('--configuration', 'Release', simulatorId);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(
+    readFileSync(harness.invokedPath, 'utf8'),
+    `expo\nrun:ios\n--device\n${simulatorId}\n--configuration\nRelease\n`,
+  );
+});
+
+test('Simulator launcher rejects unknown configurations and missing device selection', (t) => {
+  const harness = createHarness(t);
+  assert.equal(harness.run('--configuration', 'Any', simulatorId).status, 2);
+  assert.equal(harness.run().status, 2);
+  assert.equal(existsSync(harness.invokedPath), false);
 });
 
 test('Simulator launcher rejects phone identifiers and names before invoking Expo', (t) => {
@@ -86,4 +103,13 @@ test('Simulator launcher fails closed when CoreSimulator inventory is unavailabl
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Stopped before invoking Expo/);
   assert.equal(existsSync(harness.invokedPath), false);
+});
+
+test('all package launch shortcuts use the Simulator-only validation helper', () => {
+  const { scripts } = JSON.parse(readFileSync(resolve('package.json'), 'utf8'));
+  assert.match(scripts.ios, /run-ios-simulator\.mjs/);
+  assert.match(scripts['ios:sim'], /run-ios-simulator\.mjs/);
+  assert.match(scripts['ios:release'], /run-ios-simulator\.mjs/);
+  assert.doesNotMatch(scripts.ios, /expo run:ios/);
+  assert.doesNotMatch(scripts['ios:release'], /expo run:ios/);
 });

@@ -9,6 +9,7 @@ Thanks for helping make Yidie easier to use, understand, and run. The project is
 - Prefer one clear model and typed contract over compatibility branches or generic frameworks. Add tests for meaningful date, migration, ownership, and failure boundaries.
 - Use the existing shared text, copy, color, spacing, and font tokens. Verify narrow screens, long English strings, large text, and reduced motion when a UI change affects them.
 - Update the current README, TODO, PRD, or verification document when user-visible behavior or a release boundary changes. Avoid adding another stage report when the live document can be updated.
+- Do not add retired browser prototypes, temporary mockups, simulator captures, generated native projects, or other machine-local artifacts. Keep an active UI preview only when it has a documented test purpose and cannot access real app data.
 
 Run from `apps/mobile`:
 
@@ -32,4 +33,4 @@ Use the GitHub issue templates. Include the app version, iOS version, steps, exp
 
 ## Pull requests
 
-Describe the user-visible change, the checks you ran, and any unverified device behavior. Keep unrelated changes separate. UI changes should include an app screenshot or screen recording from the tested build, with synthetic or consented content.
+Describe the user-visible change, the checks you ran, and any unverified device behavior. Keep unrelated changes separate. UI changes should include a capture from the tested build when practical; public-facing screenshots and recordings require the owner's approval and a real photo captured in Yidie. Do not add generated people or synthetic outfit stand-ins to project marketing materials.

@@ -23,6 +23,7 @@ function record(index: number, date: string | null, status: Entry['status'] = 'r
     stickerPath: status === 'ready' ? cutout : null,
     cutoutPath: status === 'ready' ? cutout : null,
     thumbnailPath: status === 'ready' ? cutout : null,
+    effect: 'outline',
     borderWidth: 4,
     borderColor: '#FFFFFF',
     styleRevision: 0,

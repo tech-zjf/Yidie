@@ -1,5 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import { initializeDatabase } from './initializeDatabase';
 import { schema } from './schema.generated';
 import type { PhotoProcessor } from '../domain/records';
@@ -8,6 +12,7 @@ import { createEntryActions } from '../domain/entryActions';
 import { importPhoto } from '../domain/importPhoto';
 import { createEntryRepository } from './entryRepository';
 import type { SqlDatabase } from './sqlDatabase';
+import { createWriteTransaction } from './writeTransaction';
 
 test('fresh schema and v1 migration preserve records and recover interrupted jobs', async (t) => {
   const r = fixture();
@@ -15,16 +20,20 @@ test('fresh schema and v1 migration preserve records and recover interrupted job
   r.sqlite.exec(schema);
   r.sqlite.exec('PRAGMA user_version=1');
   r.sqlite
-    .exec(`INSERT INTO entries(id,date_source,original_path,processing_state,layout_seed,sort_key,imported_at,updated_at)
-    VALUES ('interrupted','unknown','originals/interrupted.source','running',0,1,'now','now');
+    .exec(`INSERT INTO entries(id,date_source,original_path,border_width,processing_state,layout_seed,sort_key,imported_at,updated_at)
+    VALUES ('interrupted','unknown','originals/interrupted.source',0,'running',0,1,'now','now');
+    INSERT INTO entries(id,date_source,original_path,border_width,processing_state,layout_seed,sort_key,imported_at,updated_at)
+    VALUES ('legacy-outline','unknown','originals/legacy-outline.source',4,'failed',0,2,'now','now');
     INSERT INTO processing_jobs VALUES ('interrupted','interrupted','running',0,1,NULL,'now','now')`);
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 6);
   assert.equal((await r.repository.get('interrupted'))?.status, 'paused');
+  assert.equal((await r.repository.get('interrupted'))?.effect, 'original');
+  assert.equal((await r.repository.get('legacy-outline'))?.effect, 'outline');
   assert.equal(r.sqlite.prepare('SELECT state FROM processing_jobs').get()?.state, 'paused');
   assert.deepEqual(await r.repository.pendingDeletions(), []);
   await initializeDatabase(r.db, r.write); // Restart is idempotent.
-  assert.equal((await r.repository.list()).length, 1);
+  assert.equal((await r.repository.list()).length, 2);
 });
 
 test('repository serializes SQLite work and close fences queued and later calls', async (t) => {
@@ -89,6 +98,88 @@ test('repository serializes SQLite work and close fences queued and later calls'
   await repository.close();
 });
 
+test('a held SQLite read drains queued writes before close and WAL reopen', async (t) => {
+  const directory = mkdtempSync(join(tmpdir(), 'yidie-repository-close-'));
+  const filename = join(directory, 'library.sqlite');
+  const r = fixture(filename);
+  let closed = false;
+  let holdNextRead = false;
+  let pending: Promise<unknown>[] = [];
+  let releaseRead!: () => void;
+  let markReadStarted!: () => void;
+  const readStarted = new Promise<void>((resolve) => {
+    markReadStarted = resolve;
+  });
+  const readGate = new Promise<void>((resolve) => {
+    releaseRead = resolve;
+  });
+  t.after(async () => {
+    releaseRead();
+    await Promise.allSettled(pending);
+    if (!closed) r.sqlite.close();
+    rmSync(directory, { recursive: true, force: true });
+  });
+
+  const db: SqlDatabase = {
+    ...r.db,
+    async getAllAsync<T>(sql: string, ...params: (string | number | null)[]) {
+      if (!holdNextRead) return r.db.getAllAsync<T>(sql, ...params);
+      holdNextRead = false;
+      r.sqlite.exec('BEGIN DEFERRED');
+      const rows = r.sqlite.prepare(sql).all(...params) as T[];
+      markReadStarted();
+      try {
+        await readGate;
+        return rows;
+      } finally {
+        r.sqlite.exec('COMMIT');
+      }
+    },
+    async closeAsync() {
+      r.sqlite.close();
+      closed = true;
+    },
+  };
+  const write = createWriteTransaction(db);
+  const repository = createEntryRepository(db, write);
+  await initializeDatabase(db, write);
+  const ticket = await repository.begin(photo('held-read'), {
+    date: '2026-06-12',
+    source: 'user',
+  });
+  await repository.finish(ticket, sticker('held-read'));
+
+  holdNextRead = true;
+  const read = repository.list();
+  pending.push(read);
+  await readStarted;
+  const update = repository.changeDate('held-read', 0, '2026-06-14');
+  pending.push(update);
+  const close = repository.close();
+  pending.push(close);
+  await assert.rejects(repository.get('held-read'), /DATABASE_CLOSED/);
+  assert.equal(closed, false, 'close must wait for the open read transaction and queued write');
+
+  releaseRead();
+  const [rows] = await Promise.all([read, update, close]);
+  assert.equal(rows[0]?.date, '2026-06-12', 'the held read returns its consistent snapshot');
+  assert.equal(closed, true, 'the connection closes after the queued write commits');
+
+  const reopened = new DatabaseSync(filename);
+  try {
+    const entry = reopened
+      .prepare('SELECT record_date FROM entries WHERE id=?')
+      .get('held-read') as { record_date: string } | undefined;
+    assert.equal(entry?.record_date, '2026-06-14', 'the queued write survives close and reopen');
+    assert.equal(reopened.prepare('PRAGMA integrity_check').get()?.integrity_check, 'ok');
+    const checkpoint = reopened.prepare('PRAGMA wal_checkpoint(TRUNCATE)').get() as
+      { busy: number } | undefined;
+    assert.equal(checkpoint?.busy, 0, 'WAL checkpoint is not blocked after connection drain');
+  } finally {
+    reopened.close();
+  }
+});
+
 test('a rejected repository operation does not poison the SQLite lane', async (t) => {
   const r = fixture();
   t.after(() => r.sqlite.close());
@@ -103,7 +194,7 @@ test('fresh install applies every migration once and has editable sticker column
   const r = fixture();
   t.after(() => r.sqlite.close());
   await initializeDatabase(r.db, r.write);
-  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 5);
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 6);
   const columns = new Set(
     (r.sqlite.prepare('PRAGMA table_info(entries)').all() as { name: string }[]).map(
       (column) => column.name,
@@ -111,11 +202,34 @@ test('fresh install applies every migration once and has editable sticker column
   );
   assert.ok(columns.has('cutout_path'));
   assert.ok(columns.has('border_color'));
+  assert.ok(columns.has('sticker_effect'));
   assert.ok(columns.has('style_revision'));
   assert.equal(
     r.sqlite.prepare("SELECT value FROM app_meta WHERE key='schema_version'").get()?.value,
-    '5',
+    '6',
   );
+});
+
+test('v5 libraries migrate sticker effects without losing records or their outline setting', async (t) => {
+  const r = fixture();
+  t.after(() => r.sqlite.close());
+  await initializeDatabase(r.db, r.write);
+  await ready(r, 'legacy-original');
+  await ready(r, 'legacy-outline', '2026-06-13');
+  r.sqlite.exec(`
+    UPDATE entries SET border_width=0 WHERE id='legacy-original';
+    ALTER TABLE entries DROP COLUMN sticker_effect;
+    UPDATE app_meta SET value='5' WHERE key='schema_version';
+    PRAGMA user_version=5;
+  `);
+
+  await initializeDatabase(r.db, r.write);
+
+  assert.equal(r.sqlite.prepare('PRAGMA user_version').get()?.user_version, 6);
+  assert.equal((await r.repository.get('legacy-original'))?.effect, 'original');
+  assert.equal((await r.repository.get('legacy-outline'))?.effect, 'outline');
+  assert.equal((await r.repository.list()).length, 2);
+  assert.deepEqual(r.sqlite.prepare('PRAGMA foreign_key_check').all(), []);
 });
 
 test('moving a cover preserves destination cover; unknown dates can be filed and unfiled', async (t) => {
@@ -154,6 +268,7 @@ test('sticker style updates are local metadata transactions guarded by the entry
     width: 220,
     height: 300,
     instanceCount: 1,
+    effect: 'dimensional' as const,
     borderWidth: 8,
     borderColor: '#242424' as const,
     styleRevision: 1,
@@ -162,15 +277,50 @@ test('sticker style updates are local metadata transactions guarded by the entry
   const entry = await r.repository.get('a');
   assert.equal(entry?.stickerPath, style.stickerPath);
   assert.equal(entry?.borderWidth, 8);
+  assert.equal(entry?.effect, 'dimensional');
   assert.equal(entry?.borderColor, '#242424');
   assert.equal(entry?.styleRevision, 1);
   assert.equal(entry?.revision, 1);
   await assert.rejects(r.repository.updateStickerStyle('a', 0, style), /STALE_RESULT/);
+  const versionedCutout = {
+    ...style,
+    styleRevision: 2,
+    stickerPath: 'stickers/a-v2.png',
+    thumbnailPath: 'previews/a-v2.png',
+    cutoutPath: 'cutouts/a-v2.png',
+  };
+  await r.repository.updateStickerStyle('a', 1, versionedCutout);
+  assert.equal((await r.repository.get('a'))?.cutoutPath, versionedCutout.cutoutPath);
   await assert.rejects(
-    r.repository.updateStickerStyle('a', 1, { ...style, stickerPath: 'outside/a.png' }),
+    r.repository.updateStickerStyle('a', 2, {
+      ...versionedCutout,
+      styleRevision: 3,
+      stickerPath: 'stickers/a-v3.png',
+      thumbnailPath: 'previews/a-v3.png',
+      cutoutPath: 'cutouts/other-v3.png',
+    }),
     /INVALID_STICKER_STYLE/,
   );
-  assert.equal((await r.repository.get('a'))?.stickerPath, style.stickerPath);
+  await assert.rejects(
+    r.repository.updateStickerStyle('a', 2, {
+      ...style,
+      styleRevision: 3,
+      stickerPath: 'outside/a.png',
+      thumbnailPath: 'previews/a-v3.png',
+    }),
+    /INVALID_STICKER_STYLE/,
+  );
+  await assert.rejects(
+    r.repository.updateStickerStyle('a', 2, {
+      ...style,
+      styleRevision: 3,
+      stickerPath: 'stickers/a-v3.png',
+      thumbnailPath: 'previews/a-v3.png',
+      effect: 'made-up' as never,
+    }),
+    /INVALID_STICKER_STYLE/,
+  );
+  assert.equal((await r.repository.get('a'))?.stickerPath, versionedCutout.stickerPath);
 });
 
 test('stale editors and in-flight edits are rejected without partial mutations', async (t) => {

@@ -43,6 +43,8 @@ export function DaySheet({
   const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState<Entry | null>(null);
   const [progress] = useState(() => new Animated.Value(0));
+  const targetSheetHeight = editing || fontScale > 1.4 ? height - insets.top - 12 : height * 0.72;
+  const [sheetHeight] = useState(() => new Animated.Value(targetSheetHeight));
   const [closing, setClosing] = useState(false);
   const reduceMotion = useReducedMotion();
   useEffect(() => {
@@ -66,6 +68,23 @@ export function DaySheet({
       progress.stopAnimation();
     };
   }, [date, progress, reduceMotion]);
+
+  useEffect(() => {
+    sheetHeight.stopAnimation();
+    if (reduceMotion) {
+      sheetHeight.setValue(targetSheetHeight);
+      return;
+    }
+    const animation = Animated.spring(sheetHeight, {
+      toValue: targetSheetHeight,
+      damping: 26,
+      stiffness: 245,
+      mass: 0.9,
+      useNativeDriver: false,
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [reduceMotion, sheetHeight, targetSheetHeight]);
 
   const closeAfterAnimation = useCallback(
     (afterClose: () => void = () => {}) => {
@@ -97,11 +116,10 @@ export function DaySheet({
     [closing, onClose, progress, reduceMotion],
   );
 
-  const sheetHeight = editing || fontScale > 1.4 ? height - insets.top - 12 : height * 0.72;
   const backdropOpacity = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.28] });
   const sheetTranslateY = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [sheetHeight + 32, 0],
+    outputRange: [targetSheetHeight + 32, 0],
   });
   // Only the handle owns vertical dismissal; the photo strip owns horizontal swipes.
   const dismissGesture = useMemo(

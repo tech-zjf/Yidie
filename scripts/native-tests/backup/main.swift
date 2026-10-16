@@ -30,8 +30,11 @@ func makeFixtureLibrary(at support: URL) throws -> (root: URL, database: OpaqueP
   PRAGMA journal_mode=WAL;
   CREATE TABLE entries (
     original_path TEXT, sticker_path TEXT, thumbnail_path TEXT,
-    cutout_path TEXT, photo_preview_path TEXT
+    cutout_path TEXT, photo_preview_path TEXT, border_width REAL NOT NULL DEFAULT 4,
+    sticker_effect TEXT NOT NULL DEFAULT 'outline'
   );
+  CREATE TABLE app_meta (key TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL);
+  INSERT INTO app_meta(key, value) VALUES ('schema_version', '\(LocalBackup.schemaVersion)');
   PRAGMA user_version=\(LocalBackup.schemaVersion);
   """
   guard sqlite3_exec(connection, sql, nil, nil, nil) == SQLITE_OK else {
@@ -52,6 +55,34 @@ func rewriteManifest(_ package: URL, _ update: (inout [String: Any]) -> Void) th
 func sha256(_ url: URL) throws -> String {
   let digest = SHA256.hash(data: try Data(contentsOf: url))
   return digest.map { String(format: "%02x", $0) }.joined()
+}
+
+func markAsLegacyV5(_ package: URL) throws {
+  let databaseURL = package.appendingPathComponent("database/yidie.sqlite")
+  var database: OpaquePointer?
+  guard sqlite3_open(databaseURL.path, &database) == SQLITE_OK, let database else {
+    throw BackupTestFailure.assertion("Could not open legacy backup fixture")
+  }
+  let result = sqlite3_exec(
+    database,
+    "ALTER TABLE entries DROP COLUMN sticker_effect; UPDATE app_meta SET value='5' WHERE key='schema_version'; PRAGMA user_version=5",
+    nil,
+    nil,
+    nil
+  )
+  sqlite3_close(database)
+  try check(result == SQLITE_OK, "Could not create a v5 database schema")
+  let size = try FileManager.default.attributesOfItem(atPath: databaseURL.path)[.size] as? NSNumber
+  guard let size else { throw BackupTestFailure.assertion("Could not read legacy database size") }
+  let hash = try sha256(databaseURL)
+  try rewriteManifest(package) { manifest in
+    manifest["schemaVersion"] = 5
+    manifest["totalBytes"] = size.int64Value
+    var files = manifest["files"] as! [[String: Any]]
+    files[0]["byteCount"] = size.int64Value
+    files[0]["sha256"] = hash
+    manifest["files"] = files
+  }
 }
 
 func journalMode(at url: URL) throws -> String {
@@ -88,6 +119,19 @@ func journalMode(_ database: OpaquePointer) throws -> String {
   return String(cString: value).lowercased()
 }
 
+func schemaVersion(_ database: OpaquePointer) throws -> Int {
+  var statement: OpaquePointer?
+  guard sqlite3_prepare_v2(database, "PRAGMA user_version", -1, &statement, nil) == SQLITE_OK,
+        let statement else {
+    throw BackupTestFailure.assertion("Could not inspect the restored SQLite schema version")
+  }
+  defer { sqlite3_finalize(statement) }
+  guard sqlite3_step(statement) == SQLITE_ROW else {
+    throw BackupTestFailure.assertion("Restored SQLite schema version was unavailable")
+  }
+  return Int(sqlite3_column_int(statement, 0))
+}
+
 func expectBackupError(_ expected: String, operation: () throws -> Void) throws {
   do {
     try operation()
@@ -117,6 +161,25 @@ func runBackupTests() throws {
   try check(!pickerURL.hasDirectoryPath, "Restore URL fixture should omit the directory hint")
   let pickerSummary = try LocalBackup.stageRestore(from: pickerURL, support: support)
   try check(pickerSummary.entryCount == 0 && pickerSummary.assetCount == 0, "Document-picker package URL was rejected")
+  let legacy = temporary.appendingPathComponent("LegacyV5.yidie", isDirectory: true)
+  try FileManager.default.copyItem(at: package, to: legacy)
+  try markAsLegacyV5(legacy)
+  let legacySupport = temporary.appendingPathComponent("LegacySupport", isDirectory: true)
+  try makeDirectory(legacySupport.appendingPathComponent("Yidie", isDirectory: true))
+  let legacySummary = try LocalBackup.stageRestore(from: legacy, support: legacySupport)
+  try check(legacySummary.entryCount == 0, "A compatible v5 backup was not accepted")
+  try LocalBackup.activateRestore(support: legacySupport)
+  let restoredLegacyDatabase = legacySupport.appendingPathComponent("Yidie/database/yidie.sqlite")
+  var legacyConnection: OpaquePointer?
+  guard sqlite3_open_v2(restoredLegacyDatabase.path, &legacyConnection, SQLITE_OPEN_READONLY, nil) == SQLITE_OK,
+        let legacyConnection else {
+    throw BackupTestFailure.assertion("Could not inspect the restored v5 database")
+  }
+  let restoredVersion = try schemaVersion(legacyConnection)
+  try check(
+    restoredVersion == 5,
+    "Restoring v5 must preserve its version for the app's startup migration")
+  sqlite3_close(legacyConnection)
   let snapshotJournalMode = try journalMode(at: package.appendingPathComponent("database/yidie.sqlite"))
   try check(snapshotJournalMode == "delete", "Portable snapshot retained WAL mode without its sidecars")
   try LocalBackup.requireAvailableStorage(required: 100, available: 100)

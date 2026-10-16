@@ -12,13 +12,7 @@ npm run preview:ios
 
 随后在兼容的 iOS 开发环境打开。该命令启动的是预览 Metro 服务，不会自动证明原生编译成功。进入后先选择场景；场景选择器关闭后，月历仍占完整可用屏幕，右上方的小型“Preview scenes”按钮用于再次切换。当天弹层与记录编辑沿用 App 的真实入口。
 
-录制 README 或社交媒体演示时，可用无场景菜单的入口，让首屏直接显示固定的日常样例：
-
-```sh
-npm run preview:clean
-```
-
-演示入口仍是只读合成数据；只隐藏开发场景控件，不会访问 Photos 或真实记录。`preview:ios` 仍保留场景切换器供验收使用。
+预览只用于本地布局验收。它包含几何占位素材，不得用作产品宣传、README 截图或社交媒体演示；公开演示应从验收通过的真实 App 构建录制，并使用项目所有者明确批准的真实照片。
 
 | 场景 | 检查内容 |
 | --- | --- |
@@ -48,6 +42,6 @@ YIDIE_UI_PREVIEW=1 npm run export:ios -- --no-bytecode
 
 ## 原生运行验收边界
 
-2026-10-15 在独立的 **Yidie QA iPhone 18 Pro / iOS 27 Simulator** 上重新打开 Debug 预览，检查了 populated/empty calendar、数量角标、十张同日记录弹层、描边预览与保存、All Records、导入确认及合成失败状态。描边保存后在日期弹层可见，导入页没有场景菜单遮挡。预览只验证界面和内存替身，不代表原生 PhotoKit/Vision 行为。之前 Release 空日历截图仍保存在 [`design/screenshots/app-empty-calendar.png`](../design/screenshots/app-empty-calendar.png)。
+先前的 Simulator 预览检查覆盖了空/满月历、数量角标、同日多张弹层、编辑状态、All Records、导入确认和失败状态。预览只验证界面和内存替身，不代表原生 PhotoKit/Vision 行为；当前代码还需要按 [交付清单](../TODO.md) 重新验收。
 
 尚需逐项验证日/月份触控滑动、窄屏、大字体、VoiceOver、减弱动态效果、原生 Files 备份/恢复、分享面板和系统日期选择。真实抠图质量、离线行为、内存与性能必须用用户主动选择的测试照片在真机检查；不得将几何占位素材当成真实效果。

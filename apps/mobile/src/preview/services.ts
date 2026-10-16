@@ -5,6 +5,7 @@ import type {
   QueueCounts,
   Sticker,
   StickerBorderColor,
+  StickerEffect,
 } from '../domain/records';
 import { createEntryActions } from '../domain/entryActions';
 
@@ -12,7 +13,13 @@ async function readOnly(): Promise<never> {
   throw new Error('PREVIEW_READ_ONLY');
 }
 
-function sampleOutline(id: string, revision: number, width: number, color: StickerBorderColor) {
+function sampleOutline(
+  id: string,
+  revision: number,
+  effect: StickerEffect,
+  width: number,
+  color: StickerBorderColor,
+) {
   const outline =
     width === 0 ? '' : `stroke="${color}" stroke-width="${width * 2}" stroke-linejoin="round"`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="360" viewBox="0 0 200 360"><g ${outline}><circle cx="100" cy="44" r="27" fill="#B89F89"/><path d="M68 78 L132 78 L162 206 L124 214 L134 334 L101 340 L85 231 L70 334 L40 329 L61 207 L34 200 Z" fill="#DAA6B2"/></g></svg>`;
@@ -27,6 +34,7 @@ function sampleOutline(id: string, revision: number, width: number, color: Stick
       width: 200,
       height: 360,
       instanceCount: 1,
+      effect,
       borderWidth: width,
       borderColor: color,
       styleRevision: revision,
@@ -103,9 +111,12 @@ export async function previewServices(entries: Entry[]): Promise<AppServices> {
     thumbnail: readOnly,
     importPhoto: readOnly,
     createSticker: readOnly,
-    renderStickerStyle: async (id, revision, borderWidth, borderColor) => ({
-      ...sampleOutline(id, revision, borderWidth, borderColor).sticker,
-      cutoutPath: findEntry(id).cutoutPath ?? `preview-cutout:${id}`,
+    listStickerSubjects: async (id) => [{ path: `preview-subject:${id}`, width: 200, height: 360 }],
+    stageStickerSubject: async (id) => `preview-cutout:${id}`,
+    discardStickerSubjectDrafts: async () => {},
+    renderStickerStyle: async (id, revision, cutoutPath, effect, borderWidth, borderColor) => ({
+      ...sampleOutline(id, revision, effect, borderWidth, borderColor).sticker,
+      cutoutPath: cutoutPath ?? findEntry(id).cutoutPath ?? `preview-cutout:${id}`,
     }),
     discardStickerStyleVersion: async () => {},
     pruneStickerStyles: async () => {},

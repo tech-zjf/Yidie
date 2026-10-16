@@ -12,6 +12,7 @@ import { BatchReview } from './BatchReview';
 import { QueuePanel } from '../processing/QueuePanel';
 import { SheetHandle } from '../../ui/SheetHandle';
 import { photoPermissionAction } from '../../domain/photoPermission';
+import { useReducedMotion } from '../../ui/useReducedMotion';
 
 export function PhotoImportSheet({
   services,
@@ -26,6 +27,7 @@ export function PhotoImportSheet({
 }) {
   const library = usePhotoLibrary(services);
   const model = useBatchImport(services, selectedDate, onSaved);
+  const reduceMotion = useReducedMotion();
   const busy = model.busy || library.busy;
   const title = { select: copy.choose, review: copy.dateTitle, submitted: copy.done }[model.stage];
   const libraryError = model.stage === 'select' ? library.error : '';
@@ -128,7 +130,7 @@ export function PhotoImportSheet({
   return (
     <Modal
       visible
-      animationType="slide"
+      animationType={reduceMotion ? 'none' : 'slide'}
       presentationStyle="pageSheet"
       onRequestClose={() => {
         if (!busy) onClose();

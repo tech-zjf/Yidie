@@ -4,16 +4,29 @@ import { findAvailableIosSimulator, parseAvailableIosSimulators } from './simula
 const usage = `Usage:
   npm run ios:sim -- --list
   npm run ios:sim -- <available-iOS-simulator-UDID>
+  npm run ios:release -- <available-iOS-simulator-UDID>
 
-The command accepts only an exact UDID from the available iOS Simulator inventory.`;
+All launch commands require an exact UDID from the available iOS Simulator inventory.`;
 
 function main(args) {
-  const [selection] = args;
-  if (selection === '--help' || selection === '-h') {
+  if (args.length === 1 && (args[0] === '--help' || args[0] === '-h')) {
     console.log(usage);
     return 0;
   }
-  if (args.length !== 1) {
+
+  let configuration = 'Debug';
+  let selectionArgs = args;
+  if (args[0] === '--configuration' && args.length === 3) {
+    configuration = args[1];
+    selectionArgs = args.slice(2);
+    if (!['Debug', 'Release'].includes(configuration)) {
+      console.error('Choose Debug or Release configuration.');
+      return 2;
+    }
+  }
+
+  const [selection] = selectionArgs;
+  if (selectionArgs.length !== 1) {
     console.error(usage);
     return 2;
   }
@@ -51,9 +64,13 @@ function main(args) {
     return 2;
   }
 
-  const run = spawnSync('npx', ['expo', 'run:ios', '--device', simulator.udid], {
-    stdio: 'inherit',
-  });
+  const run = spawnSync(
+    'npx',
+    ['expo', 'run:ios', '--device', simulator.udid, '--configuration', configuration],
+    {
+      stdio: 'inherit',
+    },
+  );
   if (run.error) {
     console.error(`Could not start Expo: ${run.error.message}`);
     return 1;
