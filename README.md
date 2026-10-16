@@ -7,7 +7,7 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** The current PR tree at [`8ab288e`](https://github.com/tech-zjf/Yidie/commit/8ab288eb962ead86b79997bf05a1b96f07d09e0c) passed the full GitHub Actions suite in [run 38858494954](https://github.com/tech-zjf/Yidie/actions/runs/38858494954), including JavaScript checks, iOS export, native safety tests, unsigned iOS Simulator Release build, sticker pixel fixtures, and app launch. Hosted CI validates a deterministic fixture and first render; it does not accept interactive flows or Vision quality from a real photo. This Mac currently has no working CoreSimulatorService or installed Simulator runtime. See the live [delivery board](TODO.md).
+> **Development build.** The current PR tree at [`90217bb`](https://github.com/tech-zjf/Yidie/commit/90217bbb7f72b2e7137049edd950b456dc672b61) passed the full GitHub Actions suite in [run 38860023978](https://github.com/tech-zjf/Yidie/actions/runs/38860023978), including JavaScript checks, iOS export, native safety tests, unsigned iOS Simulator Release build, sticker pixel fixtures, and app launch. Hosted CI validates a deterministic fixture and first render; it does not accept interactive flows or Vision quality from a real photo. This Mac currently has no working CoreSimulatorService or installed Simulator runtime. See the live [delivery board](TODO.md).
 
 ## What makes it different
 
