@@ -7,7 +7,7 @@
 <p align="center">An offline-first outfit diary that turns the days you wore them into a sticker calendar.</p>
 <p align="center">把穿过的日子，一张张叠起来。</p>
 
-> **Development build.** GitHub Actions [run 38838070465](https://github.com/tech-zjf/Yidie/actions/runs/38838070465) passed on current PR head `ac220d2`: 77 JavaScript tests, iOS export, native safety checks, unsigned iOS Simulator Release build, sticker pixel fixture, and current-app install/launch with first-screen OCR. These checks do not accept interactive flows or Vision quality from a real photo. This Mac currently has no working CoreSimulatorService or installed Simulator runtime. See the live [delivery board](TODO.md).
+> **Development build.** GitHub Actions [run 38839872676](https://github.com/tech-zjf/Yidie/actions/runs/38839872676) passed on PR head `bcf3243`: 77 JavaScript tests, iOS export, native safety checks, unsigned iOS Simulator Release build, sticker pixel fixture, and current-app install/launch with first-screen OCR. These checks do not accept interactive flows or Vision quality from a real photo. This Mac currently has no working CoreSimulatorService or installed Simulator runtime. See the live [delivery board](TODO.md).
 
 ## What makes it different
 
