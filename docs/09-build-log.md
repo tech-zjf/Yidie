@@ -4,7 +4,7 @@ This page records the latest bounded evidence. The [delivery board](../TODO.md) 
 
 ## Current source
 
-GitHub Actions [run 38853651898](https://github.com/tech-zjf/Yidie/actions/runs/38853651898) passed on app source commit [`a6e987d`](https://github.com/tech-zjf/Yidie/commit/a6e987d5e95b1dc0a3a383c3695907f7c031c9bf):
+GitHub Actions [run 38858494954](https://github.com/tech-zjf/Yidie/actions/runs/38858494954) passed for the current PR tree at [`8ab288e`](https://github.com/tech-zjf/Yidie/commit/8ab288eb962ead86b79997bf05a1b96f07d09e0c):
 
 - TypeScript, ESLint, Prettier, all 81 JavaScript tests, and iOS bundle export.
 - Documentation, database, and native-module contracts; native file ownership and backup tests; iOS SDK typecheck.
