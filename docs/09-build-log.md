@@ -2,9 +2,9 @@
 
 This page records the latest bounded evidence. The [delivery board](../TODO.md) is the source of truth for open acceptance work; implementation rationale lives in the [architecture](03-architecture.md).
 
-## Current source
+## Hosted CI baseline
 
-GitHub Actions [run 38860023978](https://github.com/tech-zjf/Yidie/actions/runs/38860023978) passed for the current PR tree at [`90217bb`](https://github.com/tech-zjf/Yidie/commit/90217bbb7f72b2e7137049edd950b456dc672b61):
+GitHub Actions [run 38862196489](https://github.com/tech-zjf/Yidie/actions/runs/38862196489) passed on source commit [`503b523`](https://github.com/tech-zjf/Yidie/commit/503b52305e3c5d36e51724cec08d4d2e76daa5c7):
 
 - TypeScript, ESLint, Prettier, all 81 JavaScript tests, and iOS bundle export.
 - Documentation, database, and native-module contracts; native file ownership and backup tests; iOS SDK typecheck.
