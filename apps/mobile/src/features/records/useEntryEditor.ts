@@ -8,6 +8,7 @@ import type {
 } from '../../domain/records';
 import { isRecordDate } from '../../domain/datePolicy';
 import { errorCode } from '../../domain/importPhoto';
+import { hasStickerStyleChanges } from '../../domain/stickerStyle';
 import type { AppServices } from '../../services';
 import { copy } from '../../ui/copy';
 
@@ -40,11 +41,12 @@ export function useEntryEditor(
     null,
   );
   const subjectDraftsLoaded = useRef(false);
-  const styleChanged =
-    effect !== entry.effect ||
-    (selectedSubjectPath !== null && selectedSubjectPath !== entry.cutoutPath) ||
-    (effect !== 'original' &&
-      (borderWidth !== entry.borderWidth || borderColor !== entry.borderColor));
+  const styleChanged = hasStickerStyleChanges(entry, {
+    effect,
+    borderWidth,
+    borderColor,
+    cutoutPath: selectedSubjectPath,
+  });
   const stagedVersion = useRef<number | null>(null),
     stagedCutoutPath = useRef<string | null>(null),
     styleCommitted = useRef(false);
@@ -165,6 +167,44 @@ export function useEntryEditor(
     setStylePreviewToken((token) => token + 1);
     setNotice(copy.stylePreview);
   }
+  function updateStyleDraft(
+    nextEffect: StickerEffect,
+    nextBorderWidth: number,
+    nextBorderColor: StickerBorderColor,
+  ) {
+    if (lock.current) return;
+    setEffect(nextEffect);
+    setBorderWidth(nextBorderWidth);
+    setBorderColor(nextBorderColor);
+    setStylePreview(null);
+    styleCommitted.current = false;
+
+    const changed = hasStickerStyleChanges(entry, {
+      effect: nextEffect,
+      borderWidth: nextBorderWidth,
+      borderColor: nextBorderColor,
+      cutoutPath: selectedSubjectPath,
+    });
+    if (changed) {
+      void run(() => makeStylePreview(nextEffect, nextBorderWidth, nextBorderColor));
+      return;
+    }
+
+    const cutoutPath = stagedCutoutPath.current;
+    const revision =
+      stagedVersion.current ??
+      (cutoutPath !== null && cutoutPath !== entry.cutoutPath ? entry.styleRevision + 1 : null);
+    if (revision === null) return;
+    void run(async () => {
+      await services.photos.discardStickerStyleVersion(
+        entry.id,
+        revision,
+        cutoutPath !== entry.cutoutPath ? cutoutPath : null,
+      );
+      stagedVersion.current = null;
+      stagedCutoutPath.current = null;
+    });
+  }
   async function chooseDate() {
     if (datePickerOpen.current || busy || !active.current) return;
     datePickerOpen.current = true;
@@ -196,16 +236,11 @@ export function useEntryEditor(
       }, true),
     effect,
     setEffect: (value: StickerEffect) => {
-      if (lock.current) return;
       if (value === effect && !styleChanged && !stylePreview) return;
       const nextBorderWidth =
         value === 'original' ? 0 : borderWidth === 0 ? lastOutlineWidth.current : borderWidth;
       if (value === 'original' && borderWidth > 0) lastOutlineWidth.current = borderWidth;
-      setBorderWidth(nextBorderWidth);
-      setEffect(value);
-      setStylePreview(null);
-      styleCommitted.current = false;
-      void run(() => makeStylePreview(value, nextBorderWidth, borderColor));
+      updateStyleDraft(value, nextBorderWidth, borderColor);
     },
     styleChanged,
     subjectCandidates,
@@ -252,24 +287,15 @@ export function useEntryEditor(
       }),
     borderWidth,
     setBorderWidth: (value: number) => {
-      if (lock.current) return;
       if (value === borderWidth && effect === 'outline' && !styleChanged && !stylePreview) return;
       const nextEffect: StickerEffect = 'outline';
       lastOutlineWidth.current = value;
-      setEffect(nextEffect);
-      setBorderWidth(value);
-      setStylePreview(null);
-      styleCommitted.current = false;
-      void run(() => makeStylePreview(nextEffect, value, borderColor));
+      updateStyleDraft(nextEffect, value, borderColor);
     },
     borderColor,
     setBorderColor: (value: StickerBorderColor) => {
-      if (lock.current) return;
       if (value === borderColor && !styleChanged && !stylePreview) return;
-      setBorderColor(value);
-      setStylePreview(null);
-      styleCommitted.current = false;
-      void run(() => makeStylePreview(effect, borderWidth, value));
+      updateStyleDraft(effect, borderWidth, value);
     },
     stylePreview,
     stylePreviewToken,
